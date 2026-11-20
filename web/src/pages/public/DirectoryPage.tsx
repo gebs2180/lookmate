@@ -64,8 +64,9 @@ export function DirectoryPage() {
           <Link to="/find">Get matched instead</Link>
         </p>
       )}
+      <p className="eyebrow">The index</p>
       <h1>All stylists</h1>
-      <p>
+      <p className="lede">
         {token
           ? 'Your matches are our suggestions. You can book any stylist here instead.'
           : 'Browse every stylist. To book, start a request: it takes two minutes, and we match you with stylists whose work looks like the style you want.'}
@@ -85,10 +86,11 @@ export function DirectoryPage() {
             {data.total} {data.total === 1 ? 'stylist' : 'stylists'}
             {pages > 1 ? `, page ${data.page + 1} of ${pages}` : ''}
           </p>
-          <ul className="stylist-cards">
-            {data.stylists.map((s) => (
+          <ul className="index">
+            {data.stylists.map((s, i) => (
               <StylistCard
                 key={s.orgId}
+                index={i}
                 name={s.displayName}
                 location={[s.locationName, s.city].filter(Boolean).join(', ') || null}
                 demo={s.demo}
