@@ -1,5 +1,5 @@
 import { useAuth0 } from '@auth0/auth0-react'
-import { Suspense } from 'react'
+import { lazy, Suspense } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router'
 import { HomePage } from './pages/HomePage'
 import { InvitePage } from './pages/InvitePage'
@@ -8,6 +8,14 @@ import { MatchQueuePage } from './pages/admin/MatchQueuePage'
 import { MatchReviewPage } from './pages/admin/MatchReviewPage'
 import { Loading, NotFound, RouteErrorBoundary } from './ui'
 import { useRouteFocus } from './useRouteFocus'
+
+// Stylists module (docs/modules/stylists.md)
+const StylistHomePage = lazy(() => import('./stylists/StylistHomePage').then((m) => ({ default: m.StylistHomePage })))
+const ProfilePage = lazy(() => import('./stylists/ProfilePage').then((m) => ({ default: m.ProfilePage })))
+const PortfolioPage = lazy(() => import('./stylists/PortfolioPage').then((m) => ({ default: m.PortfolioPage })))
+const AdminStylistsPage = lazy(() => import('./admin/AdminStylistsPage').then((m) => ({ default: m.AdminStylistsPage })))
+const AdminDemoPage = lazy(() => import('./admin/AdminDemoPage').then((m) => ({ default: m.AdminDemoPage })))
+const AdminLocationsPage = lazy(() => import('./admin/AdminLocationsPage').then((m) => ({ default: m.AdminLocationsPage })))
 
 /**
  * Stylists and the admin sign in (Auth0). Clients never do: their intake and match pages will live under
@@ -59,6 +67,12 @@ function App() {
                 <Route path="/admin/matches" element={<MatchQueuePage />} />
                 <Route path="/admin/matches/fairness" element={<FairnessPage />} />
                 <Route path="/admin/matches/:id" element={<MatchReviewPage />} />
+                <Route path="/stylist/:orgId" element={<StylistHomePage />} />
+                <Route path="/stylist/:orgId/profile" element={<ProfilePage />} />
+                <Route path="/stylist/:orgId/portfolio" element={<PortfolioPage />} />
+                <Route path="/admin/stylists" element={<AdminStylistsPage />} />
+                <Route path="/admin/locations" element={<AdminLocationsPage />} />
+                <Route path="/admin/demo" element={<AdminDemoPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

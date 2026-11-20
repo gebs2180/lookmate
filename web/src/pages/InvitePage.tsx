@@ -18,8 +18,9 @@ export function InvitePage() {
     setAcceptError(null)
     setBusy(true)
     try {
-      await api<{ orgId: string }>('POST', apiPath`/api/invites/${token}/accept`)
-      navigate('/', { replace: true })
+      const { orgId } = await api<{ orgId: string }>('POST', apiPath`/api/invites/${token}/accept`)
+      // A stylist goes straight on to the terms and their profile.
+      navigate(invite?.orgType === 'STYLIST' ? `/stylist/${orgId}` : '/', { replace: true })
     } catch (err) {
       setAcceptError(message(err))
     } finally {

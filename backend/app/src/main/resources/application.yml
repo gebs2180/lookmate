@@ -95,6 +95,10 @@ lookmate:
       similar-threshold: 0.8
       adjacent-hair-type-weight: 0.5
       keep: 5
+  stylists:
+    # A profile can go LIVE once it has this many READY portfolio photos tagged with a service and hair type
+    # (the brief asks for 10-20 photos; 3 lets a pilot stylist start while they add the rest).
+    min-tagged-photos-to-publish: 3
 
 management:
   endpoints:
