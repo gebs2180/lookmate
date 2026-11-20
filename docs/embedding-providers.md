@@ -1,4 +1,6 @@
-# Embedding providers (for the team to decide)
+# Embedding providers
+
+**Decided 2026-11-20: Amazon Bedrock, Titan Multimodal Embeddings G1.** The comparison below is kept for the record.
 
 Matching v1 needs an image-embedding model (brief, Must have 4). The code is ready for any provider behind
 `EmbeddingProvider` (`backend/app/.../matching`); only a deterministic fake runs now (`lookmate.matching.provider: fake`).
