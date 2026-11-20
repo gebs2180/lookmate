@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Openly licensed demo photos from npm run demo:photos (never committed)
+demo-photos/
