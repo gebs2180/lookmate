@@ -68,6 +68,24 @@
         },
         "required" : [ "createdAt", "id", "members", "name", "type" ]
       },
+      "AdminTrackingControllerRecordBooking" : {
+        "properties" : {
+          "note" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "VIEWED", "CLICKED_BOOK", "BOOKED", "REBOOKED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "note", "occurredAt", "type" ]
+      },
       "ConsentControllerAcceptRequest" : {
         "properties" : {
           "version" : {
@@ -216,6 +234,313 @@
           }
         },
         "required" : [ "orgId", "orgName", "orgType", "role" ]
+      },
+      "MetricsServiceMetrics" : {
+        "properties" : {
+          "from" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "hairTypes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TrackingQueriesHairTypeRow"
+            },
+            "type" : "array"
+          },
+          "market" : {
+            "type" : "string"
+          },
+          "markets" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "stylists" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TrackingQueriesStylistRow"
+            },
+            "type" : "array"
+          },
+          "timeZone" : {
+            "type" : "string"
+          },
+          "to" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "totals" : {
+            "$ref" : "#/components/schemas/MetricsServiceTotals"
+          },
+          "weeks" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TrackingQueriesWeekRow"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "from", "hairTypes", "market", "markets", "stylists", "timeZone", "to", "totals", "weeks" ]
+      },
+      "MetricsServiceStylistStats" : {
+        "properties" : {
+          "allTime" : {
+            "$ref" : "#/components/schemas/TrackingQueriesOrgCounts"
+          },
+          "last30Days" : {
+            "$ref" : "#/components/schemas/TrackingQueriesOrgCounts"
+          }
+        },
+        "required" : [ "allTime", "last30Days" ]
+      },
+      "MetricsServiceTotals" : {
+        "properties" : {
+          "bookingClicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bookings" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsBooked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsClicked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsMatched" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsRebooked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "rebookCohort" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "rebookCohortRebooked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "rebookRate" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "rebooks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "requestsPublished" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "stylistsActive" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "stylistsLive" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "bookingClicks", "bookings", "clientsBooked", "clientsClicked", "clientsMatched", "clientsRebooked", "rebookCohort", "rebookCohortRebooked", "rebookRate", "rebooks", "requestsPublished", "stylistsActive", "stylistsLive" ]
+      },
+      "TrackingQueriesHairTypeRow" : {
+        "properties" : {
+          "clientsBooked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsClicked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsMatched" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "hairType" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "clientsBooked", "clientsClicked", "clientsMatched", "hairType" ]
+      },
+      "TrackingQueriesOrgCounts" : {
+        "properties" : {
+          "bookingClicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bookings" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "matchesShown" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "rebooks" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "bookingClicks", "bookings", "matchesShown", "rebooks" ]
+      },
+      "TrackingQueriesRecentMatch" : {
+        "properties" : {
+          "bookingClicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bookings" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientEmail" : {
+            "type" : "string"
+          },
+          "clientFirstName" : {
+            "type" : "string"
+          },
+          "finalRank" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "market" : {
+            "type" : "string"
+          },
+          "matchId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "publishedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "rebooks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "requestId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          },
+          "stylistName" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "bookingClicks", "bookings", "clientEmail", "clientFirstName", "finalRank", "market", "matchId", "orgId", "publishedAt", "rebooks", "requestId", "service", "stylistName" ]
+      },
+      "TrackingQueriesStylistRow" : {
+        "properties" : {
+          "bookingClicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bookings" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsBooked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsRebooked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "matchesShown" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "readyPhotos" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "rebooks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "bookingClicks", "bookings", "clientsBooked", "clientsRebooked", "displayName", "matchesShown", "orgId", "readyPhotos", "rebooks", "status" ]
+      },
+      "TrackingQueriesWeekRow" : {
+        "properties" : {
+          "bookingClicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bookings" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsMatched" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "rebooks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "requestsPublished" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "weekStart" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "required" : [ "bookingClicks", "bookings", "clientsMatched", "rebooks", "requestsPublished", "weekStart" ]
+      },
+      "TrackingServiceRecorded" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "matchId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "note" : {
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "source" : {
+            "enum" : [ "CLIENT", "ADMIN", "STYLIST" ],
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "VIEWED", "CLICKED_BOOK", "BOOKED", "REBOOKED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "matchId", "note", "occurredAt", "source", "type" ]
       }
     }
   },
@@ -225,6 +550,85 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/admin/matches/{matchId}/events" : {
+      "post" : {
+        "operationId" : "record_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "matchId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminTrackingControllerRecordBooking"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TrackingServiceRecorded"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "admin-tracking-controller" ]
+      }
+    },
+    "/api/admin/metrics" : {
+      "get" : {
+        "operationId" : "metrics",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "market",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "from",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "to",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MetricsServiceMetrics"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-tracking-controller" ]
+      }
+    },
     "/api/admin/orgs" : {
       "get" : {
         "operationId" : "list",
@@ -423,6 +827,44 @@
         "tags" : [ "admin-org-controller" ]
       }
     },
+    "/api/admin/tracking/matches" : {
+      "get" : {
+        "operationId" : "matches",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "market",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TrackingQueriesRecentMatch"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-tracking-controller" ]
+      }
+    },
     "/api/invites/{token}" : {
       "get" : {
         "operationId" : "preview",
@@ -553,6 +995,124 @@
           }
         },
         "tags" : [ "consent-controller" ]
+      }
+    },
+    "/api/orgs/{orgId}/matches/{matchId}/events" : {
+      "post" : {
+        "operationId" : "record",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "matchId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminTrackingControllerRecordBooking"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TrackingServiceRecorded"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "stylist-tracking-controller" ]
+      }
+    },
+    "/api/orgs/{orgId}/tracking/stats" : {
+      "get" : {
+        "operationId" : "stats",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MetricsServiceStylistStats"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-tracking-controller" ]
+      }
+    },
+    "/api/public/book/{token}/{matchId}" : {
+      "get" : {
+        "operationId" : "book",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "matchId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "public-tracking-controller" ]
+      }
+    },
+    "/api/public/match-requests/{token}/viewed" : {
+      "post" : {
+        "operationId" : "viewed",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "public-tracking-controller" ]
       }
     }
   },
