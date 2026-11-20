@@ -1,7 +1,8 @@
 # Combpatible: stylist matching app
 
 Product name: Combpatible. 'lookmate' stays the internal name in packages, Gradle, databases, buckets, config keys and
-Auth0 identifiers.
+Auth0 identifiers. Anything outsiders see says Combpatible, including the `utm_source=combpatible` tag on booking links
+(stylists see it in their booking tools' reports).
 
 Matches hair clients with stylists by the stylist's actual portfolio work on similar hair, not just distance and price.
 Columbus, Ohio first, with independent stylists at Salon Lofts. The original project brief (what we build, why, the

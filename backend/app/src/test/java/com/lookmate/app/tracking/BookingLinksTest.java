@@ -11,7 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 class BookingLinksTest {
 
     private static final UUID MATCH = UUID.fromString("11111111-2222-3333-4444-555555555555");
-    private static final String UTM = "utm_source=lookmate&utm_medium=referral&utm_campaign=columbus-oh"
+    private static final String UTM = "utm_source=combpatible&utm_medium=referral&utm_campaign=columbus-oh"
             + "&utm_content=11111111-2222-3333-4444-555555555555";
 
     @Test
