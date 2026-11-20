@@ -13,7 +13,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param rateLimit                     per-IP limits on the public endpoints (in memory: per instance)
  */
 @ConfigurationProperties("lookmate.intake")
-record IntakeProperties(@DefaultValue("120d") Duration linkTtl,
+record IntakeProperties(@DefaultValue("90d") Duration linkTtl,
                         @DefaultValue("3") int maxOpenRequestsPerEmailPerDay,
                         @DefaultValue("15m") Duration matchingStuckAfter,
                         @DefaultValue RateLimit rateLimit) {

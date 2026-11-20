@@ -13,6 +13,7 @@ import com.lookmate.app.TestcontainersConfiguration;
 import com.lookmate.app.identity.SecurityProperties;
 import com.lookmate.app.storage.BlobStore;
 import com.lookmate.app.storage.StorageProperties;
+import com.lookmate.app.storage.TestPhotos;
 import java.io.ByteArrayInputStream;
 import java.time.Instant;
 import java.util.Map;

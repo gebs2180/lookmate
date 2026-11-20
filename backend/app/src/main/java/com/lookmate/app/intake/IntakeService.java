@@ -4,6 +4,7 @@ import com.lookmate.app.api.ApiException;
 import com.lookmate.app.notify.ClientEmails;
 import com.lookmate.app.storage.BlobStore;
 import com.lookmate.app.storage.ImageGuard;
+import com.lookmate.app.storage.PhotoMetadata;
 import com.lookmate.app.storage.StorageProperties;
 import java.time.Duration;
 import java.time.Instant;
@@ -40,7 +41,12 @@ class IntakeService {
     }
 
     record ClientView(Stage stage, String firstName, String service, String hairType, String texture, String length, Instant createdAt,
-                      boolean photoUploaded, boolean photoDeleted, Instant photoDeletesAt, String photoUrl, List<ClientMatch> matches) {
+                      boolean photoUploaded, boolean photoDeleted, Instant photoDeletesAt, int photoKeptDays, String photoUrl,
+                      List<ClientMatch> matches) {
+    }
+
+    /** What the quiz tells clients before they send anything: how long their photo is kept, how large it may be. */
+    record Settings(int photoKeptDays, long maxPhotoBytes) {
     }
 
     static final Set<String> PHOTO_TYPES = Set.of("image/jpeg", "image/png");
@@ -68,6 +74,10 @@ class IntakeService {
         this.matchList = matchList;
         this.defaultMarket = defaultMarket;
         this.photoDays = photoDays;
+    }
+
+    Settings settings() {
+        return new Settings(photoDays, storage.maxUploadBytes());
     }
 
     @Transactional
@@ -124,7 +134,7 @@ class IntakeService {
         if (header.isEmpty()) {
             throw reject(row, "not a JPEG or PNG within the size limits");
         }
-        byte[] clean = PhotoMetadata.withoutMetadata(bytes);
+        byte[] clean = PhotoMetadata.strip(bytes);
         if (clean == null || ImageGuard.safeHeader(clean).isEmpty()) {
             // Never keep a photo whose metadata we couldn't take out.
             throw reject(row, "metadata could not be removed");
@@ -162,7 +172,7 @@ class IntakeService {
             matches = provider == null ? List.of() : List.copyOf(provider.forClient(row.id()));
         }
         return new ClientView(stage, row.firstName(), row.service(), row.hairType(), row.texture(), row.length(), row.createdAt(), uploaded,
-                deleted, deleted ? null : row.createdAt().plus(photoDays, ChronoUnit.DAYS), photoUrl, matches);
+                deleted, deleted ? null : row.createdAt().plus(photoDays, ChronoUnit.DAYS), photoDays, photoUrl, matches);
     }
 
     /** The request a token opens. Every failure is the same 404, so a guess learns nothing. */

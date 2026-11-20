@@ -2,13 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { message } from '../../format'
 import { preparePhoto } from './photo'
 
-/** "Deleted after 30 days, never public": shown wherever a client picks a photo. */
-export function PrivacyNote() {
+/**
+ * "Never public, deleted after N days": shown wherever a client picks a photo. N is the server's retention setting;
+ * until it has loaded, the note says the photo is deleted without a number rather than guess one.
+ */
+export function PrivacyNote({ keptDays }: { keptDays: number | null }) {
   return (
     <div className="alert alert-info privacy-note">
       <p className="alert-title">Your photo stays private</p>
       <p>
-        Only the LookMate team sees it. It's never public, and we delete it 30 days after your request. We remove
+        Only the LookMate team sees it. It's never public, and we delete it{' '}
+        {keptDays ? `${keptDays} days after your request` : 'on a set schedule'}. We remove
         location and camera details before it's stored.
       </p>
     </div>

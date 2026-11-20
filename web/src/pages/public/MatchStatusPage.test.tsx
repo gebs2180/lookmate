@@ -17,6 +17,7 @@ const BASE: ClientView = {
   photoUploaded: true,
   photoDeleted: false,
   photoDeletesAt: '2026-12-20T12:00:00Z',
+  photoKeptDays: 21,
   photoUrl: 'https://storage.test/view',
   matches: [],
 }
@@ -73,6 +74,12 @@ describe('MatchStatusPage', () => {
     show(200, { ...BASE, stage: 'PHOTO_NEEDED', photoUploaded: false, photoUrl: null, photoDeletesAt: null })
     expect(await screen.findByRole('heading', { name: 'Add your inspiration photo' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Send photo' })).toBeDisabled()
+    expect(screen.getByText(/we delete it 21 days after your request/)).toBeInTheDocument()
+  })
+
+  it('says the photo is gone once retention deleted it, with the real period', async () => {
+    show(200, { ...BASE, stage: 'MATCHING', photoDeleted: true, photoUrl: null, photoDeletesAt: null })
+    expect(await screen.findByText('Deleted, as promised: we keep inspiration photos for 21 days.')).toBeInTheDocument()
   })
 
   it('treats a wrong or expired link as not found', async () => {

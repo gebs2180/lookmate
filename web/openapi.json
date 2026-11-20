@@ -263,6 +263,10 @@
             "format" : "date-time",
             "type" : "string"
           },
+          "photoKeptDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "photoUploaded" : {
             "type" : "boolean"
           },
@@ -280,7 +284,20 @@
             "type" : "string"
           }
         },
-        "required" : [ "createdAt", "firstName", "hairType", "length", "matches", "photoDeleted", "photoDeletesAt", "photoUploaded", "photoUrl", "service", "stage", "texture" ]
+        "required" : [ "createdAt", "firstName", "hairType", "length", "matches", "photoDeleted", "photoDeletesAt", "photoKeptDays", "photoUploaded", "photoUrl", "service", "stage", "texture" ]
+      },
+      "IntakeServiceSettings" : {
+        "properties" : {
+          "maxPhotoBytes" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "photoKeptDays" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "maxPhotoBytes", "photoKeptDays" ]
       },
       "InviteControllerAccepted" : {
         "properties" : {
@@ -410,7 +427,7 @@
     }
   },
   "info" : {
-    "title" : "Rawmark API",
+    "title" : "LookMate API",
     "version" : "1"
   },
   "openapi" : "3.1.0",
@@ -743,6 +760,24 @@
           }
         },
         "tags" : [ "consent-controller" ]
+      }
+    },
+    "/api/public/intake/settings" : {
+      "get" : {
+        "operationId" : "settings",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/IntakeServiceSettings"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "intake-controller" ]
       }
     },
     "/api/public/match-requests" : {

@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
  * their link. Rate-limited per IP ({@link PublicRateLimit}); a wrong or expired token is always the same 404.
  */
 @RestController
-@RequestMapping("/api/public/match-requests")
 class IntakeController {
 
     record PhotoFile(@NotBlank String contentType, @Positive long sizeBytes) {
@@ -54,13 +52,20 @@ class IntakeController {
     record Created(String token, String statusPath, UploadSlot upload) {
     }
 
+    static final String BASE = "/api/public/match-requests";
+
     private final IntakeService intake;
 
     IntakeController(IntakeService intake) {
         this.intake = intake;
     }
 
-    @PostMapping
+    @GetMapping("/api/public/intake/settings")
+    IntakeService.Settings settings() {
+        return intake.settings();
+    }
+
+    @PostMapping(BASE)
     @ResponseStatus(HttpStatus.CREATED)
     Created create(@Valid @RequestBody CreateRequest body) {
         IntakeService.Created created = intake.create(new IntakeService.NewRequest(body.email(), body.firstName(), body.hairType(),
@@ -69,17 +74,17 @@ class IntakeController {
         return new Created(created.token(), created.statusPath(), UploadSlot.of(created.upload()));
     }
 
-    @GetMapping("/{token}")
+    @GetMapping(BASE + "/{token}")
     IntakeService.ClientView view(@PathVariable String token) {
         return intake.view(token);
     }
 
-    @PostMapping("/{token}/inspiration")
+    @PostMapping(BASE + "/{token}/inspiration")
     UploadSlot uploadSlot(@PathVariable String token, @Valid @RequestBody PhotoFile body) {
         return UploadSlot.of(intake.uploadSlot(token, body.contentType(), body.sizeBytes()));
     }
 
-    @PostMapping("/{token}/inspiration/confirm")
+    @PostMapping(BASE + "/{token}/inspiration/confirm")
     IntakeService.ClientView confirm(@PathVariable String token) {
         return intake.confirm(token);
     }

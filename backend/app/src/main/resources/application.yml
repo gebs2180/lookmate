@@ -63,7 +63,7 @@ lookmate:
       app-url: ${NOTIFY_APP_URL:http://localhost:5173}
   intake:
     # Client intake (docs/modules/intake.md). Clients have no account: a link token reaches their request.
-    link-ttl: 120d
+    link-ttl: 90d
     # Requests one email address may have open (not yet matched) from the last 24 hours.
     max-open-requests-per-email-per-day: 3
     # A request claimed for matching but untouched this long is offered to the matching worker again.
@@ -82,6 +82,9 @@ lookmate:
     # A client's inspiration photo is deleted from storage this many days after the request was made
     # (CLAUDE.md, Privacy). The embedding and the match rows stay. Default to confirm.
     inspiration-photo-days: 30
+    # A client's email, phone, first name, neighborhood and note are cleared this many days after the latest request
+    # made with that email address; the quiz codes stay for the fairness metrics (docs/data-retention.md).
+    client-contact-days: 365
 
 management:
   endpoints:

@@ -22,12 +22,12 @@ class OpenApiConfig {
 
     @Bean
     OpenAPI openApi() {
-        return new OpenAPI().info(new Info().title("Rawmark API").version("1")).servers(List.of(new Server().url("/")));
+        return new OpenAPI().info(new Info().title("LookMate API").version("1")).servers(List.of(new Server().url("/")));
     }
 
     /**
-     * Names a nested type with the classes around it ({@code IntakeControllerPhotoView}), since several
-     * controllers have their own {@code PhotoView}: by simple name alone, one would silently replace another.
+     * Names a nested type with the classes around it ({@code IntakeControllerUploadSlot}), since several
+     * controllers have their own {@code UploadSlot}: by simple name alone, one would silently replace another.
      */
     @Bean
     ModelResolver nestedTypeNames() {

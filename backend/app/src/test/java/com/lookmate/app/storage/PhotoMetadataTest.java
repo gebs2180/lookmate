@@ -1,4 +1,4 @@
-package com.lookmate.app.intake;
+package com.lookmate.app.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -21,7 +21,7 @@ class PhotoMetadataTest {
         Metadata before = ImageMetadataReader.readMetadata(new ByteArrayInputStream(original));
         assertThat(before.getFirstDirectoryOfType(GpsDirectory.class)).as("the test photo has a GPS block").isNotNull();
 
-        byte[] clean = PhotoMetadata.withoutMetadata(original);
+        byte[] clean = PhotoMetadata.strip(original);
 
         assertThat(clean).isNotNull();
         Metadata after = ImageMetadataReader.readMetadata(new ByteArrayInputStream(clean));
@@ -36,7 +36,7 @@ class PhotoMetadataTest {
     @Test
     void aPngLosesItsTextChunks() throws Exception {
         byte[] original = TestPhotos.pngWithText();
-        byte[] clean = PhotoMetadata.withoutMetadata(original);
+        byte[] clean = PhotoMetadata.strip(original);
         assertThat(clean).isNotNull();
         assertThat(new String(original, StandardCharsets.ISO_8859_1)).contains("Elm St");
         assertThat(new String(clean, StandardCharsets.ISO_8859_1)).doesNotContain("Elm St");
@@ -46,14 +46,14 @@ class PhotoMetadataTest {
     @Test
     void aPhotoWithoutMetadataIsCopiedAsItIs() throws Exception {
         byte[] png = TestPhotos.encode("png");
-        assertThat(PhotoMetadata.withoutMetadata(png)).isEqualTo(png);
+        assertThat(PhotoMetadata.strip(png)).isEqualTo(png);
     }
 
     @Test
     void anythingElseHasNoCopy() {
-        assertThat(PhotoMetadata.withoutMetadata("not an image at all".getBytes(StandardCharsets.UTF_8))).isNull();
+        assertThat(PhotoMetadata.strip("not an image at all".getBytes(StandardCharsets.UTF_8))).isNull();
         byte[] truncated = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE1, 0x00};
-        assertThat(PhotoMetadata.withoutMetadata(truncated)).isNull();
+        assertThat(PhotoMetadata.strip(truncated)).isNull();
     }
 
     private static void assertSamePixels(byte[] a, byte[] b) throws Exception {

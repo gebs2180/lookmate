@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { publicApi, type MatchRequestCreate, type MatchRequestCreated } from '../../api'
+import { publicApi, type IntakeSettings, type MatchRequestCreate, type MatchRequestCreated } from '../../api'
+import { useLoad } from '../../useLoad'
 import { message } from '../../format'
 import { PhotoPicker, PrivacyNote } from './PhotoPicker'
 import { sendPhoto } from './photo'
@@ -62,6 +63,8 @@ export function FindPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState<Sent | null>(null)
+  const { data: settings } = useLoad(() => publicApi<IntakeSettings>('GET', '/api/public/intake/settings'), [])
+  const keptDays = settings?.photoKeptDays ?? null
 
   const set = <K extends keyof Answers>(key: K, value: Answers[K]) => setAnswers((a) => ({ ...a, [key]: value }))
   const current: Step = STEPS[step]
@@ -148,7 +151,9 @@ export function FindPage() {
             See your request
           </Link>
         </div>
-        <p className="muted small">Your photo is private and deleted after 30 days.</p>
+        <p className="muted small">
+          Your photo is private{keptDays ? ` and deleted after ${keptDays} days` : ''}.
+        </p>
       </section>
     )
   }
@@ -233,7 +238,7 @@ export function FindPage() {
         {current === 'photo' && (
           <Question legend="Show us the look you want" hint="One photo of the style: a screenshot, a saved post, or a photo you took.">
             <PhotoPicker photo={answers.photo} onChange={(p) => set('photo', p)} />
-            <PrivacyNote />
+            <PrivacyNote keptDays={keptDays} />
           </Question>
         )}
         {current === 'contact' && (

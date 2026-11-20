@@ -173,6 +173,7 @@ export type ClientView = Omit<components['schemas']['IntakeServiceClientView'], 
   length: string | null
 }
 export type ClientMatch = components['schemas']['ClientMatch']
+export type IntakeSettings = components['schemas']['IntakeServiceSettings']
 
 /** The public API, for clients who never sign in: no token, the same problem-detail errors as {@link useApi}. */
 export async function publicApi<T>(method: string, path: string, body?: unknown): Promise<T> {

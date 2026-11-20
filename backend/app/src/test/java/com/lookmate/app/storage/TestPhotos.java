@@ -1,4 +1,4 @@
-package com.lookmate.app.intake;
+package com.lookmate.app.storage;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -11,14 +11,14 @@ import java.util.zip.CRC32;
 import javax.imageio.ImageIO;
 
 /** Small photos with the metadata a phone writes: GPS position, the phone's make, and an orientation. */
-final class TestPhotos {
+public final class TestPhotos {
 
-    static final String MAKE = "Pixelphone";
+    public static final String MAKE = "Pixelphone";
 
     private TestPhotos() {
     }
 
-    static BufferedImage image() {
+    public static BufferedImage image() {
         BufferedImage image = new BufferedImage(48, 32, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = image.createGraphics();
         g.setColor(new Color(120, 70, 40));
@@ -30,7 +30,7 @@ final class TestPhotos {
     }
 
     /** A JPEG with an EXIF block: Make, Orientation 6 and a GPS latitude. */
-    static byte[] jpegWithGps() throws IOException {
+    public static byte[] jpegWithGps() throws IOException {
         byte[] jpeg = encode("jpeg");
         int app0End = 4 + (((jpeg[4] & 0xFF) << 8) | (jpeg[5] & 0xFF));   // FFD8, then FFE0 and its length
         byte[] tiff = tiffWithGps();
@@ -45,7 +45,7 @@ final class TestPhotos {
     }
 
     /** A PNG with a text chunk naming a place. */
-    static byte[] pngWithText() throws IOException {
+    public static byte[] pngWithText() throws IOException {
         byte[] png = encode("png");
         int ihdrEnd = 8 + 12 + 13;
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -55,7 +55,7 @@ final class TestPhotos {
         return out.toByteArray();
     }
 
-    static byte[] encode(String format) throws IOException {
+    public static byte[] encode(String format) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ImageIO.write(image(), format, out);
         return out.toByteArray();

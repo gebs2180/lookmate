@@ -1,4 +1,4 @@
-package com.lookmate.app.intake;
+package com.lookmate.app.storage;
 
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.metadata.Metadata;
@@ -13,15 +13,16 @@ import java.util.Set;
 import java.util.zip.CRC32;
 
 /**
- * A client photo exactly as uploaded, pixel for pixel, without its metadata (CLAUDE.md: location metadata is stripped
+ * A photo (a client's inspiration photo, a stylist's portfolio photo) exactly as uploaded, pixel for pixel, without its metadata (CLAUDE.md: location metadata is stripped
  * at upload). The image data is copied byte for byte, never decoded or re-encoded; only the segments that say where,
  * when and with what it was taken (EXIF with GPS and the phone's make, model and serial, XMP, comments, text chunks)
  * are left out. The EXIF orientation is the one tag kept, written fresh, so the photo still shows the right way up.
  *
- * <p>Ported from pokemans' {@code ExactCopy.of} (intake), which has run on every uploaded photo there since the privacy
- * review of 2026-11-12. Unlike pokemans, nothing else is kept: an inspiration photo needs no capture time.
+ * <p>The one copy of this in LookMate: every module that stores an uploaded photo calls {@link #strip}. Ported from
+ * pokemans' {@code ExactCopy.of}; its capture-time variant ({@code withoutLocation}) was not ported, nothing here
+ * needs a capture time.
  */
-final class PhotoMetadata {
+public final class PhotoMetadata {
 
     /** PNG chunks that describe the pixels; text, time and EXIF chunks are left out. */
     private static final Set<String> PNG_KEPT = Set.of("IHDR", "PLTE", "IDAT", "IEND", "tRNS", "gAMA", "cHRM", "sRGB", "iCCP", "sBIT",
@@ -33,9 +34,9 @@ final class PhotoMetadata {
 
     /**
      * The photo without its metadata, or null when it isn't a JPEG or PNG this can read (then it must not be kept).
-     * Call only on images {@link com.lookmate.app.storage.ImageGuard} let through.
+     * Call only on images {@link ImageGuard} let through.
      */
-    static byte[] withoutMetadata(byte[] image) {
+    public static byte[] strip(byte[] image) {
         int orientation = orientation(image);
         byte[] tiff = orientation == 1 ? null : orientationTiff(orientation);
         try {
@@ -52,7 +53,7 @@ final class PhotoMetadata {
     }
 
     /** The EXIF orientation, 1 (as stored) when there is none. */
-    static int orientation(byte[] image) {
+    public static int orientation(byte[] image) {
         try {
             Metadata metadata = ImageMetadataReader.readMetadata(new ByteArrayInputStream(image));
             ExifIFD0Directory ifd0 = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);

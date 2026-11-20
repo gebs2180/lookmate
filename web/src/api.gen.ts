@@ -148,6 +148,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/intake/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["settings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/match-requests": {
         parameters: {
             query?: never;
@@ -312,12 +328,20 @@ export interface components {
             photoDeleted: boolean;
             /** Format: date-time */
             photoDeletesAt: string;
+            /** Format: int32 */
+            photoKeptDays: number;
             photoUploaded: boolean;
             photoUrl: string;
             service: string;
             /** @enum {string} */
             stage: "PHOTO_NEEDED" | "RECEIVED" | "MATCHING" | "READY" | "CLOSED";
             texture: string;
+        };
+        IntakeServiceSettings: {
+            /** Format: int64 */
+            maxPhotoBytes: number;
+            /** Format: int32 */
+            photoKeptDays: number;
         };
         InviteControllerAccepted: {
             /** Format: uuid */
@@ -642,6 +666,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ConsentControllerConsentStatus"];
+                };
+            };
+        };
+    };
+    settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IntakeServiceSettings"];
                 };
             };
         };

@@ -17,6 +17,6 @@ class IntakeConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(rateLimit).addPathPatterns("/api/public/match-requests", "/api/public/match-requests/**");
+        registry.addInterceptor(rateLimit).addPathPatterns("/api/public/match-requests", "/api/public/match-requests/**", "/api/public/intake/**");
     }
 }

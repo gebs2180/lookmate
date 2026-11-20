@@ -81,17 +81,33 @@ click is recorded. The record's shape is a proposal: matching may add fields in 
 | `POST /api/public/match-requests` | The quiz. Creates `client` + `match_request` (NEW, default market), returns `{token, statusPath, upload}`; `upload` is a presigned PUT to `intake/{id}/inspiration`. Emails the client the link. 429 `TOO_MANY_OPEN_REQUESTS` past the per-email daily cap. |
 | `POST /api/public/match-requests/{token}/inspiration` | A fresh upload slot (the first expired or failed). 409 once a photo is confirmed. |
 | `POST /api/public/match-requests/{token}/inspiration/confirm` | Checks the upload (`ImageGuard`: JPEG/PNG within size), strips location and device metadata, stores its SHA-256. 422 `IMAGE_REJECTED` (the upload is deleted; ask for a new slot), 409 `NOT_UPLOADED`. Idempotent. |
-| `GET /api/public/match-requests/{token}` | The client's view: stage, quiz summary, photo state (with a short-lived link) and, once published, the matches. |
+| `GET /api/public/match-requests/{token}` | The client's view: stage, quiz summary, photo state (with a short-lived link, and `photoKeptDays`) and, once published, the matches. |
+| `GET /api/public/intake/settings` | `{photoKeptDays, maxPhotoBytes}`, so the quiz states the real retention period before anything is sent. |
 
 A wrong or expired token is 404, the same for every case. 429 `RATE_LIMITED` carries `Retry-After`.
 
 ## Settings (`lookmate.intake` in application.yml)
 
-`link-ttl` (120d), `max-open-requests-per-email-per-day` (3), `matching-stuck-after` (15m),
+`link-ttl` (90d), `max-open-requests-per-email-per-day` (3), `matching-stuck-after` (15m),
 `rate-limit.creates-per-hour` (10 per IP), `rate-limit.reads-per-minute` (60 per IP).
 
 The rate limiter is in memory, so it is per instance: with more than one app container, move it to Caddy or Postgres
 (docs/architecture.md, "How it scales").
+
+## Retention
+
+- Inspiration photo: `lookmate.retention.inspiration-photo-days` (30), `InspirationRetention`.
+- Client contact details: `lookmate.retention.client-contact-days` (365) after the latest request by that email,
+  `ClientContactRetention`. Email, phone, first name, neighborhood and the note are cleared; the quiz codes stay for
+  the fairness metrics. Decided 2026-11-20 (CLAUDE.md).
+- Links: `lookmate.intake.link-ttl` (90d).
+
+## Photo metadata: one copy, in `storage`
+
+`com.lookmate.app.storage.PhotoMetadata.strip(bytes)` is the only metadata stripper in LookMate (and
+`PhotoMetadata.orientation(bytes)`). **Merge note for stylists:** `stylists/MetadataStripper` is the same code; on
+merge, delete it and its test and call `PhotoMetadata.strip` from `stylists/PhotoService` (same signature). Both
+branches add `com.drewnoakes:metadata-extractor:2.22.0` to `build.gradle.kts`: keep one line.
 
 ## Schema (V4)
 
@@ -108,7 +124,7 @@ the matching module should not email clients itself.
 
 - The photo is uploaded straight to storage with a presigned PUT bound to type, size and `If-None-Match: *`. On
   confirm it must pass `ImageGuard`; the stored original is rewritten without EXIF/XMP/text (orientation kept,
-  `PhotoMetadata`, ported from pokemans' `ExactCopy`). A file that fails either check is deleted at once.
+  `storage/PhotoMetadata`, ported from pokemans' `ExactCopy`). A file that fails either check is deleted at once.
 - The client sees their own photo through a presigned link only (`photoUrl`, short-lived).
 - Inspiration photos are deleted after `lookmate.retention.inspiration-photo-days` (`InspirationRetention`) and are
   left out of the photo backups, which can't delete.

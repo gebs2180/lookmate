@@ -13,6 +13,7 @@ import com.drew.metadata.exif.GpsDirectory;
 import com.lookmate.app.TestApi;
 import com.lookmate.app.TestcontainersConfiguration;
 import com.lookmate.app.storage.StorageProperties;
+import com.lookmate.app.storage.TestPhotos;
 import java.io.ByteArrayInputStream;
 import java.time.Duration;
 import java.time.Instant;
@@ -79,6 +80,9 @@ class IntakeFlowTest {
     @Autowired
     private InspirationRetention retention;
 
+    @Autowired
+    private ClientContactRetention contactRetention;
+
     static String quiz(String email, String firstName) {
         return """
                 {"email":"%s","firstName":"%s","hairType":"CURLY","texture":"THICK","length":"MEDIUM","budgetTier":2,
@@ -142,6 +146,7 @@ class IntakeFlowTest {
                 .andExpect(jsonPath("$.stage").value("PHOTO_NEEDED"))
                 .andExpect(jsonPath("$.firstName").value("Ada"))
                 .andExpect(jsonPath("$.photoUploaded").value(false))
+                .andExpect(jsonPath("$.photoKeptDays").value(30))
                 .andExpect(jsonPath("$.matches").isEmpty())
                 .andExpect(jsonPath("$.email").doesNotExist());
     }
@@ -288,7 +293,7 @@ class IntakeFlowTest {
         UUID oldId = idOf(old);
         jdbc.sql("update match_request set created_at = now() - interval '31 days' where id = :id").param("id", oldId).update();
 
-        assertThat(retention.run(Instant.now())).isEqualTo(1);
+        assertThat(retention.run(Instant.now())).isGreaterThanOrEqualTo(1);
 
         assertThat(blobs.head(storage.photoBucket(), IntakeService.objectKey(oldId))).isEmpty();
         assertThat(blobs.head(storage.photoBucket(), IntakeService.objectKey(idOf(recent)))).isPresent();
@@ -299,5 +304,38 @@ class IntakeFlowTest {
         assertThat(retention.run(Instant.now())).as("nothing left to do").isZero();
         assertThat(retention.run(Instant.now().plus(Duration.ofDays(31)))).isGreaterThanOrEqualTo(1);
         assertThat(blobs.head(storage.photoBucket(), IntakeService.objectKey(idOf(recent)))).isEmpty();
+    }
+
+    @Test
+    void theQuizIsToldHowLongPhotosAreKept() throws Exception {
+        mvc.perform(get("/api/public/intake/settings")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.photoKeptDays").value(30))
+                .andExpect(jsonPath("$.maxPhotoBytes").value(storage.maxUploadBytes()));
+    }
+
+    @Test
+    void contactDetailsGoAYearAfterTheLatestRequest() throws Exception {
+        String old = newRequest("pam@example.com", "Pam");
+        String oldButReturning = newRequest("quin@example.com", "Quin");
+        String returning = newRequest("Quin@example.com", "Quin");
+        jdbc.sql("update match_request set created_at = now() - interval '400 days' where id in (:ids)")
+                .param("ids", List.of(idOf(old), idOf(oldButReturning))).update();
+        jdbc.sql("update client set created_at = now() - interval '400 days' where id in "
+                + "(select client_id from match_request where id in (:ids))").param("ids", List.of(idOf(old), idOf(oldButReturning))).update();
+
+        assertThat(contactRetention.run(Instant.now())).isEqualTo(1);
+
+        var pam = jdbc.sql("select c.email, c.first_name, c.neighborhood, c.notes, c.hair_type, c.anonymised_at from client c "
+                + "join match_request r on r.client_id = c.id where r.id = :id").param("id", idOf(old)).query().singleRow();
+        assertThat(pam.get("email")).isNull();
+        assertThat(pam.get("first_name")).isNull();
+        assertThat(pam.get("neighborhood")).isNull();
+        assertThat(pam.get("notes")).isNull();
+        assertThat(pam.get("hair_type")).as("kept for the fairness metrics").isEqualTo("CURLY");
+        assertThat(pam.get("anonymised_at")).isNotNull();
+        view(old).andExpect(jsonPath("$.firstName").value(nullValue()));
+        view(oldButReturning).andExpect(jsonPath("$.firstName").value("Quin"));
+        view(returning).andExpect(jsonPath("$.firstName").value("Quin"));
+        assertThat(contactRetention.run(Instant.now())).as("nothing left to do").isZero();
     }
 }

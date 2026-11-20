@@ -51,7 +51,7 @@ export function MatchStatusPage() {
         {hairType ? ` · ${hairType.toLowerCase()} hair` : ''} · sent {new Date(view.createdAt).toLocaleDateString()}
       </p>
 
-      {view.stage === 'PHOTO_NEEDED' && <AddPhoto token={token} onSent={reload} />}
+      {view.stage === 'PHOTO_NEEDED' && <AddPhoto token={token} keptDays={view.photoKeptDays} onSent={reload} />}
       {view.stage === 'CLOSED' && <p className="alert alert-info">This request is closed.</p>}
       {view.stage !== 'PHOTO_NEEDED' && view.stage !== 'CLOSED' && <Progress stage={view.stage} />}
 
@@ -61,7 +61,7 @@ export function MatchStatusPage() {
         <h2>Your inspiration photo</h2>
         {view.photoUrl && <img className="inspiration-preview" src={view.photoUrl} alt="Your inspiration photo" referrerPolicy="no-referrer" />}
         {view.photoDeleted ? (
-          <p>Deleted, as promised: we keep inspiration photos for 30 days.</p>
+          <p>Deleted, as promised: we keep inspiration photos for {view.photoKeptDays} days.</p>
         ) : view.photoUploaded && view.photoDeletesAt ? (
           <p className="muted small">Private to you and the LookMate team. We delete it on {new Date(view.photoDeletesAt).toLocaleDateString()}.</p>
         ) : null}
@@ -127,7 +127,7 @@ function Matches({ matches }: { matches: ClientMatch[] }) {
   )
 }
 
-function AddPhoto({ token, onSent }: { token: string; onSent: () => void }) {
+function AddPhoto({ token, keptDays, onSent }: { token: string; keptDays: number; onSent: () => void }) {
   const [photo, setPhoto] = useState<Blob | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -152,7 +152,7 @@ function AddPhoto({ token, onSent }: { token: string; onSent: () => void }) {
       <h2>Add your inspiration photo</h2>
       <p>We match on the look in your photo, so we start once it's here.</p>
       <PhotoPicker photo={photo} onChange={setPhoto} />
-      <PrivacyNote />
+      <PrivacyNote keptDays={keptDays} />
       {error && (
         <p className="error" role="alert">
           {error}

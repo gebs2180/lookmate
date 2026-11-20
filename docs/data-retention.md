@@ -7,9 +7,9 @@ How long LookMate keeps personal data, and what takes it out. The mechanism is p
 |---|---|---|---|---|
 | A client's inspiration photo (and any selfie, Phase 2) | 30 days after the request | Deleted from storage (everything under `intake/<request>/`, confirmed or not); `match_request.inspiration_deleted_at` set. The embedding and the matches stay: a vector can't be turned back into the photo. Never in the photo backups. | `inspiration-photo-days: 30` | Built (`intake/InspirationRetention`, daily with the email job) |
 | An email's address, subject and bodies | 90 days after it was queued, once done with | Cleared; the row stays as the record | `email-content-days: 90` | Built (from pokemans) |
-| A client's contact details | To decide: e.g. 12 months after their last request | Anonymised (`client.anonymised_at`) | – | To decide |
-| Location and device metadata in uploaded photos | Not kept | Stripped at upload (pokemans' `ExifReader`/`PhotoService` approach). Inspiration photos: built (`intake/PhotoMetadata`; only the orientation is kept). Portfolio photos: with uploads | – | Inspiration: built. Portfolio: to build |
-| A client's link (`match_request_link`) | 120 days after it was sent | Stops working (404); the hash stays | `lookmate.intake.link-ttl: 120d` | Built |
+| A client's contact details (email, phone, first name, neighborhood, free-text note) | 365 days after the latest request made with that email address | Cleared and `client.anonymised_at` set; the quiz codes (hair type, texture, length, budget, past-issue codes) and market stay, so matching quality by hair type can still be measured | `client-contact-days: 365` | Built (`intake/ClientContactRetention`). Decided 2026-11-20 |
+| Location and device metadata in uploaded photos | Not kept | Stripped at upload by `storage/PhotoMetadata` (the one copy; ported from pokemans' `ExactCopy.of`). Only the orientation is kept | – | Built for inspiration photos; portfolio photos call the same class |
+| A client's link (`match_request_link`) | 90 days after it was sent | Stops working (404); the hash stays | `lookmate.intake.link-ttl: 90d` | Built |
 | A stylist's deleted photo | Gone from storage at once | Backups age out within 35 days | – | To build with portfolio |
 
 ## Biometric law (CLAUDE.md, Privacy)
