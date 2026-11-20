@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type UIEvent } from 'react'
 import { Link, useParams } from 'react-router'
 import { ApiError, apiPath, publicApi, type ClientMatch, type ClientView } from '../../api'
 import { message } from '../../format'
+import { Strand, type StrandShape } from '../../strand/Strand'
+import { useLoopRunning } from '../../strand/motion'
 import { Chip, Loading } from '../../ui'
 import { useLoad, usePoll, type Backoff } from '../../useLoad'
 import { PhotoPicker, PrivacyNote } from './PhotoPicker'
 import { sendPhoto } from './photo'
+import { BookLink, InstagramLink, Portfolio, type StylistView } from './Portfolio'
 import { HAIR_TYPES, SERVICES, labelOf } from './quiz'
-import { StylistCard } from './StylistCard'
 import { useNoReferrer } from './useNoReferrer'
 
 const STAGES: { stage: ClientView['stage']; label: string }[] = [
@@ -56,20 +58,30 @@ export function MatchStatusPage() {
 
   // Published with nobody on it: no stylist's portfolio was a close match (CLAUDE.md, decided 2026-11-20).
   const noMatches = view.stage === 'READY' && view.matches.length === 0
+  const revealed = view.stage === 'READY' && !noMatches
   const directory = `/m/${encodeURIComponent(token)}/stylists`
   const service = labelOf(SERVICES, view.service)
   const hairType = labelOf(HAIR_TYPES, view.hairType)
+  const sent = new Date(view.createdAt).toLocaleDateString()
   return (
-    <section className="find">
+    <section className="find request">
       <h1>{view.firstName ? `${view.firstName}, here's your request` : 'Your request'}</h1>
-      <p className="muted">
-        {service}
-        {hairType ? ` · ${hairType.toLowerCase()} hair` : ''} · sent {new Date(view.createdAt).toLocaleDateString()}
-      </p>
+      {revealed ? (
+        <blockquote className="echo">
+          <p>{`“${echo(view)}”`}</p>
+          <cite>What you asked for, {sent}</cite>
+        </blockquote>
+      ) : (
+        <p className="muted">
+          {service}
+          {hairType ? ` · ${hairType.toLowerCase()} hair` : ''} · sent {sent}
+        </p>
+      )}
 
       {view.stage === 'PHOTO_NEEDED' && <AddPhoto token={token} keptDays={view.photoKeptDays} onSent={reload} />}
       {view.stage === 'CLOSED' && <p className="alert alert-info">This request is closed.</p>}
-      {view.stage !== 'PHOTO_NEEDED' && view.stage !== 'CLOSED' && !noMatches && <Progress stage={view.stage} />}
+      {waiting && <ContactSheet hairType={view.hairType} />}
+      {waiting && <Progress stage={view.stage} />}
       {waiting && (
         <p className="muted small" role="status">
           This page updates by itself when your matches are ready, and we'll email you too. Meanwhile you can{' '}
@@ -78,14 +90,7 @@ export function MatchStatusPage() {
       )}
 
       {noMatches && <NoCloseMatches directory={directory} />}
-      {view.stage === 'READY' && !noMatches && <Matches token={token} matches={view.matches} />}
-      {view.stage === 'READY' && !noMatches && (
-        <p>
-          <Link className="button secondary" to={directory}>
-            See all stylists
-          </Link>
-        </p>
-      )}
+      {revealed && <Matches token={token} matches={view.matches} hairType={view.hairType} directory={directory} />}
 
       <div className="panel">
         <h2>Your inspiration photo</h2>
@@ -100,16 +105,42 @@ export function MatchStatusPage() {
   )
 }
 
+/** Where the request is: the stages the server reports, nothing finer (no made-up percentages). */
 function Progress({ stage }: { stage: ClientView['stage'] }) {
   const at = STAGES.findIndex((s) => s.stage === stage)
   return (
-    <ol className="stage-list">
+    <ol className="steps">
       {STAGES.map((s, i) => (
-        <li key={s.stage} aria-current={i === at ? 'step' : undefined}>
-          <Chip tone={i < at ? 'success' : i === at ? 'info' : 'neutral'}>{i < at ? 'Done' : i === at ? 'Now' : 'Next'}</Chip> {s.label}
+        <li key={s.stage} className={i < at ? 'done' : undefined} aria-current={i === at ? 'step' : undefined}>
+          <span className="dot" aria-hidden="true" />
+          <span>{s.label}</span>
+          <span className="sr-only">{i < at ? ', done' : i === at ? ', now' : ', next'}</span>
         </li>
       ))}
     </ol>
+  )
+}
+
+const SHEET_FRAMES = 12
+
+/**
+ * The matching moment: a contact sheet of blank frames with the strand, in the client's hair type, threading through
+ * it while we look through portfolios. It stands for the looking, never for how far along it is: no frame numbers, no
+ * frames ticked off, no counts. Decoration only (the stage list and the status line say it in words), and still when
+ * it's off screen or motion is reduced.
+ */
+function ContactSheet({ hairType }: { hairType: ClientView['hairType'] }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const running = useLoopRunning(ref)
+  return (
+    <div ref={ref} className={running ? 'sheet' : 'sheet is-paused'} aria-hidden="true">
+      <div className="sheet-frames">
+        {Array.from({ length: SHEET_FRAMES }, (_, i) => (
+          <i key={i} style={{ '--i': i } as CSSProperties} />
+        ))}
+      </div>
+      <Strand shape={hairType as StrandShape} horizontal draw="loop" width={320} height={150} bend={1.6} strokeWidth={3.5} />
+    </div>
   )
 }
 
@@ -133,10 +164,23 @@ function NoCloseMatches({ directory }: { directory: string }) {
 }
 
 /**
- * The recommendations, best first. Each "Book" is tracking's redirect: it records the click, then sends the client to
- * the stylist's own booking page with UTM tags. Built here because only this page has the client's token.
+ * The recommendations as magazine covers, best first: the stylist's work full bleed with their name set over it, the
+ * reason as the coverline, a strand in the client's hair type threading down to the photos that earned the match, and
+ * Book. Each "Book" is tracking's redirect: it records the click, then sends the client to the stylist's own booking
+ * page with UTM tags. Built here because only this page has the client's token. No scores, only the order.
  */
-function Matches({ token, matches }: { token: string; matches: ClientMatch[] }) {
+function Matches({
+  token,
+  matches,
+  hairType,
+  directory,
+}: {
+  token: string
+  matches: ClientMatch[]
+  hairType: ClientView['hairType']
+  directory: string
+}) {
+  const [at, setAt] = useState(0)
   // Tell tracking the list was seen (the pilot's "viewed" metric, and the held "matches ready" email isn't sent).
   useEffect(() => {
     if (matches.length === 0) return
@@ -145,27 +189,130 @@ function Matches({ token, matches }: { token: string; matches: ClientMatch[] }) 
     })
   }, [token, matches.length])
 
+  // The dots under the covers follow the scroll.
+  function onScroll(event: UIEvent<HTMLOListElement>) {
+    const list = event.currentTarget
+    const first = list.firstElementChild as HTMLElement | null
+    if (first) setAt(Math.round(list.scrollLeft / (first.offsetWidth + 12)))
+  }
+
   return (
     <>
-      <h2>Stylists for your look</h2>
-      <p className="muted small">These are suggestions: you can book any stylist you like. You book on the stylist's own page.</p>
-      <ol className="stylist-cards">
-        {matches.map((m) => (
-          <StylistCard
-            key={m.matchId}
-            name={m.stylistName}
-            rank={m.rank}
-            location={m.locationName}
-            demo={m.demo}
-            reason={m.reason}
-            photoUrls={m.photoUrls}
-            instagram={m.instagram}
-            book={{ href: apiPath`/api/public/book/${token}/${m.matchId}` }}
-          />
+      <ul className="tabs">
+        <li>
+          <span aria-current="page">{matches.length === 1 ? 'Your pick' : `Your ${matches.length} picks`}</span>
+        </li>
+        <li>
+          <Link to={directory}>All stylists</Link>
+        </li>
+      </ul>
+      <ol className="covers" onScroll={onScroll} aria-label="Stylists for your look">
+        {matches.map((m, i) => (
+          <Cover key={m.matchId} index={i} match={m} hairType={hairType} book={{ href: apiPath`/api/public/book/${token}/${m.matchId}` }} />
         ))}
       </ol>
+      {matches.length > 1 && (
+        <div className="dots" aria-hidden="true">
+          {matches.map((m, i) => (
+            <i key={m.matchId} className={i === Math.min(at, matches.length - 1) ? 'on' : undefined} />
+          ))}
+        </div>
+      )}
+      <div className="anyone">
+        <p>These are suggestions: you can book any stylist you like. You book on the stylist's own page.</p>
+        <p>
+          <Link className="button secondary" to={directory}>
+            See all stylists
+          </Link>
+        </p>
+      </div>
     </>
   )
+}
+
+function Cover({
+  index,
+  match,
+  hairType,
+  book,
+}: {
+  index: number
+  match: ClientMatch
+  hairType: ClientView['hairType']
+  book: { href: string }
+}) {
+  const [open, setOpen] = useState(false)
+  const stylist: StylistView = {
+    name: match.stylistName,
+    location: match.locationName,
+    demo: match.demo,
+    reason: match.reason,
+    photoUrls: match.photoUrls,
+    instagram: match.instagram,
+    book,
+  }
+  const [cover, ...evidence] = match.photoUrls
+  const alt = (i: number) => `${match.stylistName}'s work, photo ${i + 1}`
+  return (
+    <li className="cover" style={{ '--i': index } as CSSProperties}>
+      <div className="cover-photo">
+        <div className="frame">{cover && <img src={cover} alt={alt(0)} referrerPolicy="no-referrer" />}</div>
+        <span className="scrim" />
+        <span className="no" aria-hidden="true">
+          No. {index + 1}
+        </span>
+        {match.demo && (
+          <span className="sample-on">
+            <Chip tone="warning">Sample stylist</Chip>
+          </span>
+        )}
+        <h3>{match.stylistName}</h3>
+      </div>
+      <div className="cover-body">
+        {match.locationName && <p className="eyebrow">{match.locationName}</p>}
+        <p className="reason">{match.reason}</p>
+        {evidence.length > 0 && (
+          <>
+            <p className="thread" aria-hidden="true">
+              <Strand shape={hairType as StrandShape} width={18} height={44} bend={0.42} strokeWidth={2} />
+              The work behind it
+            </p>
+            <div className="evidence">
+              {evidence.slice(0, 3).map((url, i) => (
+                <div key={url} className="frame">
+                  <img src={url} alt={alt(i + 1)} referrerPolicy="no-referrer" loading="lazy" />
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+        <div className="cover-actions">
+          <BookLink stylist={stylist} />
+          {match.photoUrls.length > 1 && (
+            <button className="secondary" onClick={() => setOpen(true)}>
+              All {match.photoUrls.length} photos
+            </button>
+          )}
+          <InstagramLink handle={match.instagram} />
+        </div>
+      </div>
+      {open && <Portfolio stylist={stylist} onClose={() => setOpen(false)} />}
+    </li>
+  )
+}
+
+const LENGTH_WORDS: Record<string, string> = { PIXIE: 'cropped', SHORT: 'short', MEDIUM: 'shoulder-length', LONG: 'long' }
+const TEXTURE_WORDS: Record<string, string> = { FINE: 'fine', THICK: 'thick' }
+
+/** The pull quote over the picks: the client's own answers, said back to them (the API has no free-text note). */
+function echo(view: ClientView): string {
+  const service = labelOf(SERVICES, view.service) ?? 'A new look'
+  const hair = [
+    view.length ? LENGTH_WORDS[view.length] : null,
+    view.texture ? TEXTURE_WORDS[view.texture] : null,
+    labelOf(HAIR_TYPES, view.hairType)?.toLowerCase(),
+  ].filter(Boolean)
+  return hair.length > 0 ? `${service}, on my ${hair.join(', ')} hair.` : `${service}.`
 }
 
 function AddPhoto({ token, keptDays, onSent }: { token: string; keptDays: number; onSent: () => void }) {

@@ -1,5 +1,6 @@
 import { Component, useId, type ErrorInfo, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import { Strand } from './strand/Strand'
 
 /** The colour a chip, alert or message takes. Each maps to a token pair in index.css. */
 export type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger'
@@ -8,9 +9,17 @@ export function Chip({ tone = 'neutral', children }: { tone?: Tone; children: Re
   return <span className={`chip chip-${tone}`}>{children}</span>
 }
 
-/** A page or panel still loading. Not a live region: pages already announce what they load. */
+/**
+ * A page or panel still loading: the Strand drawing itself and morphing, in place of a spinner. Not a live region:
+ * pages already announce what they load, and the words say it for anyone who can't see the strand.
+ */
 export function Loading({ children = 'Loading…' }: { children?: ReactNode }) {
-  return <p className="loading">{children}</p>
+  return (
+    <p className="loading">
+      <Strand cycle draw="loop" width={20} height={40} bend={0.22} strokeWidth={2.2} />
+      <span>{children}</span>
+    </p>
+  )
 }
 
 /** A page that couldn't be shown: why, and the way back. */

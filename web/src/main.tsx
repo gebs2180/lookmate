@@ -1,8 +1,12 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
-import '@fontsource-variable/manrope'
+// Self-hosted type (no font CDN at runtime): Instrument Serif for display, Inter Tight for everything read or tapped.
+import '@fontsource/instrument-serif/400.css'
+import '@fontsource/instrument-serif/400-italic.css'
+import '@fontsource-variable/inter-tight/wght.css'
 import './index.css'
+import './lookbook.css'
 import App from './App.tsx'
 import { AuthProvider } from './AuthProvider.tsx'
 

@@ -1,7 +1,7 @@
 /*
  * Tracking pages: the metrics dashboard, the record-booking form and the stylist stats card. Kept out of index.css
  * (shared by four parallel sessions). Chart colours are the dataviz reference palette's first three categorical slots
- * (blue, orange, aqua), which pass the colour-vision checks in both modes; aqua is under 3:1 on white, so every line
+ * (blue, orange, aqua), which pass the colour-vision checks on paper; aqua is under 3:1 on white, so every line
  * also has a direct label and the numbers are in a table.
  */
 
@@ -11,20 +11,6 @@
   --series-3: #1baf7a;
   --viz-grid: var(--color-line);
   margin: 0;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme='light'])) .viz-root {
-    --series-1: #3987e5;
-    --series-2: #d95926;
-    --series-3: #199e70;
-  }
-}
-
-:root[data-theme='dark'] .viz-root {
-  --series-1: #3987e5;
-  --series-2: #d95926;
-  --series-3: #199e70;
 }
 
 .viz-title {

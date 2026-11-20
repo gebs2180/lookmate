@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router'
+import { BrandMark } from '../../strand/Strand'
 import { Loading, NotFound, RouteErrorBoundary } from '../../ui'
 import { DirectoryPage } from './DirectoryPage'
 import { FindPage } from './FindPage'
@@ -11,11 +12,14 @@ export function PublicShell() {
   return (
     <div className="shell">
       <header className="topbar">
-        <Link to="/find" className="brand">
+        <Link to="/" className="brand">
+          <BrandMark />
           Combpatible
         </Link>
+        <span className="topbar-note">Columbus</span>
       </header>
-      <main>
+      {/* Keyed by page, so each new page lifts in over the last like a turned magazine page (lookbook.css). */}
+      <main className="page-lift" key={location.pathname}>
         <RouteErrorBoundary key={location.pathname}>
           <Suspense fallback={<Loading />}>
             <Routes>

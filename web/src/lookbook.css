@@ -1,0 +1,1168 @@
+/*
+ * Lookbook with Strand motion (docs/ux/redesign-options.md): the client-facing screens and the motion pieces. Tokens
+ * live in index.css. Motion rules: only transform, opacity and clip-path animate (and stroke-dashoffset, which draws a
+ * line); loops pause off screen (the components add .is-paused); prefers-reduced-motion turns every move into a cut
+ * and shows every line already drawn (the block at the end).
+ */
+
+/* ---------- Page-lift: each new page wipes up over the last, like a magazine page turned upward ---------- */
+
+.page-lift {
+  /* Backwards only: once the page is in, no clip stays on it to cut off bleeds and focus rings. */
+  animation: page-lift var(--t-page) var(--ease-page) backwards;
+}
+
+@keyframes page-lift {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ---------- Ink-rise: headline words rise out of a mask, 45ms apart ---------- */
+
+.w {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.1em;
+  margin-bottom: -0.1em;
+}
+
+.w > span {
+  display: inline-block;
+  animation: ink-rise var(--t-rise) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 45ms + 260ms);
+}
+
+@keyframes ink-rise {
+  from {
+    transform: translateY(105%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fade-up 600ms var(--ease-out) both;
+  animation-delay: var(--d, 400ms);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- The Strand ---------- */
+
+.strand {
+  display: block;
+  overflow: visible;
+  color: var(--marker);
+}
+
+.strand path {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Drawn once, root to tip. Waits (undrawn) until it has been on screen. */
+.strand-draw-once path {
+  stroke-dasharray: 1;
+  animation: strand-draw var(--t-draw) var(--ease-draw) both;
+}
+
+.strand-draw-once.is-waiting path {
+  animation-play-state: paused;
+}
+
+@keyframes strand-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Loading: the strand draws in root to tip, then withdraws tip-first, round and round. */
+.strand-draw-loop path {
+  stroke-dasharray: 1;
+  animation: strand-loop 2.2s var(--ease-draw) infinite;
+}
+
+.strand-draw-loop.is-paused path {
+  animation-play-state: paused;
+}
+
+@keyframes strand-loop {
+  0% {
+    stroke-dashoffset: 1;
+  }
+  55% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -1;
+  }
+}
+
+/* The brand mark: one curl, drawn in when the page opens. */
+.brand-mark {
+  flex: none;
+  width: 14px;
+  height: 24px;
+  overflow: visible;
+}
+
+.brand-mark path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  animation: strand-draw 1200ms var(--ease-draw) 200ms both;
+}
+
+.brand:hover .brand-mark path {
+  animation: strand-draw 900ms var(--ease-draw) both;
+}
+
+.loading .strand {
+  flex: none;
+}
+
+/* ---------- Shared editorial pieces ---------- */
+
+.display {
+  font: 400 2.875rem/1 var(--serif);
+  letter-spacing: -0.015em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.display em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+.lede {
+  font: 400 1rem/1.55 var(--sans);
+  color: var(--ink-2);
+  margin: 0;
+}
+
+/* A photo box: fixed shape, image cropped to it, a warm fill while it loads. */
+.frame {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 5;
+  background: linear-gradient(160deg, #8a6a52, #2e2420);
+}
+
+.frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 30%;
+  border: 0;
+  border-radius: 0;
+}
+
+.privacy {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0;
+  font: 400 0.8125rem/1.45 var(--sans);
+  color: var(--ink-2);
+}
+
+.privacy svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+/* ---------- Landing ---------- */
+
+.landing {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.hero-strip {
+  margin: calc(-1 * var(--space-4)) calc(-1 * var(--space-4)) 0;
+  padding: var(--space-4) 0 var(--space-5) var(--space-4);
+  overflow: hidden;
+  min-height: 12.5rem;
+}
+
+.hero-strip.empty {
+  min-height: 0;
+  padding: 0;
+}
+
+.hero-strip .track {
+  display: flex;
+  gap: var(--space-2);
+  width: max-content;
+  animation: drift 38s linear infinite;
+}
+
+.hero-strip.is-paused .track {
+  animation-play-state: paused;
+}
+
+.hero-strip .frame {
+  width: 132px;
+  flex: none;
+  border-radius: var(--radius-sm);
+}
+
+.hero-strip .frame:nth-child(even) {
+  margin-top: 26px;
+}
+
+@keyframes drift {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.issue {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--ink);
+  padding-top: var(--space-2);
+}
+
+.landing-hero {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: var(--space-2);
+}
+
+.landing-hero .display {
+  font-size: clamp(2.875rem, 11vw, 4.25rem);
+}
+
+.landing-strand {
+  margin: 0;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  width: 96px;
+}
+
+.landing-strand figcaption {
+  font: italic 400 1.0625rem var(--serif);
+  color: var(--ink-2);
+  animation: fade-up 400ms var(--ease-out) both;
+}
+
+.landing-cta {
+  display: grid;
+  gap: var(--space-1);
+  justify-items: center;
+}
+
+.landing-browse {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.how {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  counter-reset: n;
+}
+
+.how li {
+  counter-increment: n;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--rule);
+}
+
+.how li::before {
+  content: '0' counter(n);
+  grid-row: span 2;
+  font: 400 1.75rem/1 var(--serif);
+  color: var(--accent);
+}
+
+.how b {
+  display: block;
+  font: 600 0.9375rem var(--sans);
+  margin-bottom: 2px;
+}
+
+.how span {
+  font: 400 0.875rem/1.45 var(--sans);
+  color: var(--ink-2);
+}
+
+.landing-foot {
+  display: grid;
+  gap: var(--space-1);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--ink);
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+}
+
+.landing-foot button.link {
+  min-height: var(--tap);
+}
+
+/* ---------- Client pages ---------- */
+
+.find {
+  padding-bottom: var(--space-6);
+}
+
+.find > h1:first-child,
+.find .request-head h1 {
+  font-size: 2.25rem;
+}
+
+.panel {
+  margin-top: var(--space-6);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--ink);
+}
+
+.panel > h2:first-child {
+  margin-top: 0;
+}
+
+.inspiration-preview {
+  display: block;
+  max-height: 22rem;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  animation: photo-in 800ms var(--ease-page) both;
+}
+
+@keyframes photo-in {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ---------- Quiz ---------- */
+
+.quiz-head {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.folio {
+  margin: 0;
+  font: 400 1.375rem var(--serif);
+}
+
+.folio b {
+  font-weight: 400;
+  color: var(--accent);
+}
+
+.quiz-progress {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 2px;
+  border: 0;
+  background: var(--rule);
+  color: var(--ink);
+}
+
+.quiz-progress::-webkit-progress-bar {
+  background: var(--rule);
+}
+
+.quiz-progress::-webkit-progress-value {
+  background: var(--ink);
+  transition: width 600ms var(--ease-out);
+}
+
+.quiz-progress::-moz-progress-bar {
+  background: var(--ink);
+}
+
+.question {
+  display: grid;
+  gap: var(--space-3);
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.question legend {
+  padding: 0;
+}
+
+.question legend h1 {
+  font-size: 2.25rem;
+  margin: 0 0 var(--space-1);
+  animation: fade-up 520ms var(--ease-out) 180ms both;
+}
+
+.question .field-hint {
+  margin: 0;
+}
+
+.find .choices {
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.find .choice {
+  position: relative;
+  align-items: flex-start;
+  min-height: 3.5rem;
+  padding: var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  font-weight: 500;
+  transition:
+    border-color 200ms,
+    background 200ms,
+    transform 200ms var(--ease-out);
+}
+
+.find .choice:hover {
+  border-color: var(--ink-2);
+}
+
+.find .choice:active {
+  transform: scale(0.98);
+}
+
+.find .choice:has(input:checked) {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  background: #fbf1ee;
+}
+
+.find .choice:has(input:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.find .choice input {
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.choice-hint {
+  display: block;
+  font: 400 0.8125rem/1.35 var(--sans);
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+
+/* Hair type: four cards, each with its own strand, and one large strand above that takes the shape you pick. */
+.type-strand {
+  margin: 0 0 var(--space-1);
+  color: var(--marker);
+}
+
+.type-strand .strand {
+  width: 100%;
+  height: auto;
+  max-height: 72px;
+}
+
+.types {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.type {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 10.5rem;
+  padding: var(--space-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  cursor: pointer;
+  transition:
+    border-color 200ms,
+    background 200ms,
+    transform 200ms var(--ease-out);
+}
+
+.type:hover {
+  border-color: var(--ink-2);
+}
+
+.type:active {
+  transform: scale(0.98);
+}
+
+.type .strand {
+  color: var(--ink);
+}
+
+.type .name {
+  display: block;
+  font: 400 1.625rem/1 var(--serif);
+}
+
+.type .choice-hint {
+  margin-top: var(--space-1);
+}
+
+.type:has(input:checked) {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+  background: #fbf1ee;
+}
+
+.type:has(input:checked) .strand {
+  color: var(--accent);
+}
+
+.type:has(input:checked)::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E")
+    center / 16px no-repeat;
+  animation: pop 320ms var(--ease-out);
+}
+
+.type:has(input:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0);
+  }
+}
+
+.find .form > .actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  margin: var(--space-2) calc(-1 * var(--space-4)) 0;
+  padding: var(--space-3) var(--space-4);
+  background: linear-gradient(transparent, var(--paper) 30%);
+}
+
+.find .form > .actions > button[type='submit'] {
+  flex: 1;
+}
+
+.sent-strand {
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+/* ---------- The matching moment: a contact sheet, the strand threading through it ---------- */
+
+.sheet {
+  position: relative;
+  margin: var(--space-4) 0 var(--space-2);
+  padding: 8px;
+  background: var(--sheet);
+}
+
+.sheet-frames {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+
+/* Blank frames: the sheet stands for "looking through portfolios", never for how far along that is. */
+.sheet-frames i {
+  aspect-ratio: 4 / 5;
+  background: linear-gradient(160deg, #3a322d, #26201d);
+  animation: frame-in 420ms var(--ease-out) both;
+  animation-delay: calc(var(--i) * 70ms);
+}
+
+@keyframes frame-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 0.85;
+    transform: none;
+  }
+}
+
+/* A slow light passing over the sheet, like a loupe moving across it. */
+.sheet::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgb(255 246 242 / 0.09) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: loupe 3.6s var(--ease-draw) infinite;
+  pointer-events: none;
+}
+
+.sheet.is-paused::after {
+  animation-play-state: paused;
+}
+
+@keyframes loupe {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.sheet .strand {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--marker);
+}
+
+.steps {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-4) 0 var(--space-2);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.steps li {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: var(--space-2);
+  align-items: center;
+  color: var(--ink-2);
+}
+
+.steps li.done,
+.steps li[aria-current='step'] {
+  color: var(--ink);
+}
+
+.steps .dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  display: grid;
+  place-items: center;
+}
+
+.steps li[aria-current='step'] .dot {
+  border-color: var(--accent);
+  background: radial-gradient(circle, var(--accent) 0 4px, transparent 4.5px);
+}
+
+.steps li.done .dot {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.steps li.done .dot::after {
+  content: '';
+  width: 8px;
+  height: 5px;
+  border: 2px solid var(--paper);
+  border-top: 0;
+  border-right: 0;
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+
+/* ---------- The reveal: picks as magazine covers ---------- */
+
+.echo {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) 0 0;
+  border-top: 1px solid var(--ink);
+  font: italic 400 1.375rem/1.25 var(--serif);
+}
+
+.echo p {
+  margin: 0;
+}
+
+.echo cite {
+  display: block;
+  margin-top: var(--space-1);
+  font: normal 500 0.75rem var(--sans);
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+}
+
+.tabs {
+  display: flex;
+  gap: var(--space-5);
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--rule);
+}
+
+.tabs a,
+.tabs span {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  font: 600 0.875rem var(--sans);
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.tabs [aria-current='page'] {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.tabs a:hover {
+  color: var(--ink);
+}
+
+.covers {
+  list-style: none;
+  display: flex;
+  gap: var(--space-3);
+  margin: 0 calc(-1 * var(--space-4));
+  padding: var(--space-4) var(--space-4) var(--space-2);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 var(--space-4);
+  scrollbar-width: none;
+}
+
+.covers::-webkit-scrollbar {
+  display: none;
+}
+
+.cover {
+  flex: 0 0 min(86%, 24rem);
+  scroll-snap-align: start;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  animation: cover-in 760ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 140ms + 300ms);
+}
+
+/* One pick: it fills the column instead of peeking at a next one that isn't there. */
+.covers:has(> .cover:only-child) .cover {
+  flex-basis: 100%;
+}
+
+@keyframes cover-in {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.cover-photo {
+  position: relative;
+  overflow: hidden;
+}
+
+.cover-photo .frame img {
+  animation: cover-settle 1400ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 140ms + 300ms);
+}
+
+@keyframes cover-settle {
+  from {
+    transform: scale(1.12);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.cover-photo .scrim {
+  position: absolute;
+  inset: 45% 0 0;
+  background: linear-gradient(transparent, rgb(15 10 8 / 0.72));
+}
+
+.cover-photo .no {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  font: 500 0.9375rem var(--sans);
+  letter-spacing: 0.08em;
+  color: #fff;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.6);
+}
+
+.cover-photo .sample-on {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+
+.cover-photo h3 {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  margin: 0;
+  color: #fff;
+  font: 400 2.75rem/0.95 var(--serif);
+  text-shadow: 0 2px 18px rgb(0 0 0 / 0.45);
+}
+
+.cover-body {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-4);
+}
+
+.cover-body .eyebrow {
+  margin: 0;
+}
+
+.reason {
+  margin: 0;
+  font: 600 1rem/1.35 var(--sans);
+}
+
+/* The thread from the reason down to the photos that prove it. */
+.thread {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: calc(-1 * var(--space-1)) 0;
+  font: 500 0.75rem var(--sans);
+  color: var(--ink-2);
+}
+
+.thread .strand {
+  flex: none;
+}
+
+.evidence {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.cover-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.cover-actions .button.accent {
+  flex: 1 1 12rem;
+}
+
+.dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  padding: var(--space-1) 0;
+}
+
+.dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--rule);
+  transition:
+    transform 300ms var(--ease-out),
+    background 300ms;
+}
+
+.dots i.on {
+  background: var(--ink);
+  transform: scaleX(2.4);
+  margin: 0 8px;
+}
+
+.anyone {
+  margin: var(--space-4) 0 0;
+  padding: var(--space-4);
+  border: 1px solid var(--ink);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.anyone p {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+/* ---------- Directory: an index of stylists ---------- */
+
+.directory h1 {
+  font-size: 2.25rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.filters label {
+  display: grid;
+  gap: var(--space-1);
+  flex: 1 1 10rem;
+  font: 600 0.6875rem var(--sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.filters select {
+  min-height: var(--tap);
+  padding: 0 2.25rem 0 var(--space-4);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-pill);
+  background: transparent
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%231a1614' stroke-width='1.6'/%3E%3C/svg%3E")
+    right 14px center / 12px no-repeat;
+  appearance: none;
+  font: 500 0.9375rem var(--sans);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+}
+
+.filters select:has(option:checked:not([value=''])) {
+  background-color: var(--ink);
+  color: var(--paper);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23f5f0e8' stroke-width='1.6'/%3E%3C/svg%3E");
+}
+
+.index {
+  list-style: none;
+  margin: var(--space-2) 0 var(--space-5);
+  padding: 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.index > li {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--rule);
+  animation: fade-up 520ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 60ms + 200ms);
+}
+
+.index .row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-2);
+}
+
+.index h3 {
+  margin: 0 auto 0 0;
+  font: 400 1.875rem/1 var(--serif);
+}
+
+.index .meta {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+}
+
+.thumbs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.thumbs .frame {
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  border-radius: 0;
+  cursor: zoom-in;
+}
+
+.thumbs .frame:focus-visible {
+  outline-offset: 1px;
+}
+
+.index .actions {
+  margin: 0;
+}
+
+/* ---------- Portfolio: one stylist's work as a spread ---------- */
+
+.portfolio {
+  width: 100%;
+  max-width: var(--measure);
+  max-height: 100dvh;
+  height: 100dvh;
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+  background: var(--paper);
+  color: var(--ink);
+  overflow-y: auto;
+}
+
+.portfolio[open] {
+  animation: page-lift var(--t-page) var(--ease-page) both;
+}
+
+.portfolio::backdrop {
+  background: rgb(26 22 20 / 0.6);
+}
+
+.pf-hero {
+  position: relative;
+}
+
+.pf-close {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  min-width: var(--tap);
+  padding: 0 var(--space-3);
+  border: 0;
+  background: rgb(255 253 249 / 0.92);
+  color: var(--ink);
+}
+
+.pf-close:hover:not(:disabled) {
+  background: var(--card);
+  color: var(--ink);
+}
+
+.pf-title {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+.pf-title h2 {
+  margin: 0;
+  font: 400 3.25rem/0.95 var(--serif);
+}
+
+.pf-title p {
+  margin: 0;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: var(--space-3) var(--space-4) 0;
+}
+
+.grid2 .frame {
+  animation: fade-up 520ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 70ms + 300ms);
+}
+
+.stickybook {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  gap: var(--space-1);
+  margin-top: var(--space-5);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: var(--paper);
+  border-top: 1px solid var(--ink);
+}
+
+.stickybook .button {
+  width: 100%;
+}
+
+.stickybook small {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+}
+
+/* ---------- Reduced motion: cuts instead of wipes, lines already drawn, nothing looping ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .page-lift,
+  .portfolio[open],
+  .w > span,
+  .fade-up,
+  .index > li,
+  .grid2 .frame,
+  .cover,
+  .cover-photo .frame img,
+  .sheet-frames i,
+  .question legend h1,
+  .inspiration-preview,
+  .landing-strand figcaption {
+    animation: none !important;
+  }
+
+  .sheet-frames i {
+    opacity: 0.85;
+  }
+
+  .strand path,
+  .brand-mark path {
+    animation: none !important;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+  }
+
+  .hero-strip .track,
+  .sheet::after {
+    animation: none !important;
+  }
+
+  .sheet::after {
+    display: none;
+  }
+}

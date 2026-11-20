@@ -1,5 +1,9 @@
 # Implementation plan: bringing the web app to "Chair-side"
 
+> **Superseded (2026-11-20):** Zach chose Lookbook with Strand motion ([redesign-options.md](redesign-options.md)),
+> applied on branch `claude/lookbook-redesign-232f2e`. The Chair-side visual PRs below won't be built. Items that
+> aren't about the look (session-kept quiz answers, one shared hair vocabulary) are still open ideas.
+
 How to move `web/` from the inherited "Ledger" styling (pokemans) to [design-direction.md](design-direction.md) in
 small PRs, client flow first. Each PR is one module's files where possible, keeps tests green
 (`cd web && npm test && npm run lint && npm run build`), and changes no behaviour except where it says so.
