@@ -97,3 +97,20 @@ The rate limiter is in memory, so it is per instance: with more than one app con
 
 `match_request_link` (one row per emailed link, hashed, with an expiry), `match_request.inspiration_size_bytes`,
 and an index on `lower(client.email)` for the abuse guard. One `client` row per request: quiz answers are a snapshot.
+
+## Emails (notify)
+
+Clients have no user row, so notify gained a public `ClientEmails` (`requestReceived`, `matchesReady`) over a new
+`Notifier.queueToAddress`, and the template `MATCH_REQUEST_RECEIVED`. `MatchRequests.publish` sends `MATCHES_READY`;
+the matching module should not email clients itself.
+
+## Privacy
+
+- The photo is uploaded straight to storage with a presigned PUT bound to type, size and `If-None-Match: *`. On
+  confirm it must pass `ImageGuard`; the stored original is rewritten without EXIF/XMP/text (orientation kept,
+  `PhotoMetadata`, ported from pokemans' `ExactCopy`). A file that fails either check is deleted at once.
+- The client sees their own photo through a presigned link only (`photoUrl`, short-lived).
+- Inspiration photos are deleted after `lookmate.retention.inspiration-photo-days` (`InspirationRetention`) and are
+  left out of the photo backups, which can't delete.
+- Tokens are in URLs: Caddy's access log and any Referer header can carry them. Book links on `/m/:token` should be
+  `rel="noreferrer"` (the web page sets `<meta name="referrer" content="no-referrer">`).
