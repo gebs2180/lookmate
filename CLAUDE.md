@@ -23,7 +23,8 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
 
 - Embedding provider and model (hosted image-embedding API vs. self-hosted SigLIP/CLIP).
 - Inspiration-photo retention: 30 days (`lookmate.retention.inspiration-photo-days`).
-- Client contact retention: undecided.
+- Client contact retention: **decided 2026-11-20**: anonymised 365 days after the latest request by that email
+  (`lookmate.retention.client-contact-days`). Client links expire after 90 days (`lookmate.intake.link-ttl`).
 - Stylist terms text: a draft (`backend/app/src/main/resources/terms/`), needs a lawyer before the pilot.
 - App name and domain: placeholder `pilot.lookmate.example` in `deploy/` and `.claude/skills/`.
 - Tagged photos a stylist needs before going live: 3 (`lookmate.stylists.min-tagged-photos-to-publish`).

@@ -1,0 +1,30 @@
+import { Suspense } from 'react'
+import { Link, Route, Routes, useLocation } from 'react-router'
+import { Loading, NotFound, RouteErrorBoundary } from '../../ui'
+import { FindPage } from './FindPage'
+import { MatchStatusPage } from './MatchStatusPage'
+
+/** Clients never sign in (CLAUDE.md): their pages render outside the signed-in shell, with no login at all. */
+export function PublicShell() {
+  const location = useLocation()
+  return (
+    <div className="shell">
+      <header className="topbar">
+        <Link to="/find" className="brand">
+          LookMate
+        </Link>
+      </header>
+      <main>
+        <RouteErrorBoundary key={location.pathname}>
+          <Suspense fallback={<Loading />}>
+            <Routes>
+              <Route path="/find" element={<FindPage />} />
+              <Route path="/m/:token" element={<MatchStatusPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </RouteErrorBoundary>
+      </main>
+    </div>
+  )
+}

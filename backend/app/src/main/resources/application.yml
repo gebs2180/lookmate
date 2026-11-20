@@ -61,6 +61,17 @@ lookmate:
       api-key: ${RESEND_API_KEY:}
       from: ${NOTIFY_EMAIL_FROM:LookMate <notify@example.com>}
       app-url: ${NOTIFY_APP_URL:http://localhost:5173}
+  intake:
+    # Client intake (docs/modules/intake.md). Clients have no account: a link token reaches their request.
+    link-ttl: 90d
+    # Requests one email address may have open (not yet matched) from the last 24 hours.
+    max-open-requests-per-email-per-day: 3
+    # A request claimed for matching but untouched this long is offered to the matching worker again.
+    matching-stuck-after: 15m
+    # Per IP, in memory: per instance. More than one app container needs a shared limit (Caddy or Postgres).
+    rate-limit:
+      creates-per-hour: 10
+      reads-per-minute: 60
   retention:
     # Personal data is kept only as long as it's needed (docs/data-retention.md). A daily job at 04:15 UTC.
     # The periods are defaults to confirm.
@@ -71,6 +82,9 @@ lookmate:
     # A client's inspiration photo is deleted from storage this many days after the request was made
     # (CLAUDE.md, Privacy). The embedding and the match rows stay. Default to confirm.
     inspiration-photo-days: 30
+    # A client's email, phone, first name, neighborhood and note are cleared this many days after the latest request
+    # made with that email address; the quiz codes stay for the fairness metrics (docs/data-retention.md).
+    client-contact-days: 365
   stylists:
     # A profile can go LIVE once it has this many READY portfolio photos tagged with a service and hair type
     # (the brief asks for 10-20 photos; 3 lets a pilot stylist start while they add the rest).

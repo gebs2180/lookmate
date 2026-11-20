@@ -66,7 +66,9 @@ rclone copyto "$work/$counts" "backups:${BACKUP_BUCKET}/postgres/${counts}"
 echo "backup ${stamp}: encrypting new photos"
 # Names, not sizes: an encrypted copy is a little bigger than its photo, and a photo is never rewritten once
 # it's an hour old (the location strip happens at upload; the one-off backfill runs before encryption starts).
-rclone lsf -R --files-only --min-age 1h "photos:${PHOTO_BUCKET}" | sort > "$work/photos.txt"
+# Clients' inspiration photos (intake/) are never copied: they are deleted after 30 days, and this copy can't
+# delete anything (docs/data-retention.md). A lost one costs the client a re-upload, nothing more.
+rclone lsf -R --files-only --min-age 1h --exclude 'intake/**' "photos:${PHOTO_BUCKET}" | sort > "$work/photos.txt"
 rclone lsf -R --files-only "backups:${BACKUP_BUCKET}/photos-age" | sed -n 's/\.age$//p' | sort > "$work/copied.txt"
 comm -23 "$work/photos.txt" "$work/copied.txt" > "$work/new.txt"
 new=$(wc -l < "$work/new.txt")

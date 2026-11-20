@@ -1,5 +1,6 @@
 import { useAuth0 } from '@auth0/auth0-react'
 import { useCallback } from 'react'
+import type { components } from './api.gen'
 
 // Hand-written API types for the scaffold. As endpoints land, prefer the generated ones in api.gen.ts
 // (docs/api-types.md): `npm run api:types` after the backend rewrites openapi.json.
@@ -158,3 +159,45 @@ export async function uploadToStorage(slot: UploadSlot, file: Blob): Promise<voi
 
 // Review (admin): identification and condition
 
+
+// Client intake (signed out): /find and /m/:token. Types from the API description (api.gen.ts).
+
+
+export type MatchRequestCreate = components['schemas']['IntakeControllerCreateRequest']
+export type MatchRequestCreated = components['schemas']['IntakeControllerCreated']
+export type ClientView = Omit<components['schemas']['IntakeServiceClientView'], 'photoUrl' | 'photoDeletesAt' | 'firstName' | 'texture' | 'length'> & {
+  photoUrl: string | null
+  photoDeletesAt: string | null
+  firstName: string | null
+  texture: string | null
+  length: string | null
+}
+export type ClientMatch = components['schemas']['ClientMatch']
+export type IntakeSettings = components['schemas']['IntakeServiceSettings']
+
+/** The public API, for clients who never sign in: no token, the same problem-detail errors as {@link useApi}. */
+export async function publicApi<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const response = await reach(
+    () =>
+      fetch(path, {
+        method,
+        headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      }),
+    UNREACHABLE,
+  )
+  if (!response.ok) {
+    let detail = response.status === 404 ? "We couldn't find that." : `Something went wrong (${response.status}). Please try again.`
+    let code: string | undefined
+    try {
+      const problem = await response.json()
+      detail = problem.detail ?? problem.title ?? detail
+      code = typeof problem.code === 'string' ? problem.code : undefined
+    } catch {
+      // not JSON
+    }
+    throw new ApiError(response.status, detail, code)
+  }
+  const text = await response.text()
+  return (text ? JSON.parse(text) : undefined) as T
+}

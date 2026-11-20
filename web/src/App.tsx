@@ -3,6 +3,8 @@ import { lazy, Suspense } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router'
 import { HomePage } from './pages/HomePage'
 import { InvitePage } from './pages/InvitePage'
+import { PublicShell } from './pages/public/PublicShell'
+import { isPublicPath } from './pages/public/publicPaths'
 import { Loading, NotFound, RouteErrorBoundary } from './ui'
 import { useRouteFocus } from './useRouteFocus'
 
@@ -22,6 +24,7 @@ function App() {
   const { isLoading, isAuthenticated, user, error, loginWithRedirect, logout } = useAuth0()
   const location = useLocation()
   useRouteFocus()
+  if (isPublicPath(location.pathname)) return <PublicShell />
 
   return (
     <div className="shell">
@@ -45,6 +48,11 @@ function App() {
       {!isLoading && !isAuthenticated && (
         <main className="welcome">
           <p className="lead">Find the stylist whose work matches the look you want.</p>
+          {!location.pathname.startsWith('/invite/') && (
+            <Link className="button block" to="/find">
+              Find my stylist
+            </Link>
+          )}
           {location.pathname.startsWith('/invite/') && (
             <p>You've been invited to join LookMate as a stylist. Log in, or sign up, to accept.</p>
           )}

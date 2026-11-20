@@ -50,7 +50,7 @@ rclone lsf "backups:${BACKUP_BUCKET}/postgres/lookmate-${stamp}.counts" | grep -
   || problem "lookmate-${stamp}.counts is missing, so the restore test has nothing to compare against"
 
 # 2. Every photo has an encrypted copy. Two hours, not one: backup.sh copies objects over an hour old.
-rclone lsf -R --files-only --min-age 2h "photos:${PHOTO_BUCKET}" | sort > "$work/photos.txt"
+rclone lsf -R --files-only --min-age 2h --exclude 'intake/**' "photos:${PHOTO_BUCKET}" | sort > "$work/photos.txt"   # not backed up: backup.sh
 rclone lsf -R --files-only "backups:${BACKUP_BUCKET}/photos-age" | sort > "$work/sealed.txt"
 sed -n 's/\.age$//p' "$work/sealed.txt" | sort > "$work/copied.txt"
 missing=$(comm -23 "$work/photos.txt" "$work/copied.txt" | wc -l)
