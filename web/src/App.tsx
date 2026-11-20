@@ -6,6 +6,9 @@ import { InvitePage } from './pages/InvitePage'
 import { FairnessPage } from './pages/admin/FairnessPage'
 import { MatchQueuePage } from './pages/admin/MatchQueuePage'
 import { MatchReviewPage } from './pages/admin/MatchReviewPage'
+import { AdminMetricsPage } from './pages/tracking/AdminMetricsPage'
+import { RecordBookingPage, StylistBookingsPage } from './pages/tracking/RecordBookingPage'
+import { StylistStatsPage } from './pages/tracking/StylistStatsCard'
 import { Loading, NotFound, RouteErrorBoundary } from './ui'
 import { useRouteFocus } from './useRouteFocus'
 
@@ -73,6 +76,10 @@ function App() {
                 <Route path="/admin/stylists" element={<AdminStylistsPage />} />
                 <Route path="/admin/locations" element={<AdminLocationsPage />} />
                 <Route path="/admin/demo" element={<AdminDemoPage />} />
+                <Route path="/admin/metrics" element={<AdminMetricsPage />} />
+                <Route path="/admin/bookings" element={<RecordBookingPage />} />
+                <Route path="/orgs/:orgId/stats" element={<StylistStatsPage />} />
+                <Route path="/orgs/:orgId/bookings" element={<StylistBookingsPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
