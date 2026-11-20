@@ -1,4 +1,4 @@
-<title>LookMate Chair-side Prototype</title>
+<title>Combpatible Chair-side Prototype</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -352,7 +352,7 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
 <div class="wrap">
   <header class="wall-head">
     <div>
-      <div class="eyebrow">LookMate · working name · design direction “Chair-side”</div>
+      <div class="eyebrow">Combpatible · design direction “Chair-side”</div>
       <h1>The stylist who’s <em>already done</em> your look.</h1>
       <p>A clickable prototype of the pilot’s key screens. Every phone is live: tap through the quiz and watch the wait turn into results, filter every stylist, tag a photo and watch the go-live checklist update, and flip the admin’s review switch. Photos are drawn placeholders in real hair colours; all people are made up.</p>
     </div>
@@ -540,7 +540,7 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
 
   // ---------- Brand mark: two overlapping rings (a match), name-agnostic ----------
   const MARK = '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="10" cy="13" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16" cy="13" r="7" fill="none" stroke="var(--accent)" stroke-width="1.8"/></svg>';
-  document.querySelectorAll('[data-mark]').forEach((el) => { el.innerHTML = MARK + '<span>LookMate</span><small>working name</small>'; });
+  document.querySelectorAll('[data-mark]').forEach((el) => { el.innerHTML = MARK + '<span>Combpatible</span>'; });
 
   // ---------- Hair glyphs ----------
   const GLYPH = {
@@ -666,7 +666,7 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
       <div class="privacy" role="note">
         <h4>${LOCK.replace('aria-hidden', 'width="18" height="18" aria-hidden')} Your photo stays private</h4>
         <ul>
-          <li>${EYE}<span>Only you and the LookMate team see it. It never appears on a stylist’s profile or anywhere public.</span></li>
+          <li>${EYE}<span>Only you and the Combpatible team see it. It never appears on a stylist’s profile or anywhere public.</span></li>
           <li>${PIN}<span>We remove location and camera details before it’s stored.</span></li>
           <li>${CLOCK}<span>We delete it after 30 days. Your page shows the exact date.</span></li>
         </ul>
@@ -721,7 +721,7 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
     const filled = Math.min(inst.phase, 2);
     const tiles = MATCHES.map((m, i) => i < filled ? `<div class="pop">${ph(...m.ev[0].slice(0, 2), '')}</div>` : '<div class="tilewait"></div>').join('');
     const body = done ? `
-      <div class="appbar"><span class="mark" data-mark>${MARK}<span>LookMate</span></span><span class="chip neutral">Private link</span></div>
+      <div class="appbar"><span class="mark" data-mark>${MARK}<span>Combpatible</span></span><span class="chip neutral">Private link</span></div>
       <div class="pad">
         <span class="eyebrow">Found in 4 seconds</span>
         <h3 class="h-screen">${name === 'there' ? 'These' : name + ', these'} stylists have done your look on ${hairLabel(q.hair).toLowerCase()} hair.</h3>
@@ -733,9 +733,9 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
           <p class="hint">These are suggestions. Browse every stylist and book anyone you like.</p>
           <button class="btn quiet" type="button" data-go="browse">See all 23 stylists</button>
         </div>
-        <p class="hint small">You book on the stylist’s own page. LookMate never takes payments. Your photo is deleted on Dec 20. We’ve emailed you this page’s private link.</p>
+        <p class="hint small">You book on the stylist’s own page. Combpatible never takes payments. Your photo is deleted on Dec 20. We’ve emailed you this page’s private link.</p>
       </div>` : `
-      <div class="appbar"><span class="mark" data-mark>${MARK}<span>LookMate</span></span></div>
+      <div class="appbar"><span class="mark" data-mark>${MARK}<span>Combpatible</span></span></div>
       <div class="pad">
         <span class="eyebrow">Request sent</span>
         <h3 class="h-screen">Thanks${name === 'there' ? '' : ', ' + name}. Here’s what we heard.</h3>
@@ -909,7 +909,7 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
         <div class="appbar"><span class="mark" data-mark>${MARK}<span>Amara</span></span><span class="chip ${live ? 'ok' : 'neutral'}">${live ? 'Live' : 'Draft'}</span></div>
         <div class="pad">
           <h3 class="h-screen">${live ? 'You’re live.' : missing ? 'Almost ready to go live' : 'Ready to go live'}</h3>
-          <p class="hint">${live ? 'Clients in Columbus can now be matched with your work. We’ll email you when someone books through LookMate.' : 'Once you’re live, clients whose photo looks like your work are matched with you. You can hide your profile any time.'}</p>
+          <p class="hint">${live ? 'Clients in Columbus can now be matched with your work. We’ll email you when someone books through Combpatible.' : 'Once you’re live, clients whose photo looks like your work are matched with you. You can hide your profile any time.'}</p>
           <ul class="check">${items.map((i) => `<li class="${i.ok ? 'ok' : ''}"><span class="tick" aria-hidden="true">${i.ok ? '✓' : ''}</span><span><b>${i.t}</b><small>${i.s}</small></span>${i.ok ? '<span class="hint small">Edit</span>' : '<span class="chip">Tag now</span>'}</li>`).join('')}</ul>
           <div class="card" style="padding:1rem;display:grid;gap:.6rem"><b>Your work by hair type</b><p class="hint small">Clients are matched on hair like theirs. This is what you’ll be matched on now.</p>
             <div class="coverage">${by.map((b) => `<div><span>${b.l}</span><span class="track"><i style="width:${(b.n / max) * 100}%;${b.n ? '' : 'background:var(--line)'}"></i></span><span>${b.n}</span></div>`).join('')}</div></div>

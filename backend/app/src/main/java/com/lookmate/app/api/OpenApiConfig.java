@@ -22,7 +22,7 @@ class OpenApiConfig {
 
     @Bean
     OpenAPI openApi() {
-        return new OpenAPI().info(new Info().title("LookMate API").version("1")).servers(List.of(new Server().url("/")));
+        return new OpenAPI().info(new Info().title("Combpatible API").version("1")).servers(List.of(new Server().url("/")));
     }
 
     /**

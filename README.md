@@ -1,4 +1,7 @@
-# LookMate (working name)
+# Combpatible
+
+Product name: Combpatible (working name until 2026-11-20: LookMate). `lookmate` stays the internal name in packages,
+Gradle, databases, buckets, config keys and Auth0 identifiers.
 
 Matches hair clients with stylists by the stylist's portfolio work on similar hair. Pilot: Columbus, Ohio, with
 Salon Lofts stylists.

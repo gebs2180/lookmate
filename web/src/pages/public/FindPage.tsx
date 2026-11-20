@@ -141,7 +141,7 @@ export function FindPage() {
       <section className="find">
         <h1>Request sent</h1>
         <p>
-          Thanks{answers.firstName.trim() ? `, ${answers.firstName.trim()}` : ''}. A LookMate stylist is matching you with stylists whose
+          Thanks{answers.firstName.trim() ? `, ${answers.firstName.trim()}` : ''}. A Combpatible stylist is matching you with stylists whose
           own work looks like your photo, on hair like yours. We'll email <strong>{answers.email.trim()}</strong> when your matches are
           ready, usually within a day or two.
         </p>
@@ -293,7 +293,7 @@ export function FindPage() {
         </div>
       </form>
       <p className="muted small">
-        Our picks are suggestions: you can book any stylist you like. LookMate doesn't take bookings or payments; you book on the stylist's
+        Our picks are suggestions: you can book any stylist you like. Combpatible doesn't take bookings or payments; you book on the stylist's
         own page.
       </p>
     </section>

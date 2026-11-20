@@ -42,11 +42,11 @@ four-tab bar; the admin gets a sidebar.
 
 ## Client: from Instagram to a stylist's booking page
 
-**Entry.** A link in a stylist's or LookMate's Instagram bio or story, opened in Instagram's in-app browser on a phone.
+**Entry.** A link in a stylist's or Combpatible's Instagram bio or story, opened in Instagram's in-app browser on a phone.
 
 | # | Step | Decision for the client | Design notes |
 |---|---|---|---|
-| 1 | Landing | "Is this for me, and is it safe?" | Hero collage across ≥3 hair types; one CTA "Find my stylist"; privacy line under it. If they arrive from a specific stylist's link (`?via=amara`, new), say "Amara uses LookMate to match new clients". |
+| 1 | Landing | "Is this for me, and is it safe?" | Hero collage across ≥3 hair types; one CTA "Find my stylist"; privacy line under it. If they arrive from a specific stylist's link (`?via=amara`, new), say "Amara uses Combpatible to match new clients". |
 | 2 | Service | What am I booking? | Chips, tap to advance. |
 | 3 | Hair type | Which of four? | 2×2 equal cards with glyphs; "If it's a mix, pick what you see most"; "See photo examples". |
 | 4 | Strand thickness | Fine / medium / thick / not sure | "Not sure" is a full answer, not a failure. |
@@ -70,7 +70,7 @@ four-tab bar; the admin gets a sidebar.
 - "Question 1 of 9" with a native `<progress>`: keep the count, style a thin bar.
 - Instagram's in-app browser can't pick HEIC well and loses state on app switch: keep answers in `sessionStorage` until
   sent, so leaving to find a screenshot doesn't restart the quiz.
-- The sent screen says "a LookMate stylist is matching you…" and "we'll email you": replace it with the in-page wait that
+- The sent screen says "a Combpatible stylist is matching you…" and "we'll email you": replace it with the in-page wait that
   becomes the results (matches now publish automatically in seconds).
 - The match list is the only way to see stylists: add "See all stylists" next to it, so choosing anyone is real.
 
@@ -106,7 +106,7 @@ four-tab bar; the admin gets a sidebar.
 
 | # | Step | Decision | Design notes |
 |---|---|---|---|
-| 1 | Invite → sign up (Auth0) | Trust the invite | Invite page shows who invited them and what LookMate does in two lines. |
+| 1 | Invite → sign up (Auth0) | Trust the invite | Invite page shows who invited them and what Combpatible does in two lines. |
 | 2 | Terms | Accept | Plain-language summary above the full text (the text needs a lawyer before the pilot). |
 | 3 | Home: checklist | What's left? | Screen 7. Each row links to its step. |
 | 4 | Profile | Name, location, specialties, booking link, Instagram | Location is a list (entered by the admin). Booking link: paste, then show "Detected: Booksy" or "We don't recognise this site; clients will still go there". |

@@ -43,10 +43,10 @@ describe('StylistHomePage', () => {
     let accepted = false
     const calls = stubApi({
       [`GET /api/orgs/${ORG}/stylist`]: () => home(accepted ? {} : { termsAccepted: false, missing: ['TERMS', 'PROFILE', 'TAGGED_PHOTOS'] }),
-      [`GET /api/orgs/${ORG}/consent`]: () => ({ version: 'stylist-2026-11-20', text: 'The terms text', acceptedAt: null }),
+      [`GET /api/orgs/${ORG}/consent`]: () => ({ version: 'stylist-2026-11-20b', text: 'The terms text', acceptedAt: null }),
       [`POST /api/orgs/${ORG}/consent`]: () => {
         accepted = true
-        return { version: 'stylist-2026-11-20', text: 'The terms text', acceptedAt: '2026-11-20T00:00:00Z' }
+        return { version: 'stylist-2026-11-20b', text: 'The terms text', acceptedAt: '2026-11-20T00:00:00Z' }
       },
     })
     renderAt(`/stylist/${ORG}`, '/stylist/:orgId', <StylistHomePage />)
@@ -55,7 +55,7 @@ describe('StylistHomePage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'I accept these terms' }))
 
     expect(await screen.findByRole('heading', { name: 'Getting ready to go live' })).toBeInTheDocument()
-    expect(calls.find((c) => c.method === 'POST')?.body).toEqual({ version: 'stylist-2026-11-20' })
+    expect(calls.find((c) => c.method === 'POST')?.body).toEqual({ version: 'stylist-2026-11-20b' })
   })
 
   it("can't go live with something missing, and says what", async () => {

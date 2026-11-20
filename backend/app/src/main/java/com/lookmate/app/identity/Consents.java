@@ -38,7 +38,7 @@ public class Consents {
      * What a stylist agrees to before their profile and portfolio go live. DRAFT, to confirm with the team (and a
      * lawyer before the pilot opens): see resources/terms/CHANGELOG.md.
      */
-    public static final String STYLIST_TERMS_VERSION = "stylist-2026-11-20";
+    public static final String STYLIST_TERMS_VERSION = "stylist-2026-11-20b";
 
     static final String STYLIST_TERMS_TEXT = text(STYLIST_TERMS_VERSION) + FOOTER;
 

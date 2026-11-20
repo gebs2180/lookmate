@@ -50,7 +50,7 @@ services:
       # Optional features, off unless set in .env.
       NOTIFY_EMAIL_ENABLED: ${NOTIFY_EMAIL_ENABLED:-false}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
-      NOTIFY_EMAIL_FROM: ${NOTIFY_EMAIL_FROM:-LookMate <notify@lookmate.example>}
+      NOTIFY_EMAIL_FROM: ${NOTIFY_EMAIL_FROM:-Combpatible <notify@pilot.combpatible.example>}
       NOTIFY_APP_URL: ${NOTIFY_APP_URL:-}
     # No OpenCV or PDF rendering here, so far less than pokemans needs. The JVM takes 60% of this as heap.
     mem_limit: 768m

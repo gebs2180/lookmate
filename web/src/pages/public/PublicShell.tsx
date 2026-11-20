@@ -12,7 +12,7 @@ export function PublicShell() {
     <div className="shell">
       <header className="topbar">
         <Link to="/find" className="brand">
-          LookMate
+          Combpatible
         </Link>
       </header>
       <main>

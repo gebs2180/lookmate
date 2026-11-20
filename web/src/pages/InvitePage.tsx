@@ -33,7 +33,7 @@ export function InvitePage() {
 
   return (
     <>
-      <h1>You're invited to LookMate</h1>
+      <h1>You're invited to Combpatible</h1>
       <p>Join as {invite.orgName}. Next you'll set up your profile and read the stylist terms.</p>
       {invite.usable ? (
         <div className="actions">

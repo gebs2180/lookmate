@@ -204,9 +204,9 @@ function BookingEntry({ paths, admin }: { paths: Paths; admin: boolean }) {
 
   return (
     <>
-      <h1>{admin ? 'Record a booking' : 'Your bookings from LookMate'}</h1>
+      <h1>{admin ? 'Record a booking' : 'Your bookings from Combpatible'}</h1>
       <p className="muted">
-        For a booking or a return visit that came from a LookMate match. A mistake can be voided below; the record keeps
+        For a booking or a return visit that came from a Combpatible match. A mistake can be voided below; the record keeps
         both.
       </p>
 

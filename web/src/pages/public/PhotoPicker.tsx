@@ -11,7 +11,7 @@ export function PrivacyNote({ keptDays }: { keptDays: number | null }) {
     <div className="alert alert-info privacy-note">
       <p className="alert-title">Your photo stays private</p>
       <p>
-        Only the LookMate team sees it. It's never public, and we delete it{' '}
+        Only the Combpatible team sees it. It's never public, and we delete it{' '}
         {keptDays ? `${keptDays} days after your request` : 'on a set schedule'}. We remove
         location and camera details before it's stored.
       </p>

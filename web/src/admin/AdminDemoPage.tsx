@@ -78,7 +78,7 @@ export function AdminDemoPage() {
       </p>
       <h1>Demo stylists</h1>
       <p>
-        {DEMO_STYLISTS.length} made-up stylists for trying LookMate before real stylists join. They go live like real ones, marked as demo,
+        {DEMO_STYLISTS.length} made-up stylists for trying Combpatible before real stylists join. They go live like real ones, marked as demo,
         with booking links to example.com.
       </p>
       <p>

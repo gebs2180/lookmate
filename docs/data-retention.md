@@ -1,6 +1,6 @@
 # Data retention
 
-How long LookMate keeps personal data, and what takes it out. The mechanism is pokemans' (a daily job, settings under
+How long Combpatible keeps personal data, and what takes it out. The mechanism is pokemans' (a daily job, settings under
 `lookmate.retention` in `application.yml`); the periods are **defaults to confirm** with the team and the privacy policy.
 
 | What | Kept | Then | Setting | Status |
@@ -15,7 +15,7 @@ How long LookMate keeps personal data, and what takes it out. The mechanism is p
 ## Biometric law (CLAUDE.md, Privacy)
 
 Ohio has no biometric privacy law; Illinois (BIPA) and Texas (CUBI) do. Image embeddings of a face can count as
-biometric identifiers there. Before LookMate takes clients from either state: written consent at upload, a published
+biometric identifiers there. Before Combpatible takes clients from either state: written consent at upload, a published
 retention schedule, and deleting embeddings of client photos with the photo. Designed for now: embeddings are in their
 own table keyed by request, so deleting them with the photo is one statement.
 

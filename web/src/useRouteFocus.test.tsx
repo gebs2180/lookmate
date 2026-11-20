@@ -51,7 +51,7 @@ describe('useRouteFocus', () => {
 
   it('names the tab on first load without moving focus or scroll', async () => {
     renderApp()
-    await waitFor(() => expect(document.title).toBe('List · LookMate'))
+    await waitFor(() => expect(document.title).toBe('List · Combpatible'))
     expect(scrollTo).not.toHaveBeenCalled()
     expect(document.body).toHaveFocus()
   })
@@ -62,7 +62,7 @@ describe('useRouteFocus', () => {
     await user.click(screen.getByRole('link', { name: 'Open' }))
     expect(await screen.findByRole('heading', { name: 'Balayage' })).toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Balayage' })).toHaveFocus())
-    expect(document.title).toBe('Balayage · LookMate')
+    expect(document.title).toBe('Balayage · Combpatible')
     expect(scrollTo).toHaveBeenCalledWith(0, 0)
   })
 })

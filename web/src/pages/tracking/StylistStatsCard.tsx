@@ -4,7 +4,7 @@ import { Loading, PageError } from '../../ui'
 import { useLoad } from '../../useLoad'
 import './tracking.css'
 
-/** A stylist's own numbers: how often LookMate showed them, and the clicks and bookings that followed. */
+/** A stylist's own numbers: how often Combpatible showed them, and the clicks and bookings that followed. */
 export function StylistStatsCard({ orgId }: { orgId: string }) {
   const api = useApi()
   const { data, error } = useLoad(() => api<StylistStats>('GET', apiPath`/api/orgs/${orgId}/tracking/stats`), [api, orgId])
@@ -20,7 +20,7 @@ export function StylistStatsCard({ orgId }: { orgId: string }) {
   ]
   return (
     <section className="panel" aria-labelledby="stylist-stats-title">
-      <h2 id="stylist-stats-title">Your LookMate numbers</h2>
+      <h2 id="stylist-stats-title">Your Combpatible numbers</h2>
       <table className="table">
         <thead>
           <tr>
@@ -41,7 +41,7 @@ export function StylistStatsCard({ orgId }: { orgId: string }) {
           ))}
         </tbody>
       </table>
-      <p className="muted">Bookings count once you or LookMate record them.</p>
+      <p className="muted">Bookings count once you or Combpatible record them.</p>
     </section>
   )
 }

@@ -89,7 +89,7 @@ export function MatchStatusPage() {
         {view.photoDeleted ? (
           <p>Deleted, as promised: we keep inspiration photos for {view.photoKeptDays} days.</p>
         ) : view.photoUploaded && view.photoDeletesAt ? (
-          <p className="muted small">Private to you and the LookMate team. We delete it on {new Date(view.photoDeletesAt).toLocaleDateString()}.</p>
+          <p className="muted small">Private to you and the Combpatible team. We delete it on {new Date(view.photoDeletesAt).toLocaleDateString()}.</p>
         ) : null}
       </div>
     </section>

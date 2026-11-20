@@ -125,7 +125,7 @@ The rate limiter is in memory, so it is per instance: with more than one app con
 
 ## Photo metadata: one copy, in `storage`
 
-`com.lookmate.app.storage.PhotoMetadata.strip(bytes)` is the only metadata stripper in LookMate (and
+`com.lookmate.app.storage.PhotoMetadata.strip(bytes)` is the only metadata stripper in Combpatible (and
 `PhotoMetadata.orientation(bytes)`), used by both intake and stylists since the merge of 2026-11-20.
 
 ## Schema (V4)

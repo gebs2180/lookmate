@@ -18,7 +18,7 @@ class ResendClientTest {
     }
 
     private EmailProperties properties(String key, Duration timeout) {
-        return new EmailProperties(true, key, "LookMate <notify@example.com>", resend.url(), URI.create("https://app.example.com"),
+        return new EmailProperties(true, key, "Combpatible <notify@example.com>", resend.url(), URI.create("https://app.example.com"),
                 Duration.ofSeconds(2), timeout, Duration.ofSeconds(20), 20, 8);
     }
 
@@ -27,7 +27,7 @@ class ResendClientTest {
     }
 
     private static ResendClient.Message message() {
-        return new ResendClient.Message("LookMate <notify@example.com>", "sam@example.com", "Your matches are ready", "<p>Hi</p>", "Hi", "key-1");
+        return new ResendClient.Message("Combpatible <notify@example.com>", "sam@example.com", "Your matches are ready", "<p>Hi</p>", "Hi", "key-1");
     }
 
     @Test
@@ -42,7 +42,7 @@ class ResendClientTest {
         assertThat(r.idempotencyKey()).isEqualTo("key-1");
         assertThat(r.contentType()).startsWith("application/json");
         assertThat(r.to()).isEqualTo("sam@example.com");
-        assertThat(r.field("from")).isEqualTo("LookMate <notify@example.com>");
+        assertThat(r.field("from")).isEqualTo("Combpatible <notify@example.com>");
         assertThat(r.field("subject")).isEqualTo("Your matches are ready");
         assertThat(r.field("html")).isEqualTo("<p>Hi</p>");
         assertThat(r.field("text")).isEqualTo("Hi");
