@@ -47,7 +47,8 @@ for the stylist home page to embed).
 - The response is `Cache-Control: no-store` and `Referrer-Policy: no-referrer`, so the client's token in the URL never
   reaches the booking site.
 - A second click on the same match within `lookmate.tracking.click-dedupe-window` (30s) still redirects but isn't
-  recorded again. The check and the insert run under a transaction-scoped advisory lock on the match id.
+  recorded again. At most `max-clicks-per-request-per-day` (20) clicks are counted per client link per Eastern day;
+  more still redirect. Both checks and the insert run under a transaction-scoped advisory lock on the request id.
 
 ### Manual entry rules
 
@@ -106,5 +107,7 @@ every query is a small scan. What supports them:
 
 ## Not done here
 
-- No rate limit on the public routes yet (SecurityConfig says each public route rate-limits). The click dedupe keeps
-  repeated clicks from inflating counts; a shared limiter belongs with intake's public routes.
+- No rate limit on the public routes yet (SecurityConfig says each public route rate-limits). The click dedupe and the
+  daily cap keep repeated clicks from skewing the metrics. Plan (agreed 2026-11-20): after the Phase 1 branches merge,
+  one in-memory per-IP limiter on `/api/public/**` (429 with Retry-After): "Book" 60/min, viewed 30/min, intake create
+  5/hour plus 20/day per email; Postgres-backed counters when there is a second app instance.

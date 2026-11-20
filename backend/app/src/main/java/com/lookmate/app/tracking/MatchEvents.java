@@ -78,6 +78,16 @@ class MatchEvents {
                 .query(Boolean.class).single();
     }
 
+    long clicksOnRequestSince(UUID requestId, Instant since) {
+        return jdbc.sql("""
+                        select count(*) from match_event_live
+                        where match_request_id = :request and type = 'CLICKED_BOOK' and occurred_at >= :since
+                        """)
+                .param("request", requestId)
+                .param("since", Timestamp.from(since))
+                .query(Long.class).single();
+    }
+
     boolean viewedSince(UUID requestId, Instant since) {
         return jdbc.sql("""
                         select exists (select 1 from match_event_live

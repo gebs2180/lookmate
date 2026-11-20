@@ -97,6 +97,17 @@ class TrackingFlowTest {
     }
 
     @Test
+    void clicksPastTheDailyCapStillRedirectButAreNotCounted() throws Exception {
+        Seeded s = seed(null, "https://booksy.com/cap");
+        UUID other = fx.match(s.requestId(), fx.org("Cap Two"), 2, false);
+        for (int i = 0; i < 20; i++) {
+            fx.event(other, s.requestId(), null, "CLICKED_BOOK", Instant.now());
+        }
+        mvc.perform(get("/api/public/book/" + s.token() + "/" + s.matchId())).andExpect(status().isFound());
+        assertThat(fx.count(s.requestId(), "CLICKED_BOOK")).isEqualTo(20);
+    }
+
+    @Test
     void aNonHttpsBookingLinkIsNotFollowed() throws Exception {
         for (String url : List.of("http://booksy.com/a", "javascript:alert(1)", "//evil.example", "https://u:p@evil.example/")) {
             Seeded s = seed(null, url);

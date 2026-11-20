@@ -64,8 +64,10 @@ public class TrackingService {
             return Optional.empty();
         }
         Instant now = clock.instant();
-        events.lock(target.matchId());
-        if (!events.clickedSince(target.matchId(), now.minus(properties.clickDedupeWindow()))) {
+        // One lock per client link covers both checks: the per-match dedupe and the per-link daily cap.
+        events.lock(target.requestId());
+        if (!events.clickedSince(target.matchId(), now.minus(properties.clickDedupeWindow()))
+                && events.clicksOnRequestSince(target.requestId(), startOfDay(now)) < properties.maxClicksPerRequestPerDay()) {
             events.append(new MatchEvents.New(target.matchId(), target.requestId(), target.orgId(), Type.CLICKED_BOOK,
                     Source.CLIENT, null, null, now));
         }
@@ -83,7 +85,7 @@ public class TrackingService {
             return false;
         }
         Instant now = clock.instant();
-        Instant startOfDay = LocalDate.ofInstant(now, properties.timeZone()).atStartOfDay(properties.timeZone()).toInstant();
+        Instant startOfDay = startOfDay(now);
         events.lock(request.get());
         if (!events.viewedSince(request.get(), startOfDay)) {
             events.append(new MatchEvents.New(null, request.get(), null, Type.VIEWED, Source.CLIENT, null, null, now));
@@ -172,6 +174,10 @@ public class TrackingService {
         events.append(new MatchEvents.New(target.matchId(), target.matchRequestId(), target.orgId(), Type.VOIDED, source,
                 recordedBy, reason.strip(), clock.instant(), target.id()));
         return events.find(eventId).orElseThrow();
+    }
+
+    private Instant startOfDay(Instant now) {
+        return LocalDate.ofInstant(now, properties.timeZone()).atStartOfDay(properties.timeZone()).toInstant();
     }
 
     /** A link token is a short random string; something very long can't match and isn't worth hashing. */
