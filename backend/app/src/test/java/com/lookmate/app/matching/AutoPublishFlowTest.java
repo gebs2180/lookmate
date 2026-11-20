@@ -226,20 +226,47 @@ class AutoPublishFlowTest {
     }
 
     @Test
-    void aRequestWithNoCandidatesWaitsForTheAdminEvenWithoutReview() throws Exception {
+    void aRequestWithNoCandidatesIsPublishedEmptyAndTheAdminCanAddPicksAfterwards() throws Exception {
         UUID straight = stylist("Straight Only", "LIVE");
         photo(straight, "CUT", "STRAIGHT", LOOK);
         String token = token();
         UUID request = request("COILY", "CUT", token, "c@example.com");
         job.runOnce();
-        assertThat(statusOf(request)).isEqualTo("IN_REVIEW");
-        assertThat(jdbc.sql("select count(*) from email_message where template = 'MATCHES_READY' and subject_id = ?").params(request)
-                .query(Integer.class).single()).isZero();
+
+        // Published at once with nothing on it: the client's page stops waiting.
+        assertThat(statusOf(request)).isEqualTo("PUBLISHED");
+        mvc.perform(get("/api/public/match-requests/" + token)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.stage").value("READY"))
+                .andExpect(jsonPath("$.matches").isEmpty());
+
+        // The "no close match yet" email, held like the usual one, links to the directory through a fresh private link.
+        Map<String, Object> email = matchesReadyEmail(request);
+        assertThat(email.get("status")).isEqualTo("PENDING");
+        String text = (String) email.get("text_body");
+        assertThat(text).contains("didn't find a close match", "Browse all stylists").doesNotContain("We've picked stylists");
+        String fresh = text.replaceAll("(?s).*/m/([A-Za-z0-9_-]{43})/stylists.*", "$1");
+        assertThat(fresh).hasSize(43).isNotEqualTo(token);
+        mvc.perform(get("/api/public/match-requests/" + fresh + "/stylists")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1));
+
+        // The monitor keeps the reason, so the admin knows to look.
         api.get("/api/admin/match-monitor?market=" + market, api.admin())
-                .andExpect(jsonPath("$.requests[0].status").value("IN_REVIEW"))
-                .andExpect(jsonPath("$.requests[0].statusReason").value(Ranker.NO_CANDIDATES));
-        // The client can still pick from the directory meanwhile.
-        mvc.perform(get("/api/public/stylists?market=" + market)).andExpect(jsonPath("$.total").value(1));
+                .andExpect(jsonPath("$.requests[0].status").value("PUBLISHED"))
+                .andExpect(jsonPath("$.requests[0].statusReason").value(Ranker.NO_CANDIDATES))
+                .andExpect(jsonPath("$.requests[0].matches").isEmpty());
+
+        // The admin adds a pick afterwards: it's on the client's list at once, and the reason is cleared.
+        api.postJson("/api/admin/match-requests/" + request + "/matches", "{\"orgId\":\"%s\"}".formatted(straight), api.admin())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.request.status").value("PUBLISHED"))
+                .andExpect(jsonPath("$.request.statusReason").value(Matchers.nullValue()));
+        mvc.perform(get("/api/public/match-requests/" + token))
+                .andExpect(jsonPath("$.stage").value("READY"))
+                .andExpect(jsonPath("$.matches[*].stylistName").value(Matchers.contains("Straight Only")))
+                .andExpect(jsonPath("$.matches[0].rank").value(1));
+        // Still one email for the request.
+        assertThat(jdbc.sql("select count(*) from email_message where template = 'MATCHES_READY' and subject_id = ?").params(request)
+                .query(Integer.class).single()).isEqualTo(1);
     }
 
     @Test
@@ -256,6 +283,9 @@ class AutoPublishFlowTest {
         match(request, c, 3, 2, false, "ADMIN");
         UUID empty = request("WAVY", "CUT", token(), "empty@example.com");
         jdbc.sql("update match_request set status = 'IN_REVIEW' where id = ?").params(empty).update();
+        UUID allHidden = request("WAVY", "CUT", token(), "hidden@example.com");
+        jdbc.sql("update match_request set status = 'IN_REVIEW' where id = ?").params(allHidden).update();
+        match(allHidden, a, 1, null, true, "SYSTEM");
 
         job.runOnce();
 
@@ -265,8 +295,11 @@ class AutoPublishFlowTest {
         mvc.perform(get("/api/public/match-requests/" + token))
                 .andExpect(jsonPath("$.matches[*].stylistName").value(Matchers.contains("Bo", "Cy")));
         assertThat(matchesReadyEmail(request).get("status")).isEqualTo("PENDING");
-        // Nothing visible to publish: it stays for the admin.
-        assertThat(statusOf(empty)).isEqualTo("IN_REVIEW");
+        // Nothing found and nothing added: published empty, as the ranker does now.
+        assertThat(statusOf(empty)).isEqualTo("PUBLISHED");
+        assertThat((String) matchesReadyEmail(empty).get("text_body")).contains("didn't find a close match");
+        // Everything hidden by the admin: it stays for them.
+        assertThat(statusOf(allHidden)).isEqualTo("IN_REVIEW");
     }
 
     private void match(UUID request, UUID org, int systemRank, Integer finalRank, boolean hidden, String source) {

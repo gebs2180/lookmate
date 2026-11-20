@@ -104,16 +104,35 @@ public class MatchRequests {
      */
     @Transactional
     public void publish(UUID id, UUID reviewedBy) {
+        publish(id, reviewedBy, null, false);
+    }
+
+    /**
+     * To PUBLISHED with an empty list: the ranker found no stylist with a close portfolio match, and lists aren't reviewed
+     * first. {@code reason} stays on the request so the admin's monitor shows why; the admin can add stylists afterwards.
+     * The client gets the "no close match yet" email instead, pointing at the directory through their link.
+     */
+    @Transactional
+    public void publishWithoutMatches(UUID id, String reason) {
+        publish(id, null, reason, true);
+    }
+
+    private void publish(UUID id, UUID reviewedBy, String reason, boolean empty) {
         MatchRequestRows.Row row = rows.findLocked(id).orElseThrow(() -> new NoSuchElementException("No match request " + id));
         Status from = Status.valueOf(row.status());
         if (from != Status.MATCHING && from != Status.IN_REVIEW && from != Status.FAILED) {
             throw new IllegalStateException("Only a request being matched or in review can be published; this one is " + from);
         }
         Instant now = Instant.now();
-        rows.setPublished(id, reviewedBy, now);
+        rows.setPublished(id, reviewedBy, reason, now);
         String token = LinkTokens.newToken();
         rows.insertLink(LinkTokens.hash(token), id, "MATCHES_READY", now, now.plus(properties.linkTtl()));
-        emails.matchesReady(id, row.email(), row.firstName(), LinkTokens.path(token), now.plus(properties.matchesReadyEmailDelay()), now);
+        Instant sendAt = now.plus(properties.matchesReadyEmailDelay());
+        if (empty) {
+            emails.noCloseMatch(id, row.email(), row.firstName(), LinkTokens.path(token) + "/stylists", sendAt, now);
+        } else {
+            emails.matchesReady(id, row.email(), row.firstName(), LinkTokens.path(token), sendAt, now);
+        }
     }
 
     /**

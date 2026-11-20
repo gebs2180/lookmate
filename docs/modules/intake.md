@@ -49,6 +49,13 @@ public class MatchRequests {
      */
     @Transactional public void publish(UUID id, UUID reviewedBy);
 
+    /**
+     * MATCHING / IN_REVIEW / FAILED -> PUBLISHED with no matches (the ranker found no close portfolio match, review
+     * off). Keeps reason as status_reason for the admin's monitor, and queues the "no close match yet" variant of the
+     * email (same template, key and delay), linking to /m/<token>/stylists.
+     */
+    @Transactional public void publishWithoutMatches(UUID id, String reason);
+
     /** The client opened their published list (tracking calls it on VIEWED): a MATCHES_READY not yet sent is cancelled. */
     @Transactional public void clientViewedMatches(UUID id);
 
@@ -105,6 +112,11 @@ opens their list, the page posts `/viewed`; tracking records VIEWED and calls `M
 cancels the email if it hasn't gone (status CANCELLED, reason "the client opened their matches before it went"). A
 client still on their page, which checks back by itself while matching, so never gets an email for what they've seen.
 Sent at most once per request, as before.
+
+A list published empty (`publishWithoutMatches`) gets the "no close match yet" variant instead (`ClientEmails.noCloseMatch`):
+same template, timing and key, so a request gets one or the other, linking to the directory through the client's link.
+The page posts no `/viewed` for an empty list (there's no list to count), so that email isn't cancelled: it still
+carries the directory link. The client's view is stage READY with `matches: []`.
 
 ## Settings (`lookmate.intake` in application.yml)
 

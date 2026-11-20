@@ -54,6 +54,9 @@ export function MatchStatusPage() {
   }
   if (!view) return <Loading />
 
+  // Published with nobody on it: no stylist's portfolio was a close match (CLAUDE.md, decided 2026-11-20).
+  const noMatches = view.stage === 'READY' && view.matches.length === 0
+  const directory = `/m/${encodeURIComponent(token)}/stylists`
   const service = labelOf(SERVICES, view.service)
   const hairType = labelOf(HAIR_TYPES, view.hairType)
   return (
@@ -66,18 +69,19 @@ export function MatchStatusPage() {
 
       {view.stage === 'PHOTO_NEEDED' && <AddPhoto token={token} keptDays={view.photoKeptDays} onSent={reload} />}
       {view.stage === 'CLOSED' && <p className="alert alert-info">This request is closed.</p>}
-      {view.stage !== 'PHOTO_NEEDED' && view.stage !== 'CLOSED' && <Progress stage={view.stage} />}
+      {view.stage !== 'PHOTO_NEEDED' && view.stage !== 'CLOSED' && !noMatches && <Progress stage={view.stage} />}
       {waiting && (
         <p className="muted small" role="status">
           This page updates by itself when your matches are ready, and we'll email you too. Meanwhile you can{' '}
-          <Link to={`/m/${encodeURIComponent(token)}/stylists`}>browse all stylists</Link>.
+          <Link to={directory}>browse all stylists</Link>.
         </p>
       )}
 
-      {view.stage === 'READY' && <Matches token={token} matches={view.matches} />}
-      {view.stage === 'READY' && (
+      {noMatches && <NoCloseMatches directory={directory} />}
+      {view.stage === 'READY' && !noMatches && <Matches token={token} matches={view.matches} />}
+      {view.stage === 'READY' && !noMatches && (
         <p>
-          <Link className="button secondary" to={`/m/${encodeURIComponent(token)}/stylists`}>
+          <Link className="button secondary" to={directory}>
             See all stylists
           </Link>
         </p>
@@ -109,6 +113,25 @@ function Progress({ stage }: { stage: ClientView['stage'] }) {
   )
 }
 
+/** A list published empty: say so plainly and send the client to the directory. The page doesn't check back. */
+function NoCloseMatches({ directory }: { directory: string }) {
+  return (
+    <div className="panel">
+      <h2>No close matches yet</h2>
+      <p>
+        We looked through every stylist's portfolio and didn't find work close enough to your look on hair like yours yet. You can
+        still browse all our stylists and book any of them.
+      </p>
+      <p>
+        <Link className="button" to={directory}>
+          Browse all stylists
+        </Link>
+      </p>
+      <p className="muted small">Our team may add picks to this list, so it's worth opening your link again later.</p>
+    </div>
+  )
+}
+
 /**
  * The recommendations, best first. Each "Book" is tracking's redirect: it records the click, then sends the client to
  * the stylist's own booking page with UTM tags. Built here because only this page has the client's token.
@@ -122,9 +145,6 @@ function Matches({ token, matches }: { token: string; matches: ClientMatch[] }) 
     })
   }, [token, matches.length])
 
-  if (matches.length === 0) {
-    return <p>Your matches are being put together. Check back soon, or browse all stylists below.</p>
-  }
   return (
     <>
       <h2>Stylists for your look</h2>

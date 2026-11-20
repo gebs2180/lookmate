@@ -52,6 +52,22 @@ public class ClientEmails {
         notifier.queueToAddress("matches-ready:" + matchRequestId, Template.MATCHES_READY, email, matchRequestId, content, sendAt, now);
     }
 
+    /**
+     * The "matches ready" email's variant for a list published empty: no stylist's portfolio is a close match yet. Links
+     * to the directory through the client's private link ({@code linkPath}, e.g. {@code /m/<token>/stylists}). Same
+     * timing, key and cancelling as {@link #matchesReady}: a request gets one or the other.
+     */
+    public void noCloseMatch(UUID matchRequestId, String email, String firstName, String linkPath, Instant sendAt, Instant now) {
+        EmailContent content = EmailContent.of("About your stylist matches",
+                List.of(greeting(firstName),
+                        "We looked through every Combpatible stylist's portfolio and didn't find a close match for your look yet: "
+                                + "nobody has shown that work on hair like yours so far.",
+                        "You can still browse all our stylists and book any of them. Our team may also add picks to your list, "
+                                + "so it's worth opening your link again later."),
+                "Browse all stylists", properties.link(linkPath), FOOTER);
+        notifier.queueToAddress("matches-ready:" + matchRequestId, Template.MATCHES_READY, email, matchRequestId, content, sendAt, now);
+    }
+
     /** The client has seen their matches: a "matches ready" email that hasn't gone yet is cancelled. Returns whether one was. */
     public boolean cancelMatchesReady(UUID matchRequestId, Instant now) {
         return notifier.cancelPending(matchRequestId, Template.MATCHES_READY, VIEWED_FIRST, now) > 0;

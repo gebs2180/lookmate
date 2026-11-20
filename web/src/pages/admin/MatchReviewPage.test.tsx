@@ -105,7 +105,7 @@ describe('MatchReviewPage', () => {
     expect(screen.queryByRole('button', { name: 'Publish to client' })).not.toBeInTheDocument()
   })
 
-  it('lets the admin hide a match after publishing, but not reorder, add or publish again', async () => {
+  it('lets the admin hide a match after publishing, but not reorder or publish again', async () => {
     const fetch = vi
       .fn()
       .mockResolvedValueOnce(respond(200, review([match('a', 'Ana', 1, { adminNote: 'Great fit' })], 'PUBLISHED')))
@@ -119,5 +119,26 @@ describe('MatchReviewPage', () => {
     expect(fetch.mock.calls[1][0]).toBe('/api/admin/match-requests/req-1/matches/a')
     expect(JSON.parse(fetch.mock.calls[1][1].body)).toEqual({ hidden: true, note: 'Great fit' })
     expect(await screen.findByRole('button', { name: 'Show' })).toBeInTheDocument()
+  })
+
+  it('shows why a list was published empty and lets the admin add a pick afterwards', async () => {
+    const empty = review([], 'PUBLISHED')
+    empty.request.statusReason = 'No stylist has a compatible portfolio photo for this look yet'
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(respond(200, empty))
+      .mockResolvedValueOnce(respond(200, [{ orgId: 'org-b', displayName: 'Bo', locationName: null, alreadyMatched: false }]))
+      .mockResolvedValueOnce(respond(200, review([match('b', 'Bo', 1, { source: 'ADMIN' })], 'PUBLISHED')))
+    vi.stubGlobal('fetch', fetch)
+    show()
+    expect(await screen.findByText('No stylist has a compatible portfolio photo for this look yet')).toBeInTheDocument()
+    expect(screen.getByText(/the client sees them at once/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Publish to client' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Add a stylist by hand' }))
+    await userEvent.selectOptions(await screen.findByLabelText('Stylist'), 'org-b')
+    await userEvent.click(screen.getByRole('button', { name: 'Add' }))
+    expect(fetch.mock.calls[2][0]).toBe('/api/admin/match-requests/req-1/matches')
+    expect(JSON.parse(fetch.mock.calls[2][1].body)).toEqual({ orgId: 'org-b', note: null })
+    expect(await screen.findByRole('heading', { name: 'Bo' })).toBeInTheDocument()
   })
 })
