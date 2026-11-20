@@ -1,9 +1,8 @@
 > **Combpatible uses its own Auth0 account and tenant** (not Rawmark's): a separate login page, branding, user list and
 > post-login Action. Clients never sign in; only stylists and the admin do.
 >
-> Auth0 identifiers keep the internal name `lookmate` (see `CLAUDE.md`): the tenant `lookmate-dev`, the API audience
-> `https://api.lookmate.app` and the claim namespaces `https://lookmate.app/roles` and `https://lookmate.app/mfa`. Only
-> the display names say Combpatible.
+> The API audience is `https://api.combpatible.app` (Zach, 2026-11-20). The claim namespaces keep the internal name
+> `lookmate` (see `CLAUDE.md`): `https://lookmate.app/roles` and `https://lookmate.app/mfa`.
 
 # Auth setup
 
@@ -15,8 +14,8 @@ steps below use Auth0's free tier.
 
 | Setting | Environment variable | Local dev | Production |
 |---|---|---|---|
-| Issuer | `SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI` | `https://lookmate-dev.us.auth0.com/` | the production tenant's |
-| Audience (API identifier) | `SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES` | `https://api.lookmate.app` | same |
+| Issuer | `SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI` | `https://dev-xxxxxxxx.us.auth0.com/` | the production tenant's |
+| Audience (API identifier) | `SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES` | `https://api.combpatible.app` | same |
 | Roles claim | `LOOKMATE_SECURITY_ROLES_CLAIM` (optional) | default `https://lookmate.app/roles` | same |
 | MFA claim | `LOOKMATE_SECURITY_MFA_CLAIM` (optional) | default `https://lookmate.app/mfa` | same |
 | Require MFA for ADMIN | `LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA` (optional) | **`false`** | default `true` |
@@ -46,16 +45,18 @@ The issuer's region (`us`) depends on where the tenant was created; copy the dom
 `GET /api/me` returns the caller's subject, issuer, roles (ADMIN plus membership roles), org memberships, the raw roles
 claim and whether the token shows MFA. The web app shows these after login: the quickest way to check the wiring.
 
-## Local development: the `lookmate-dev` tenant
+## Local development: your dev tenant
 
 Auth0's free plan allows one tenant per account, and Rawmark uses the other account's. So Combpatible has **its own
-Auth0 account** (sign up with a different email or login method), with one tenant, `lookmate-dev`.
+Auth0 account** (sign up with a different email or login method), with one dev tenant.
 
-1. **Create the tenant.** Sign up at auth0.com with the new account; name the tenant `lookmate-dev` (region US). Its
-   domain is `lookmate-dev.us.auth0.com`; the issuer is `https://lookmate-dev.us.auth0.com/`, trailing slash included.
+1. **Create the tenant.** Sign up at auth0.com with the new account (region US). New accounts can't choose the tenant
+   name, so it gets Auth0's generated one: your dev tenant's domain (e.g. `dev-xxxx.us.auth0.com`; Friendly Name:
+   Combpatible, under Settings). The issuer is `https://<that domain>/`, trailing slash included. The commands and
+   examples here write it as `dev-xxxxxxxx.us.auth0.com`; use yours. It isn't a secret, but it stays out of the repo.
 2. **Applications → APIs → Create API.**
    - Name: **Combpatible API** (cosmetic, can be renamed).
-   - Identifier: **`https://api.lookmate.app`**. This is the audience; it can't be changed later, and the backend and
+   - Identifier: **`https://api.combpatible.app`**. This is the audience; it can't be changed later, and the backend and
      `web/.env.local` use it as is.
    - Signing algorithm: RS256.
    - Then **Settings → Access Settings:** turn on **Allow Offline Access** (refresh tokens). Save.
@@ -74,7 +75,7 @@ Auth0 account** (sign up with a different email or login method), with one tenan
    `Combpatible claims`. Paste this, **Deploy**, then **Actions → Triggers → post-login**: drag it into the flow and
    **Apply**. It must be the only Action that sets these claims.
    ```js
-   // Local development (lookmate-dev): no MFA. The backend runs with LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA=false.
+   // Local development (dev tenant): no MFA. The backend runs with LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA=false.
    exports.onExecutePostLogin = async (event, api) => {
      const roles = event.authorization?.roles ?? [];
      api.accessToken.setCustomClaim('https://lookmate.app/roles', roles);
@@ -89,9 +90,9 @@ Auth0 account** (sign up with a different email or login method), with one tenan
    `api.multifactor.enable`, so no factor needs to be turned on under Security → Multi-factor Auth.
 7. **Copy `web/.env.example` to `web/.env.local`** and fill it in:
    ```
-   VITE_AUTH0_DOMAIN=lookmate-dev.us.auth0.com
+   VITE_AUTH0_DOMAIN=dev-xxxxxxxx.us.auth0.com
    VITE_AUTH0_CLIENT_ID=<Combpatible Web's client ID>
-   VITE_AUTH0_AUDIENCE=https://api.lookmate.app
+   VITE_AUTH0_AUDIENCE=https://api.combpatible.app
    ```
    None of these are secrets.
 8. **Run it** with the issuer, the audience and MFA off: the commands are in [local-dev.md](local-dev.md#run-it).
@@ -147,11 +148,11 @@ token lifetimes and keeping third-party scripts off the app.
 | Symptom | Cause | Fix |
 |---|---|---|
 | Login page says "Client … is not authorized to access resource server" (or `access_denied`) | The SPA isn't authorized on the API | Step 4: Combpatible API → Application Access → authorize Combpatible Web |
-| "Service not found: https://api.lookmate.app" | The API identifier differs from `VITE_AUTH0_AUDIENCE` | Make both exactly `https://api.lookmate.app` (no trailing slash); restart `npm run dev` after editing `.env.local` |
+| "Service not found: https://api.combpatible.app" | The API identifier differs from `VITE_AUTH0_AUDIENCE` | Make both exactly `https://api.combpatible.app` (no trailing slash); restart `npm run dev` after editing `.env.local` |
 | "Callback URL mismatch" | `http://localhost:5173` missing from Allowed Callback URLs | Step 3; check the port Vite printed |
 | Logged out on every reload, or "Missing Refresh Token" in the console | Offline access or rotation is off | Step 2 (Allow Offline Access) and step 3 (Refresh Token Rotation), then log out and in |
-| Every API call is 401 | Issuer or audience wrong on the backend | Issuer `https://lookmate-dev.us.auth0.com/` **with** the trailing slash; audience `https://api.lookmate.app`. |
+| Every API call is 401 | Issuer or audience wrong on the backend | Issuer `https://dev-xxxxxxxx.us.auth0.com/` **with** the trailing slash; audience `https://api.combpatible.app`. |
 | Logged in, but `/admin/...` is 403 or the admin links don't show | No ADMIN in the token, or MFA required | `/api/me` shows the roles claim: empty means assign `ADMIN` (step 5) and check the Action is deployed **and** in the post-login flow, then log out and in. Roles there but still 403: the backend wasn't started with `LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA=false` |
-| An MFA enrolment prompt appears locally | The production Action (with `api.multifactor.enable`) or an MFA policy is on in `lookmate-dev` | Use the local Action above; Security → Multi-factor Auth → Require Multi-factor Auth: Never |
+| An MFA enrolment prompt appears locally | The production Action (with `api.multifactor.enable`) or an MFA policy is on in the dev tenant | Use the local Action above; Security → Multi-factor Auth → Require Multi-factor Auth: Never |
 | `/api/me` has no `email` | The email isn't verified | Verify it (Auth0 sends a link at sign-up), or mark it verified under User Management → Users |
 | Can't create a second tenant | Free plan: one tenant per account | Use the separate Combpatible Auth0 account, not Rawmark's |

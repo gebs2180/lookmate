@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "api:types": "npx --yes openapi-typescript@7.13.0 openapi.json -o src/api.gen.ts"
+    "api:types": "npx --yes openapi-typescript@7.13.0 openapi.json -o src/api.gen.ts",
+    "demo:photos": "node scripts/fetch-demo-photos.mjs"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.30.0",

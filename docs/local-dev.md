@@ -1,21 +1,24 @@
 # Local development
 
-Combpatible runs locally against Docker (Postgres with pgvector, MinIO) and a development Auth0 tenant, `lookmate-dev`,
-with MFA off. Internal names (the database, buckets, the `LOOKMATE_*` variables, Auth0 identifiers) keep `lookmate`.
+Combpatible runs locally against Docker (Postgres with pgvector, MinIO) and a development Auth0 tenant (your dev tenant's
+domain, e.g. `dev-xxxx.us.auth0.com`; Friendly Name: Combpatible) with MFA off.
+Internal names (the database, buckets, the `LOOKMATE_*` variables, the Auth0 claim namespaces) keep `lookmate`; the
+API audience is `https://api.combpatible.app`.
 
 ## One-time setup
 
 - **JDK 25 and Node 24** (Node 22 works for the web app).
 - **Docker** (Docker Desktop on Windows and macOS) for Postgres and MinIO.
-- **Auth0:** the `lookmate-dev` tenant in Combpatible's own Auth0 account, set up as in [auth.md](auth.md#local-development-the-lookmate-dev-tenant):
-  the **Combpatible API** (identifier `https://api.lookmate.app`, offline access on), the **Combpatible Web** SPA
+- **Auth0:** the dev tenant in Combpatible's own Auth0 account, set up as in [auth.md](auth.md#local-development-your-dev-tenant):
+  the **Combpatible API** (identifier `https://api.combpatible.app`, offline access on), the **Combpatible Web** SPA
   (`http://localhost:5173`, refresh-token rotation on) authorized on the API, the `ADMIN` role, and the post-login
   Action without MFA.
 - Copy `web/.env.example` to `web/.env.local` and fill in the domain and client ID; then `cd web && npm ci`.
 
 ## Run it
 
-Three terminals, from the repo root. The backend needs the issuer and audience, and MFA off for ADMIN.
+Three terminals, from the repo root. The backend needs the issuer and audience, and MFA off for ADMIN. Replace
+`dev-xxxxxxxx.us.auth0.com` with your dev tenant's domain (Auth0 dashboard → Settings → Domain).
 
 **macOS / Linux**
 
@@ -23,8 +26,8 @@ Three terminals, from the repo root. The backend needs the issuer and audience, 
 docker compose up -d                      # Postgres+pgvector on 5432, MinIO on 9000 (console 9001)
 
 cd backend
-SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI="https://lookmate-dev.us.auth0.com/" \
-SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES="https://api.lookmate.app" \
+SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI="https://dev-xxxxxxxx.us.auth0.com/" \
+SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES="https://api.combpatible.app" \
 LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA=false \
 ./gradlew :app:bootRun                    # http://localhost:8080
 
@@ -37,8 +40,8 @@ cd web && npm run dev                     # http://localhost:5173, proxies /api 
 docker compose up -d
 
 cd backend
-$env:SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI = "https://lookmate-dev.us.auth0.com/"
-$env:SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES = "https://api.lookmate.app"
+$env:SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI = "https://dev-xxxxxxxx.us.auth0.com/"
+$env:SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES = "https://api.combpatible.app"
 $env:LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA = "false"
 .\gradlew.bat :app:bootRun
 
@@ -59,12 +62,18 @@ After a fresh setup, or a change to auth, matching or the client flow. Log in as
 in"; after login the app shows the roles the backend sees, from `/api/me`: ADMIN should be there).
 
 1. **`/admin/locations`:** add one salon location (any Salon Lofts address). Demo stylists need one to go live.
-2. **`/admin/demo`:** choose real photos named as in `web/src/admin/demoStylists.ts` (e.g. `maya-1.jpg` to `nia-5.jpg`;
-   only photos you have the rights to), then create the demo stylists. They go live, marked as demo, with booking
-   links to example.com. Without photos they get drawn placeholders, which are fine for the screens but not for step 3.
+2. **`/admin/demo`:** first fetch openly licensed photos for the 40 slots: `cd web && npm run demo:photos`
+   (`npm.cmd` on Windows). It searches [Openverse](https://openverse.org) (no key; about 3 minutes) and saves
+   `maya-1.jpg` to `nia-5.jpg` with their credits in `web/demo-photos/`, which is git-ignored: never commit them.
+   Re-running fetches only missing files (delete a poor pick to replace it); `--force` fetches all again. Expect about
+   half the slots to stay empty (braids, locs and silk press especially: open-licensed photos of them are scarce), and
+   look through the rest before a demo; empty slots get a drawn placeholder. Then choose every file in
+   `web/demo-photos/` on the page and create the demo stylists. They go live, marked as demo, with booking links to
+   example.com. Without photos they get drawn placeholders, which are fine for the screens but not for step 3.
 3. **`/find`** in a private window (clients don't sign in): answer the quiz with the service and hair type of one demo
-   photo (its tags are in `demoStylists.ts`) and upload **that same file**. The fake matcher only matches identical
-   images: it seeds a vector from the photo's SHA-256, so any other photo scores close to 0 and finds nothing close.
+   photo (its tags are in `demoStylists.ts`) and upload **that same file from `web/demo-photos/`**. The fake matcher
+   only matches identical files: it seeds a vector from the photo's SHA-256, so any other photo, even a similar one,
+   scores close to 0 and finds nothing close.
 4. **Results in place:** the page waits a few seconds, then shows the ranked list with that demo stylist first and a
    reason under each pick. No email is needed locally.
 5. **See all stylists:** opens the directory of every live stylist, filterable by service and hair type.
