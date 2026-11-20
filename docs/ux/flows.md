@@ -10,9 +10,11 @@ exist yet.
 Public (no sign-in, PublicShell)
 ├── /                     Landing (today: the signed-out welcome inside the app shell)        [screen 1]
 ├── /find                 Style quiz: 7 questions → photo → email                              [screens 2, 3]
-│                         └── Sent: "Here's what we heard" + status                            [screen 4]
-├── /m/:token             The client's request: status, echo, matches, photo and its deletion date [screens 4, 5]
-│   └── /m/:token/all     Browse all stylists, filterable by hair type and service              (new)
+│                         └── sends, then goes straight to /m/:token
+├── /m/:token             The client's page: a few seconds' wait that turns into the results    [screen 4]
+│   ├── For you           Recommendations (3–5), reasons, evidence photos, Book
+│   └── See all stylists  Every live stylist, filter by service and hair type (new route,       [screen 5]
+│                         proposed /m/:token/stylists; align with the auto-publish branch)
 └── /privacy, /terms      Plain-language pages linked from the privacy note                     (new)
 
 Stylist (Auth0, phone)
@@ -25,11 +27,12 @@ Stylist (Auth0, phone)
 └── Bottom tab bar: Home · Portfolio · Stats · Profile                                          (new)
 
 Admin (Auth0 + MFA, desktop or tablet)
-├── Matching: /admin/matches (queue) → /admin/matches/:id (review)                              [screen 8]
-│             /admin/matches/fairness
+├── Matching: /admin/matches (match log, with the fairness summary on top) → /admin/matches/:id   [screen 8]
+│             /admin/matches/fairness   (one click from the log)
+│             Review-before-publish switch on the log (off by default); when on, a "Waiting" tab
 ├── Stylists: /admin/stylists, /admin/locations, /admin/demo
 └── Pilot:    /admin/metrics, /admin/bookings
-    Left sidebar with these three groups, queue count beside "Review queue".                   (new layout)
+    Left sidebar with these three groups; a waiting count beside "Match log" only while review is on. (new layout)
 ```
 
 Navigation principle: clients never see navigation chrome beyond the wordmark (one task, one path); stylists get a
@@ -53,10 +56,11 @@ four-tab bar; the admin gets a sidebar.
 | 8 | What should your next stylist get right? | Optional, multi | Positive chips + "In your own words". Skip is visible. |
 | 9 | Inspiration photo | Which photo? | Privacy note under the picker; preview with "Change photo". |
 | 10 | Email (+ first name) | Will I get spam? | "We email you a private link. No account, no password." Consent sentence states both retention periods. |
-| 11 | Sent: "Here's what we heard" | none | The echo, the 3-stage timeline, "usually within a day", "save this page". |
-| 12 | Email: "Your matches are ready" | Open it | Subject names the hair type and service: "3 stylists for your curly cut". |
-| 13 | Matches | Which stylist? | 3–5 cards, reason first, evidence photos, "Why Priya?", "Book on Vagaro ↗". "Browse all stylists" at the end. |
+| 11 | The wait (seconds) | none | Same page, no navigation: "Thanks, Jordan. Here's what we heard." (the echo), their photo with a scan line, three steps ticking off, tiles filling with stylists' photos. The page polls `GET /api/public/match-requests/{token}` about every 1.5 s while the stage is RECEIVED or MATCHING. |
+| 12 | Results, in place | Which stylist? | "Found in 4 seconds." Tabs: **For you · 3** and **See all stylists**. Cards: reason first, evidence photos, "Why Priya?", "Book on Vagaro ↗". "Not feeling these? See all 23 stylists" at the end. |
+| 13 | See all stylists (optional) | Anyone else? | Filters start from their answers (service, hair type); recommended stylists sort first with a "For you" label; each card shows work counts per hair type and three photos. |
 | 14 | Book | Leave for the stylist's site | Opens in a new tab through tracking's redirect; no referrer. |
+| 15 | Email (only matters if they left) | Come back later | Sent at publish with the private link: "3 stylists for your curly cut". Someone who stayed on the page has already seen the results; the email is their way back. |
 
 **Friction to remove (from today's `/find`):**
 
@@ -66,18 +70,22 @@ four-tab bar; the admin gets a sidebar.
 - "Question 1 of 9" with a native `<progress>`: keep the count, style a thin bar.
 - Instagram's in-app browser can't pick HEIC well and loses state on app switch: keep answers in `sessionStorage` until
   sent, so leaving to find a screenshot doesn't restart the quiz.
-- The sent screen says "a LookMate stylist is matching you…": also show the echo and the timeline, so the wait feels
-  attended to.
+- The sent screen says "a LookMate stylist is matching you…" and "we'll email you": replace it with the in-page wait that
+  becomes the results (matches now publish automatically in seconds).
+- The match list is the only way to see stylists: add "See all stylists" next to it, so choosing anyone is real.
 
 **Empty states**
 
 | Where | State | Copy and action |
 |---|---|---|
-| `/m/:token`, MATCHING | No matches yet | Timeline + shimmer: "Usually within a day. We'll email you." |
-| `/m/:token`, READY with 0 shown | Reviewer published nothing usable (shouldn't happen: publish needs one visible match) | "We're still choosing your stylists by hand. We'll email you." |
-| Few candidates for the client's hair type | Matching found < 3 on the same type | Reviewer adds by hand; client copy for a neighbouring-type match says so in the reason ("…on wavy and curly hair"). Never pad the list with poor matches. |
+| `/m/:token`, RECEIVED/MATCHING | Ranking under way | The wait (step 11). |
+| Ranking slow (> 20 s) | Worker busy or the embedding provider slow | Keep the wait, change the line: "This is taking longer than usual. Stay here, or come back with the link we emailed you." Keep polling (back off to every 10 s). |
+| Ranking failed (FAILED) | Provider outage, unreadable photo | "We couldn't match your photo just now. We'll try again and email you. Meanwhile, here's everyone who does curly cuts." with See all stylists pre-filtered. |
+| No close match | Ranking returned 0 stylists for the hair type and service | Honest headline: "We couldn't find stylists with work close to your photo on curly hair yet." Show See all stylists filtered to the hair type. Never pad the list with poor matches. |
+| Few close matches | 1–2 stylists | Show them; the reason says when evidence is from a neighbouring type ("…on wavy and curly hair"). |
+| Review switched on (admin) | Request waits for a person | "A stylist is checking your matches. We'll email you when they're ready, usually within a few hours." See all stylists stays available. |
 | Photo deleted (after 30 days) | Photo gone | "Deleted on Dec 20, as promised." Matches stay visible. |
-| Browse all (new), filters return nothing | | "No stylists show curly braids yet. Try braids on any hair type." |
+| See all stylists, filters return nothing | | "No stylists show braids on straight hair yet. The pilot is small, so some combinations are thin." Button: "Show braids on any hair type". |
 
 **Error states**
 
@@ -122,20 +130,30 @@ booking link not https ("Booking links need to start with https://. Copy it from
 
 ---
 
-## Admin: queue to published
+## Admin: monitoring, not approval
+
+Matches publish automatically (product decision, 2026-11-20). The admin watches what clients were shown and what
+happened next, and steps in after the fact.
 
 | # | Step | Decision | Design notes |
 |---|---|---|---|
-| 1 | Queue | Which first? | Oldest first, waiting time on each row, hair type and service visible. FAILED and MATCHING in their own tabs. |
-| 2 | Review (screen 8) | Is this list right for this client? | Left: photo + answers + the echo ("Get this right"). Middle: candidates with score, reason, 4 evidence photos tagged by hair type. Right: client preview, publish, fairness strip. |
-| 3 | Adjust | Reorder, hide, add, edit reason | Up/down buttons and keyboard (J/K, ⌥↑/⌥↓, H). Drag is optional, not required. |
-| 4 | Publish | Send | Button states the count; note states the email. After publishing the list can still change. |
-| 5 | Next | | Moves to the next request in the queue. |
+| 1 | Open the match log | Is anything off? | The **fairness summary sits above the log**: Book-click rate by the client's hair type for the last 30 days, a warning chip on any type falling behind, and a prominent "Open fairness report →". |
+| 2 | Scan recent requests | Which to look at? | Table: time, client (hair type, service), shown (count, top stylist), viewed, Book clicks, booked. Chips mark rows worth a look: "Only 2 matches", "Near-type match", "Not opened". |
+| 3 | Open a request | Did this list serve the client? | Detail: client photo and their words, the list as shown (rank, reason, score, 4 evidence photos tagged by hair type, near-type labelled), clicked/booked chips, and a "What happened" timeline (sent, published in 4 s, viewed, clicked, booking recorded). |
+| 4 | Act, after the fact | Hide a match, or a stylist? | **Hide from Jordan** removes one match from one client's page. **Hide stylist…** opens an inline confirmation ("leaves every client's list and the directory until you show her again; clients who already booked are not affected"). Both reversible. |
+| 5 | Switch review on (rare) | Is textured-hair quality poor? | "Review before publish" switch on the log, off by default. |
 
-**Friction to remove:** publishing today returns to the queue; go straight to the next request. Reasons are generated;
-let the reviewer edit them inline (the match `note` exists; a client-visible reason override is an open question).
+**Secondary state: review before publish (switch on).** A warning-tone banner says it is on and what clients see. A
+"Waiting for review · n" tab appears first; its rows open the old review controls (up/down, hide, Publish n), and
+publishing moves to the next waiting request. Clients see "A stylist is checking your matches" and get the email. The
+side-nav count shows the waiting number only while review is on. Turning it off publishes nothing by itself: requests
+already waiting stay waiting until published or the switch is off and they are re-ranked (decide which with the
+auto-publish branch).
 
-**Empty states:** queue empty ("Nothing to review. 2 requests are still matching."); no candidates ("No stylists matched
-this hair type and service. Add one by hand, or close the request with a note to the client."). **Errors:** someone else
-published (409 `NOT_IN_REVIEW`: "Already published by another reviewer. Reload to see it."); stylist went hidden
-(`STYLIST_NOT_AVAILABLE`).
+**Friction to remove:** today's queue and review screen assume every list needs approval; the log replaces it as the
+landing page for `/admin/matches`. Keyboard: J/K move through rows, Enter opens, H hides the focused match.
+
+**Empty states:** no requests today ("No requests yet today. Yesterday: 9 requests, 4 Book clicks."); waiting tab empty
+("Nothing waiting. New requests appear here while review is on."). **Errors:** hiding a stylist who was hidden elsewhere
+(`STYLIST_NOT_AVAILABLE`: "Already hidden. Reload to see the current list."); in review mode, someone else published
+(409 `NOT_IN_REVIEW`: "Already published by another reviewer. Reload to see it.").

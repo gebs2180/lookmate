@@ -12,14 +12,15 @@ photo, asks about your hair and repeats back what you want. The whole product is
 1. **Show the work.** Photos of finished hair carry every important screen. Words explain the photos and never stand in
    for them. A match without evidence photos is not shown.
 2. **Say it back.** Whatever the client tells us comes back to them in their own words (the *echo*): after sending, on
-   the match page, and to the reviewer. This answers the brief's core finding that clients leave stylists who "didn't
+   the match page, and in the admin's match log. This answers the brief's core finding that clients leave stylists who "didn't
    listen".
 3. **Every hair type, equally.** Straight, wavy, curly and coily get the same size, the same drawing language, the same
    number of examples and the same quality of copy. Equality is checked per screen, not assumed (see Inclusivity).
 4. **Private by default, and say so early.** The privacy promise appears where the worry starts (the landing page and the
    photo picker), in a calm tone, with facts that are true in the code.
-5. **Suggest, don't steer.** Rankings are offers. "Browse all stylists" is always one tap away, and "Book" names the site
-   it leaves for.
+5. **Clients choose; we recommend.** Matches publish automatically in seconds, recommendations first with their reasons
+   and evidence, and "See all stylists" is a tab beside them, filterable by service and hair type. "Book" names the site
+   it leaves for. Nobody approves a list before the client sees it (unless the admin turns review on; see flows.md).
 6. **Thumb-first for stylists.** One-handed, between clients, often with wet hands: big targets, few decisions per
    screen, nothing that needs typing to finish tagging.
 
@@ -87,10 +88,14 @@ Short and soft, and only where it explains something:
 - Quiz step change: the new question rises 8px and fades in over 220ms.
 - Single-choice answers advance on tap after a 260ms pause, so the selection is seen before it moves on.
 - The tag sheet slides up over 360ms with a decelerating curve.
-- "Finding your stylists": a slow pulse on the current step and a shimmer where the photos will appear.
+- **The instant-results transition** (about 3–4 seconds, while ranking runs): the client's photo with a slow scan line,
+  three real steps ticking off ("Reading your photo", "Looking through 286 photos of curly cuts", "Choosing your closest
+  stylists"), and shimmer tiles that turn into stylists' photos. Then the same page becomes the results: the cards rise
+  in one by one, 120ms apart. The step text is in an `aria-live` region so screen-reader users hear the progress.
 
-Under `prefers-reduced-motion: reduce` all durations drop to zero; the pulse and shimmer stop, and auto-advance stays
-(it is a convenience, not an animation).
+Under `prefers-reduced-motion: reduce` all durations drop to zero; the scan, pulse and shimmer stop and the results
+appear without the rise. Auto-advance in the quiz stays (it is a convenience, not an animation). The wait is never
+lengthened for effect: if ranking finishes in one second, the results show after one second.
 
 ### Imagery and photo treatment
 
@@ -101,7 +106,7 @@ Under `prefers-reduced-motion: reduce` all durations drop to zero; the pulse and
 - **Before/after pairs** show side by side with "Before" and "After" tags, never as a slider (sliders hide one half and
   need a gesture).
 - **No filters** of our own over stylists' photos. Colour work must look like what the client will get.
-- **The client's inspiration photo** is only shown to the client and the reviewer, never beside stylists' photos where a
+- **The client's inspiration photo** is only shown to the client and the admin, never beside stylists' photos where a
   third party could see it.
 - **Placeholders** (prototype, demo stylists, loading): duotones from real hair colours (espresso, copper, honey, plum,
   ash, jet, auburn) with the texture drawn in, so even an empty state represents all four hair types.
@@ -127,10 +132,13 @@ sentences. We talk about hair, not "users", "profiles" or "requests" (except whe
 | Past stylists | What should your next stylist get right? | List your complaints |
 | Photo prompt | Show us the look you want. The hair matters, not the face. | Upload image |
 | Privacy | Only you and the LookMate team see it. We delete it after 30 days. | Your data is secured with industry-standard encryption |
-| Waiting | Usually within a day. A working stylist checks every list. | Our AI is working its magic ✨ |
+| Waiting (seconds) | Looking through 286 photos of curly cuts | Our AI is working its magic ✨ |
+| Results | Found in 4 seconds. Jordan, these stylists have done your look on curly hair. | We found your perfect match! |
+| Next to the picks | See all stylists · Pick anyone. Our recommendations are only a starting point. | Top-rated stylists near you |
 | Match reason | 14 similar cuts on curly hair | 94% match |
 | Book | Book on Vagaro ↗ | Book now! |
-| Empty matches | We couldn't find a close match on curly hair yet, so a stylist is choosing for you by hand. | No results |
+| No close match | We couldn't find stylists with work close to your photo on curly hair yet. Here's everyone who cuts curly hair. | No results |
+| Review switched on | A stylist is checking your matches. We'll email you when they're ready, usually within a few hours. | Pending approval |
 | Bad photo | We couldn't read that photo. Try a JPEG or PNG up to 10 MB, or a screenshot of it. (The number comes from the server's settings.) | Error 422 |
 | Stylist tagging | 6 photos to tag. Clients are matched on tagged photos only. | Incomplete profile |
 | Go live, blocked | Tag 1 more photo to go live | Requirements not met |
@@ -171,8 +179,9 @@ Hair-type equality is a product non-negotiable (CLAUDE.md). Review of the curren
 | Services | Cut and Color first; Braids, Locs and Silk press present | Good coverage. | Keep; on the client quiz show all as equal chips (no "popular" ordering). |
 | Match reason | "12 similar cuts on wavy hair" | Good: names the hair type. | Always include the client's hair type in the reason; if the evidence is from a neighbouring type, say so ("…on wavy and curly hair"). |
 
-Imagery rules are under *Imagery and photo treatment*. Fairness is also made visible in the product: the admin review
-shows each list's evidence photos by hair type, and the stylist's go-live screen shows "Your work by hair type" as
+Imagery rules are under *Imagery and photo treatment*. Fairness is also made visible in the product: the admin match log
+opens with Book-click rates by the client's hair type (flagging one that falls behind) and shows each list's evidence
+photos tagged by hair type, and the stylist's go-live screen shows "Your work by hair type" as
 information, never as a score or a nudge to tag differently from what they actually do.
 
 ## Open questions
@@ -184,10 +193,13 @@ information, never as a score or a nudge to tag differently from what they actua
    most"? A new code changes matching's compatibility weights and the fairness report.
 3. **Budget ranges.** The prototype shows dollar ranges per tier ($60–$120 …). They differ by service; confirm with the
    stylist on the team or drop the numbers.
-4. **Browse all stylists.** The non-negotiable says clients can book any stylist, but there is no way to see stylists
-   other than one's matches. Is a browse page in the pilot, or is "reply to this email for more options" enough?
-5. **Editable match reasons.** Should the reviewer be able to rewrite the client-visible reason (today only a private
-   note)?
+4. ~~Browse all stylists~~ **Decided 2026-11-20:** yes, "See all stylists" beside the recommendations, filterable by
+   service and hair type. Open: does it show stylists from every market or only the request's (`columbus-oh`)?
+5. **When to switch review on.** The "review before publish" switch exists for poor early quality on textured hair.
+   Agree the trigger in advance (for example, the coily or curly Book-click rate under two-thirds of the overall rate
+   after 30 requests of that type), so turning it on is a rule, not a mood.
 6. **Stylist-specific entry links** (`/find?via=<stylist>`), so a stylist can share LookMate from their own Instagram.
    Tracking would need to record it.
 7. **The name.** Bodoni plus a short name looks best; anything over ~10 letters needs the wordmark tested again.
+8. **Instant-results copy uses real counts** ("286 photos of curly cuts by 23 stylists"). The client page needs those
+   two numbers from the API, or the step falls back to "Looking through stylists' work on curly hair".

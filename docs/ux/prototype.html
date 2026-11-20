@@ -271,7 +271,7 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
 .kv dd { margin: 0; font-weight: 600; }
 .heard { background: var(--accent-soft); color: var(--accent-text); border-radius: 12px; padding: .7rem .8rem; font-size: .9rem; }
 .heard q { font-family: var(--display); font-style: italic; font-size: 1.05rem; display: block; margin-top: .3rem; color: var(--text); }
-.cand { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow-1); padding: 12px; display: grid; grid-template-columns: 34px minmax(0, 1fr) 36px; gap: 14px; align-items: start; }
+.cand { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow-1); padding: 12px; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 14px; align-items: start; }
 .cand.hidden-c { opacity: .5; }
 .cand .rank { text-align: center; }
 .cand .ev { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; max-width: 340px; margin-top: .6rem; }
@@ -288,6 +288,62 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
 .fair .track { height: 6px; background: var(--sunken); border-radius: 3px; overflow: hidden; }
 .fair i { display: block; height: 100%; background: var(--accent); }
 
+
+/* Instant results, browse, admin log (auto-publish) */
+.rise { animation: rise 420ms var(--ease) both; }
+.waitgrid { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: .9rem; align-items: start; }
+.waitgrid .timeline b { font-size: .9375rem; line-height: 1.3; }
+.waitgrid .timeline .hint { font-size: .8125rem; }
+.scan { position: relative; border-radius: 12px; overflow: hidden; }
+.sweep { position: absolute; left: 0; right: 0; height: 30%; top: -30%; background: linear-gradient(to bottom, transparent, rgb(255 255 255 / .55), transparent); animation: scan 1.4s ease-in-out infinite; }
+@keyframes scan { to { top: 100%; } }
+.shimmer .tilewait { aspect-ratio: 4/5; border-radius: 10px; background: linear-gradient(100deg, var(--sunken) 30%, var(--line) 50%, var(--sunken) 70%); background-size: 300% 100%; animation: sweep 2.4s linear infinite; }
+.shimmer .pop { animation: pop 380ms var(--ease) both; }
+@keyframes pop { from { opacity: 0; transform: scale(.92); } }
+.tabs { display: flex; gap: .3rem; background: var(--sunken); border-radius: 999px; padding: 4px; }
+.tab { flex: 1; appearance: none; border: 0; background: transparent; min-height: 40px; border-radius: 999px; font-weight: 650; font-size: .875rem; color: var(--muted); cursor: pointer; padding: 0 .9rem; }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow-1); }
+.scard { padding: 1rem; display: grid; gap: .6rem; }
+.works { display: flex; flex-wrap: wrap; gap: .3rem .8rem; font-size: .8125rem; font-weight: 650; color: var(--muted); font-variant-numeric: tabular-nums; }
+.works span { display: inline-flex; align-items: center; gap: .25rem; }
+.works .glyph { width: 18px; height: 18px; color: var(--muted); }
+.works .hit { color: var(--accent-text); }
+.works .hit .glyph { color: var(--accent-text); }
+.filterbar { overflow-x: auto; margin: 0 -18px; padding: 0 18px 2px; scrollbar-width: none; }
+.chips.nowrap { flex-wrap: nowrap; width: max-content; }
+.seg5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.seg5 .opt { padding: .45rem .1rem; align-items: center; text-align: center; min-height: 58px; gap: .05rem; font-size: .75rem; font-weight: 650; }
+.seg5 .opt .glyph { width: 22px; height: 22px; }
+.monitor { padding: 20px 24px; display: grid; gap: 16px; align-content: start; min-width: 0; }
+.mon-head { display: flex; justify-content: space-between; align-items: end; gap: 1rem; }
+.mon-head h3 { font-family: var(--display); font-weight: 500; font-size: 1.75rem; }
+.switch-row { display: flex; gap: .8rem; align-items: center; text-align: right; }
+.switch-row b, .switch-row span { display: block; }
+.switch { width: 52px; height: 30px; border-radius: 999px; border: 0; background: var(--border); position: relative; cursor: pointer; flex: none; transition: background 160ms; }
+.switch i { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); box-shadow: var(--shadow-1); transition: transform 160ms var(--ease); }
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"] i { transform: translateX(22px); }
+.banner { background: var(--warning-soft); color: var(--warning-text); border-radius: 12px; padding: .7rem .9rem; font-size: .9rem; }
+.fair-card { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow-1); padding: 14px 16px; display: grid; grid-template-columns: 210px 1fr auto; gap: 18px; align-items: center; }
+.fair-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.fair-cell { display: grid; grid-template-columns: 1fr auto; gap: .2rem .5rem; font-size: .8125rem; font-variant-numeric: tabular-nums; }
+.fair-cell .track { grid-column: 1 / -1; height: 6px; background: var(--sunken); border-radius: 3px; overflow: hidden; }
+.fair-cell i { display: block; height: 100%; background: var(--accent); }
+.fair-cell.low i { background: var(--warning-text); }
+.fair-cell .chip, .fair-cell .hint { grid-column: 1 / -1; justify-self: start; }
+.mon-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 16px; align-items: start; }
+.log { width: 100%; border-collapse: collapse; font-size: .875rem; font-variant-numeric: tabular-nums; }
+.log th { text-align: left; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 700; padding: .5rem .4rem; border-bottom: 1px solid var(--line); }
+.log td { padding: .6rem .4rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.log tr[data-row] { cursor: pointer; }
+.log tr[data-row]:hover td { background: var(--sunken); }
+.log tr.sel td { background: var(--accent-soft); }
+.log tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.confirm { margin-top: .6rem; background: var(--sunken); border-radius: 10px; padding: .6rem .7rem; display: grid; gap: .5rem; font-size: .8125rem; }
+.btn.mini { min-height: 34px; padding: 0 .8rem; font-size: .8125rem; }
+.events { margin: 0; padding: 0; list-style: none; display: grid; gap: .35rem; font-size: .875rem; }
+.events li { display: grid; grid-template-columns: 70px 1fr; gap: .5rem; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
 }
@@ -298,7 +354,7 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
     <div>
       <div class="eyebrow">LookMate · working name · design direction “Chair-side”</div>
       <h1>The stylist who’s <em>already done</em> your look.</h1>
-      <p>A clickable prototype of the pilot’s key screens. Every phone is live: tap through the quiz, open a match’s reasons, tag a photo and watch the go-live checklist update. Photos are drawn placeholders in real hair colours; all people are made up.</p>
+      <p>A clickable prototype of the pilot’s key screens. Every phone is live: tap through the quiz and watch the wait turn into results, filter every stylist, tag a photo and watch the go-live checklist update, and flip the admin’s review switch. Photos are drawn placeholders in real hair colours; all people are made up.</p>
     </div>
     <div class="wall-tools">
       <a class="pill-link" href="#client">Client</a>
@@ -313,7 +369,7 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
     <div class="persona-head">
       <span class="eyebrow">Client · signed out · phone</span>
       <h2>Feel heard before anyone touches your hair</h2>
-      <p>Usually arriving from an Instagram link. Five screens from the first tap to a stylist’s booking page, with no account and no password.</p>
+      <p>Usually arriving from an Instagram link. Matches publish automatically in seconds; recommendations come first, and every stylist is one tab away. No account, no password.</p>
     </div>
     <div class="row">
       <div class="slot">
@@ -336,7 +392,7 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
               <ol class="steps3">
                 <li><span><b>Tell us about your hair</b><span class="hint">Seven quick questions, most of them one tap.</span></span></li>
                 <li><span><b>Add one inspiration photo</b><span class="hint">A screenshot or a saved post is perfect.</span></span></li>
-                <li><span><b>Get 3–5 stylists, with proof</b><span class="hint">Their own photos of looks like yours. Book on their page.</span></span></li>
+                <li><span><b>Get 3–5 stylists, with proof</b><span class="hint">In seconds. Their own photos of looks like yours, plus every other stylist to browse.</span></span></li>
               </ol>
               <p class="hint small">Independent stylists at Salon Lofts in Columbus. Our picks are suggestions: you can book anyone.</p>
             </div>
@@ -371,62 +427,23 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
       </div>
 
       <div class="slot" id="findingSlot">
-        <div class="slot-label"><span>4</span>We’re finding your stylists</div>
-        <div class="phone"><div class="screen">
-          <div class="status"><span>9:44</span><span>●●●</span></div>
-          <div class="scroll">
-            <div class="appbar"><span class="mark" data-mark></span></div>
-            <div class="pad">
-              <span class="eyebrow">Request sent</span>
-              <h3 class="h-screen">Thanks, Jordan. Here’s what we heard.</h3>
-              <div class="echo-box">
-                <p class="echo" id="echoText">“A rounded shag that keeps my curls. Please don’t take too much length.”</p>
-                <div class="chips" id="echoChips"></div>
-              </div>
-              <ol class="timeline">
-                <li class="done"><span class="dot">✓</span><span><b>Request received</b><span class="hint">Today, 9:43 am</span></span></li>
-                <li class="now"><span class="dot"></span><span><b>Matching you with stylists</b><span class="hint">We compare your photo with stylists’ own work on curly hair, then a working stylist checks every list.</span></span></li>
-                <li><span class="dot"></span><span><b>Your matches are ready</b><span class="hint">Usually within a day. We’ll email jordan.r@… a private link.</span></span></li>
-              </ol>
-              <div class="shimmer" aria-hidden="true"><div></div><div></div><div></div></div>
-              <div class="card" style="padding:.9rem 1rem;display:grid;gap:.4rem">
-                <b>Save this page</b>
-                <p class="hint">This private link is in your email too. Anyone with it can see your request, so keep it to yourself.</p>
-              </div>
-              <button class="btn quiet block" type="button" data-go="matches">Preview: matches are ready</button>
-            </div>
-          </div>
-        </div></div>
+        <div class="slot-label"><span>4</span>Instant results <span>· <button class="textlink" type="button" data-replay>replay the wait</button></span></div>
+        <div class="phone"><div class="screen" id="instantScreen"></div></div>
         <ul class="notes">
-          <li><b>The echo.</b> The first thing after sending is their own words back in display italic: proof they were heard.</li>
-          <li>The wait is honest (“usually within a day”) and names the human review, which is the reason it takes a day.</li>
-          <li>The shimmer sets up where matches will appear. It stops under reduced motion.</li>
+          <li><b>No “we’ll email you”.</b> Ranking takes seconds, so the wait is a short, honest show on the same page: three real steps, the client’s own photo, and stylists’ work filling in.</li>
+          <li><b>The echo</b> holds the wait: their own words in display italic, so the first thing after sending is proof they were heard.</li>
+          <li>The wait <b>turns into the results</b> in place: the placeholder tiles become the evidence photos, and the cards rise in one by one.</li>
+          <li><b>Recommendations first, “See all stylists” beside them</b> as a tab. Book names the destination (“Book on Vagaro ↗”).</li>
         </ul>
       </div>
 
-      <div class="slot" id="matchesSlot">
-        <div class="slot-label"><span>5</span>Your matches</div>
-        <div class="phone"><div class="screen" id="matchScreen">
-          <div class="status"><span>10:12</span><span>●●●</span></div>
-          <div class="scroll">
-            <div class="appbar"><span class="mark" data-mark></span><span class="chip neutral">Private link</span></div>
-            <div class="pad">
-              <span class="eyebrow">3 stylists for your look</span>
-              <h3 class="h-screen">Jordan, these stylists have done your look on curly hair.</h3>
-              <div class="echo-box"><p class="echo" style="font-size:1.15rem">“A rounded shag that keeps my curls.”</p></div>
-              <div id="matchList" style="display:grid;gap:1rem"></div>
-              <div class="card" style="padding:1rem;display:grid;gap:.5rem">
-                <b>Not feeling these?</b>
-                <p class="hint">These are suggestions. You can browse every stylist and book anyone you like.</p>
-                <button class="btn quiet" type="button">Browse all stylists</button>
-              </div>
-              <p class="hint small">You book on the stylist’s own page. LookMate never takes payments. Your photo is deleted on Dec 20.</p>
-            </div>
-          </div>
-        </div></div>
+      <div class="slot" id="browseSlot">
+        <div class="slot-label"><span>5</span>See all stylists <span>· filter</span></div>
+        <div class="phone"><div class="screen" id="browseScreen"></div></div>
         <ul class="notes">
-          <li><b>The reason is the headline of each card</b>, with the client’s hair type in it, and evidence photos right under it.</li>
-          <li>Book names the destination (“Book on Vagaro ↗”), so leaving the app is expected, not a surprise.</li>
+          <li><b>Clients choose.</b> Every live stylist, filtered by service and hair type, starting from the client’s own answers.</li>
+          <li>Each card shows <b>how much work they have per hair type</b> (“Curly 14 · Coily 6”), the same evidence the recommendations use.</li>
+          <li>Recommended stylists carry a quiet label and sort first; nothing else is ranked by us, and there are no stars or prices to sort by.</li>
           <li><b>“Sample stylist”</b> labels a demo profile wherever a client could see it.</li>
         </ul>
       </div>
@@ -467,14 +484,14 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
   <section class="persona" id="admin">
     <div class="persona-head">
       <span class="eyebrow">Admin · desktop or tablet</span>
-      <h2>Review a match list in under two minutes</h2>
-      <p>The reviewer is an experienced stylist. The screen puts the client’s photo and words on the left, the ranked candidates with evidence in the middle, and what the client will see on the right. Reorder, hide and publish all work.</p>
+      <h2>Watch every match, step in after the fact</h2>
+      <p>Matches publish automatically. The admin screen is a log: what each client was shown, what they clicked and booked, and fairness by hair type up top. Hide a match or a stylist after the fact. Turn on “Review before publish” to see the secondary approval state.</p>
     </div>
     <div class="desk-scroll"><div class="desk"><div class="desk-screen">
       <nav class="side" aria-label="Admin">
         <span class="mark" data-mark></span>
         <h5>Matching</h5>
-        <a class="on" href="#admin">Review queue <span>4</span></a>
+        <a class="on" href="#admin">Match log <span id="sideCount"></span></a>
         <a href="#admin">Fairness report <span></span></a>
         <h5>Stylists</h5>
         <a href="#admin">Stylists <span>23</span></a>
@@ -484,54 +501,34 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
         <a href="#admin">Metrics <span></span></a>
         <a href="#admin">Record a booking <span></span></a>
       </nav>
-      <div class="review">
-        <div class="review-head">
-          <div><span class="eyebrow">Review queue · 1 of 4 · waiting 3 h 12 min</span><h3>Jordan · curly cut</h3></div>
-          <div style="display:flex;gap:.5rem;align-items:center"><span class="chip warn">In review</span><button class="btn quiet" type="button">Skip</button></div>
-        </div>
-        <div class="col">
-          <div class="panel">
-            <h4>Inspiration photo</h4>
-            <div id="adminInspo"></div>
-            <p class="hint mini">Signed link, expires in 15 min. Deleted Dec 20.</p>
-          </div>
-          <div class="panel">
-            <h4>What they asked for</h4>
-            <dl class="kv">
-              <dt>Service</dt><dd>Cut</dd><dt>Hair type</dt><dd>Curly</dd><dt>Strands</dt><dd>Medium</dd>
-              <dt>Length now</dt><dd>Medium</dd><dt>Budget</dt><dd>$$</dd><dt>Area</dt><dd>Clintonville</dd>
-            </dl>
-            <div class="heard"><b>Get this right:</b> didn’t know my hair type · cut too short
-              <q>A rounded shag that keeps my curls. Please don’t take too much length.</q></div>
+      <div class="monitor">
+        <div class="mon-head">
+          <div><span class="eyebrow">Columbus · today</span><h3>Match log</h3></div>
+          <div class="switch-row">
+            <div><b>Review before publish</b><span class="hint mini" id="switchHint">Off: clients see matches in seconds</span></div>
+            <button class="switch" type="button" role="switch" aria-checked="false" id="reviewSwitch" aria-label="Review before publish"><i></i></button>
           </div>
         </div>
-        <div class="col">
-          <div style="display:flex;justify-content:space-between;align-items:center"><b>Ranked candidates</b><button class="btn ghost" type="button">+ Add a stylist</button></div>
-          <div id="candList" style="display:grid;gap:10px"></div>
+        <div id="modeBanner"></div>
+        <div class="fair-card">
+          <div><span class="eyebrow">Fairness · last 30 days</span><p class="hint mini">Share of requests where the client clicked Book, by the client’s hair type</p></div>
+          <div class="fair-row" id="fairRow"></div>
+          <a class="btn" href="#admin">Open fairness report →</a>
         </div>
-        <div class="col">
-          <div class="panel">
-            <h4>Client will see</h4>
-            <ol id="previewList" style="margin:0;padding-left:1.1rem;display:grid;gap:.3rem;font-size:.9rem"></ol>
-            <button class="btn block" type="button" id="publishBtn">Publish 3 matches</button>
-            <p class="hint mini" id="publishNote">Emails Jordan a private link. You can still edit after publishing.</p>
+        <div class="mon-grid">
+          <div class="panel" style="align-content:start">
+            <div class="tabs" id="logTabs"></div>
+            <div style="overflow-x:auto"><table class="log"><thead><tr><th>Time</th><th>Client</th><th>Shown</th><th>Viewed</th><th>Book clicks</th><th>Booked</th></tr></thead><tbody id="logRows"></tbody></table></div>
           </div>
-          <div class="panel">
-            <h4>Fairness check · this list</h4>
-            <p class="mini hint">Evidence photos by hair type. The client is curly.</p>
-            <div class="fair" id="fairBars"></div>
-          </div>
-          <div class="panel">
-            <h4>Keyboard</h4>
-            <p class="mini hint">J / K move · ⌥↑ ⌥↓ reorder · H hide · P publish</p>
-          </div>
+          <div id="logDetail" class="col"></div>
         </div>
       </div>
     </div></div></div>
     <ul class="notes" style="margin-top:1rem;max-width:52rem">
-      <li><b>The client’s words sit beside the photo</b>, in the same echo style as the client screens, so the reviewer reads what the client needs before the scores.</li>
-      <li><b>Evidence photos carry their hair-type tag</b>; a neighbouring-type photo is labelled, so a curly client is not quietly served wavy work.</li>
-      <li>The fairness strip makes the brief’s non-negotiable visible per request, not only in the monthly report.</li>
+      <li><b>Fairness sits above the log</b>, not two clicks away: a hair type falling behind is the first thing the admin sees each morning.</li>
+      <li><b>Every row answers “what did this client see, and did it work?”</b>: shown, viewed, clicked, booked. Rows that need a look (few matches, a near-type match) carry a chip.</li>
+      <li><b>After-the-fact actions</b> are per match (“Hide from Jordan”) and per stylist (“Hide everywhere”), each with an inline confirmation that says what the client will see.</li>
+      <li><b>Review before publish</b> is a switch, off by default. When on, a banner says so, new requests wait in their own tab, and the old reorder, hide and publish controls return.</li>
     </ul>
   </section>
 </div>
@@ -642,7 +639,7 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
     if (t.dataset.want) { const v = t.dataset.want; q.wants = q.wants.includes(v) ? q.wants.filter((x) => x !== v) : [...q.wants, v]; renderQuiz(); return; }
     if (t.dataset.pick !== undefined) { photoPicked = !photoPicked; renderQuiz(); renderPhoto(); return; }
     if (t.dataset.next !== undefined) {
-      if (q.step === STEPS.length - 1) { updateEcho(); go('findingSlot'); return; }
+      if (q.step === STEPS.length - 1) { runInstant(); go('findingSlot'); return; }
       q.step++; renderQuiz();
     }
   });
@@ -685,41 +682,136 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
   $('#photoScreen').addEventListener('click', (e) => { if (e.target.closest('[data-pick]')) { photoPicked = !photoPicked; renderPhoto(); renderQuiz(); } });
 
   // ---------- Echo ----------
-  function updateEcho() {
-    $('#echoText').textContent = q.note.trim() ? `“${q.note.trim()}”` : `“${q.service} on ${hairLabel(q.hair).toLowerCase()} hair, like your photo.”`;
-    $('#echoChips').innerHTML = [q.service, hairLabel(q.hair) + ' hair', q.strands + ' strands', q.area, ...q.wants].filter(Boolean).filter((x) => !x.startsWith('Not sure'))
-      .map((x) => `<span class="chip neutral">${esc(x)}</span>`).join('');
-  }
-  updateEcho();
+  const echoQuote = () => q.note.trim() ? `“${esc(q.note.trim())}”` : `“${esc(q.service)} on ${hairLabel(q.hair).toLowerCase()} hair, like your photo.”`;
+  const echoChips = () => [q.service, hairLabel(q.hair) + ' hair', q.strands + ' strands', q.area, ...q.wants].filter(Boolean).filter((x) => !x.startsWith('Not sure'))
+    .map((x) => `<span class="chip neutral">${esc(x)}</span>`).join('');
 
-  // ---------- Matches ----------
+  // ---------- Instant results: a short in-page wait that turns into the matches ----------
   const MATCHES = [
     { name: 'Priya Raman', init: 'PR', bg: '#7e3c20', loc: 'Salon Lofts · Clintonville', reason: '14 similar cuts on curly hair', type: 'CURLY', book: 'Vagaro',
       ev: [['copper', 'CURLY', 'After · curly shag'], ['espresso', 'CURLY', 'Before / after'], ['auburn', 'CURLY', 'After · rounded cut']],
       why: ['Shape closest to your photo of anyone we checked', 'Cuts curly hair dry, curl by curl', 'Her before/after pairs keep length'] },
     { name: 'Amara Okafor', init: 'AO', bg: '#4b2340', loc: 'Salon Lofts · Easton', reason: '9 similar cuts on curly hair, 6 on coily', type: 'CURLY', book: 'Booksy',
-      ev: [['jet', 'COILY', 'After · coily taper'], ['plum', 'CURLY', 'After · curly layers'], ['espresso', 'CURLY', 'After · shag']],
+      ev: [['plum', 'CURLY', 'After · curly layers'], ['jet', 'COILY', 'After · coily taper'], ['espresso', 'CURLY', 'After · shag']],
       why: ['Specialises in curly and coily cuts and silk press', 'Strong match on the rounded shape'] },
     { name: 'Jess Navarro', init: 'JN', bg: '#8a6234', loc: 'Salon Lofts · Short North', reason: '6 shag cuts on wavy and curly hair', type: 'WAVY', book: 'GlossGenius', sample: true,
-      ev: [['honey', 'WAVY', 'After · wavy shag'], ['rose', 'CURLY', 'After · curly shag'], ['ash', 'WAVY', 'Before / after']],
+      ev: [['rose', 'CURLY', 'After · curly shag'], ['honey', 'WAVY', 'After · wavy shag'], ['ash', 'WAVY', 'Before / after']],
       why: ['Most of her shag work is on wavy hair: a near match, ranked third'] },
   ];
-  $('#matchList').innerHTML = MATCHES.map((m, i) => `<article class="card match">
+  const WAIT = [
+    ['Reading your photo', 'The shape, the length, how the curls sit.'],
+    ['Looking through 286 photos of curly cuts', 'Work by 23 independent stylists in Columbus.'],
+    ['Choosing your closest stylists', 'Ranked by their own work on hair like yours.'],
+  ];
+  const inst = { phase: 3, timers: [] };
+  function matchCard(m, i) {
+    return `<article class="card match rise" style="animation-delay:${i * 120}ms">
       <div class="mhead"><div class="avatar" style="background:${m.bg}" aria-hidden="true">${m.init}</div>
         <div><b>${m.name}</b><span class="hint small">${m.loc}</span>${m.sample ? '<br><span class="chip neutral sample">Sample stylist</span>' : ''}</div>
-        <span class="rank" aria-label="Match ${i + 1}">${i + 1}</span></div>
+        <span class="rank" aria-label="Recommendation ${i + 1}">${i + 1}</span></div>
       <p class="reason">${glyph(m.type)}<span>${m.reason}</span></p>
       <div class="evidence">${m.ev.map((e) => ph(...e)).join('')}</div>
       <details class="why"><summary>Why ${m.name.split(' ')[0]}?</summary><ul>${m.why.map((w) => `<li>${w}</li>`).join('')}</ul></details>
       <div class="mact"><button class="btn" type="button" data-book="${m.name}|${m.book}">Book on ${m.book} ↗</button><button class="btn quiet" type="button" aria-label="${m.name} on Instagram">IG</button></div>
-    </article>`).join('');
-  $('#matchScreen').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-book]'); if (!b) return;
-    const [who, where] = b.dataset.book.split('|');
-    $('#matchScreen').querySelector('.toast')?.remove();
+    </article>`;
+  }
+  function renderInstant() {
+    const done = inst.phase >= 3;
+    const name = esc(q.name.trim() || 'there');
+    const filled = Math.min(inst.phase, 2);
+    const tiles = MATCHES.map((m, i) => i < filled ? `<div class="pop">${ph(...m.ev[0].slice(0, 2), '')}</div>` : '<div class="tilewait"></div>').join('');
+    const body = done ? `
+      <div class="appbar"><span class="mark" data-mark>${MARK}<span>LookMate</span></span><span class="chip neutral">Private link</span></div>
+      <div class="pad">
+        <span class="eyebrow">Found in 4 seconds</span>
+        <h3 class="h-screen">${name === 'there' ? 'These' : name + ', these'} stylists have done your look on ${hairLabel(q.hair).toLowerCase()} hair.</h3>
+        <div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true" type="button">For you · 3</button><button class="tab" role="tab" aria-selected="false" type="button" data-go="browse">See all stylists</button></div>
+        <div class="echo-box"><p class="echo" style="font-size:1.15rem">${echoQuote()}</p></div>
+        <div style="display:grid;gap:1rem">${MATCHES.map(matchCard).join('')}</div>
+        <div class="card" style="padding:1rem;display:grid;gap:.5rem">
+          <b>Not feeling these?</b>
+          <p class="hint">These are suggestions. Browse every stylist and book anyone you like.</p>
+          <button class="btn quiet" type="button" data-go="browse">See all 23 stylists</button>
+        </div>
+        <p class="hint small">You book on the stylist’s own page. LookMate never takes payments. Your photo is deleted on Dec 20. We’ve emailed you this page’s private link.</p>
+      </div>` : `
+      <div class="appbar"><span class="mark" data-mark>${MARK}<span>LookMate</span></span></div>
+      <div class="pad">
+        <span class="eyebrow">Request sent</span>
+        <h3 class="h-screen">Thanks${name === 'there' ? '' : ', ' + name}. Here’s what we heard.</h3>
+        <div class="echo-box"><p class="echo" style="font-size:1.3rem">${echoQuote()}</p></div>
+        <div class="waitgrid"><div class="scan">${ph('copper', 'CURLY', 'Your photo')}<span class="sweep" aria-hidden="true"></span></div>
+        <ol class="timeline" aria-live="polite">${WAIT.map(([t, h], i) => `<li class="${i < inst.phase ? 'done' : i === inst.phase ? 'now' : ''}"><span class="dot">${i < inst.phase ? '✓' : ''}</span><span><b>${t}</b><span class="hint">${h}</span></span></li>`).join('')}</ol></div>
+        <div class="shimmer" aria-hidden="true">${tiles}</div>
+        <p class="hint small">Takes a few seconds. You can leave: we’ve emailed you a private link to this page.</p>
+      </div>`;
+    $('#instantScreen').innerHTML = `<div class="status"><span>9:44</span><span>●●●</span></div><div class="scroll">${body}</div>`;
+  }
+  function runInstant() {
+    inst.timers.forEach(clearTimeout); inst.timers = []; inst.phase = 0; renderInstant();
+    [1100, 2200, 3400].forEach((t, i) => inst.timers.push(setTimeout(() => { inst.phase = i + 1; renderInstant(); }, t)));
+  }
+  $('#instantScreen').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-book]'); if (b) toast('#instantScreen', b.dataset.book);
+  });
+  function toast(sel, data) {
+    const [who, where] = data.split('|'); const scr = $(sel);
+    scr.querySelector('.toast')?.remove();
     const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status');
     t.textContent = `Opens ${who.split(' ')[0]}’s booking page on ${where} in a new tab. Prototype only: nothing is opened.`;
-    $('#matchScreen').appendChild(t); setTimeout(() => t.remove(), 3200);
+    scr.appendChild(t); setTimeout(() => t.remove(), 3200);
+  }
+
+  // ---------- See all stylists ----------
+  const DIRECTORY = [
+    { name: 'Priya Raman', init: 'PR', bg: '#7e3c20', loc: 'Clintonville', book: 'Vagaro', svc: ['Cut', 'Color'], work: { CURLY: 14, WAVY: 5 }, ph: [['copper', 'CURLY'], ['auburn', 'CURLY'], ['honey', 'WAVY']], rec: 1 },
+    { name: 'Amara Okafor', init: 'AO', bg: '#4b2340', loc: 'Easton', book: 'Booksy', svc: ['Cut', 'Silk press'], work: { CURLY: 9, COILY: 11 }, ph: [['jet', 'COILY'], ['plum', 'CURLY'], ['espresso', 'COILY']], rec: 2 },
+    { name: 'Jess Navarro', init: 'JN', bg: '#8a6234', loc: 'Short North', book: 'GlossGenius', svc: ['Cut', 'Balayage', 'Color'], work: { STRAIGHT: 4, WAVY: 12, CURLY: 6 }, ph: [['honey', 'WAVY'], ['rose', 'CURLY'], ['ash', 'STRAIGHT']], rec: 3, sample: true },
+    { name: 'Dee Whitfield', init: 'DW', bg: '#1e1a1d', loc: 'Polaris', book: 'Booksy', svc: ['Locs', 'Braids', 'Cut'], work: { COILY: 15, CURLY: 4 }, ph: [['jet', 'COILY'], ['espresso', 'COILY'], ['plum', 'CURLY']] },
+    { name: 'Kayla Brooks', init: 'KB', bg: '#5a1f1a', loc: 'Bexley', book: 'Vagaro', svc: ['Braids', 'Silk press', 'Treatment'], work: { COILY: 10, CURLY: 7 }, ph: [['espresso', 'COILY'], ['auburn', 'CURLY'], ['jet', 'COILY']] },
+    { name: 'Rosa Delgado', init: 'RD', bg: '#6d2f3f', loc: 'Grandview', book: 'StyleSeat', svc: ['Color', 'Balayage', 'Extensions'], work: { STRAIGHT: 7, WAVY: 8, CURLY: 3 }, ph: [['honey', 'WAVY'], ['rose', 'STRAIGHT'], ['copper', 'CURLY']] },
+    { name: 'Mei Lin Chen', init: 'MC', bg: '#4e4a4b', loc: 'Dublin', book: 'Square', svc: ['Cut', 'Highlights'], work: { STRAIGHT: 13, WAVY: 6 }, ph: [['ash', 'STRAIGHT'], ['jet', 'STRAIGHT'], ['honey', 'WAVY']] },
+  ];
+  const BSVC = ['Any service', 'Cut', 'Color', 'Balayage', 'Highlights', 'Silk press', 'Braids', 'Locs', 'Extensions', 'Treatment'];
+  const br = { svc: 'Cut', hair: 'CURLY' };
+  function renderBrowse() {
+    const anySvc = br.svc === 'Any service', anyHair = br.hair === 'ANY';
+    const list = DIRECTORY.filter((d) => (anySvc || d.svc.includes(br.svc)) && (anyHair || d.work[br.hair]))
+      .sort((a, b) => (a.rec || 9) - (b.rec || 9) || (anyHair ? 0 : (b.work[br.hair] || 0) - (a.work[br.hair] || 0)));
+    const hairName = anyHair ? '' : hairLabel(br.hair).toLowerCase();
+    const cards = list.map((d) => `<article class="card scard">
+        <div class="mhead"><div class="avatar" style="background:${d.bg}" aria-hidden="true">${d.init}</div>
+          <div><b>${d.name}</b><span class="hint small">Salon Lofts · ${d.loc}</span></div>
+          ${d.rec ? '<span class="chip">For you</span>' : d.sample ? '' : '<span></span>'}</div>
+        ${d.sample ? '<span class="chip neutral sample" style="justify-self:start">Sample stylist</span>' : ''}
+        <p class="hint small">${d.svc.join(' · ')}</p>
+        <div class="works">${HAIR.filter((h) => d.work[h.v]).map((h) => `<span class="${br.hair === h.v ? 'hit' : ''}">${glyph(h.v)}${h.l} ${d.work[h.v]}</span>`).join('')}</div>
+        <div class="evidence">${d.ph.map(([t, h]) => ph(t, h, hairLabel(h))).join('')}</div>
+        <button class="btn" type="button" data-book="${d.name}|${d.book}">Book on ${d.book} ↗</button>
+      </article>`).join('');
+    const empty = `<div class="card" style="padding:1.1rem;display:grid;gap:.6rem;text-align:center;justify-items:center">
+        <b>No stylists show ${esc(br.svc.toLowerCase())} on ${hairName} hair yet.</b>
+        <p class="hint">The pilot is small, so some combinations are thin. Try any hair type, or another service.</p>
+        <button class="btn quiet" type="button" data-bhair="ANY">Show ${esc(br.svc.toLowerCase())} on any hair type</button></div>`;
+    $('#browseScreen').innerHTML = `<div class="status"><span>10:13</span><span>●●●</span></div>
+      <div class="scroll">
+        <div class="appbar"><button class="btn ghost" type="button" data-go="instant">← Your matches</button><span class="chip neutral">Private link</span></div>
+        <div class="pad">
+          <div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="false" type="button" data-go="instant">For you · 3</button><button class="tab" role="tab" aria-selected="true" type="button">See all stylists</button></div>
+          <h3 class="h-screen">Every stylist in the pilot</h3>
+          <p class="hint">Pick anyone. Our recommendations are only a starting point.</p>
+          <div class="filterbar" aria-label="Service"><div class="chips nowrap">${BSVC.map((s) => `<button type="button" class="chipbtn" aria-pressed="${br.svc === s}" data-bsvc="${s}">${s}</button>`).join('')}</div></div>
+          <div class="seg5" role="radiogroup" aria-label="Hair type">${[{ v: 'ANY', l: 'Any' }, ...HAIR].map((h) => `<button type="button" class="opt" role="radio" aria-checked="${br.hair === h.v}" data-bhair="${h.v}">${h.v === 'ANY' ? '<svg class="glyph" viewBox="0 0 32 32" aria-hidden="true"><path d="M8 16h16"/></svg>' : glyph(h.v)}${h.l}</button>`).join('')}</div>
+          <p class="hint small" aria-live="polite"><b style="color:var(--text)">${list.length} stylist${list.length === 1 ? '' : 's'}</b>${anyHair ? '' : ` with ${hairName} work`}${anySvc ? '' : ` · ${esc(br.svc.toLowerCase())}`}. Yours first, then by how much matching work they show.</p>
+          ${list.length ? cards : empty}
+        </div>
+      </div>`;
+  }
+  $('#browseScreen').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.bsvc) { br.svc = b.dataset.bsvc; renderBrowse(); }
+    if (b.dataset.bhair) { br.hair = b.dataset.bhair; renderBrowse(); }
+    if (b.dataset.book) toast('#browseScreen', b.dataset.book);
   });
 
   // ---------- Stylist portfolio + tag sheet ----------
@@ -828,51 +920,122 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
   }
   $('#liveScreen').addEventListener('click', (e) => { if (e.target.closest('[data-live]')) { live = !live; renderLive(); } });
 
-  // ---------- Admin review ----------
-  $('#adminInspo').innerHTML = ph('copper', 'CURLY', 'Client photo · curly shag');
-  const cands = [
-    { name: 'Priya Raman', loc: 'Clintonville', score: 0.86, reason: '14 similar cuts on curly hair', ev: [['copper', 'CURLY', 'Curly'], ['espresso', 'CURLY', 'Curly'], ['auburn', 'CURLY', 'Curly'], ['rose', 'CURLY', 'Curly']], hidden: false },
-    { name: 'Amara Okafor', loc: 'Easton', score: 0.81, reason: '9 similar cuts on curly hair, 6 on coily', ev: [['jet', 'COILY', 'Coily · near'], ['plum', 'CURLY', 'Curly'], ['espresso', 'CURLY', 'Curly'], ['jet', 'COILY', 'Coily · near']], hidden: false },
-    { name: 'Jess Navarro', loc: 'Short North', score: 0.74, reason: '6 shag cuts on wavy and curly hair', ev: [['honey', 'WAVY', 'Wavy · near'], ['rose', 'CURLY', 'Curly'], ['ash', 'WAVY', 'Wavy · near'], ['honey', 'WAVY', 'Wavy · near']], hidden: false, sample: true },
-    { name: 'Mei Lin Chen', loc: 'Dublin', score: 0.58, reason: '3 layered cuts on wavy hair', ev: [['ash', 'WAVY', 'Wavy · near'], ['ash', 'STRAIGHT', 'Straight · far'], ['honey', 'WAVY', 'Wavy · near'], ['ash', 'STRAIGHT', 'Straight · far']], hidden: true },
+  // ---------- Admin: match log, after-the-fact actions, optional review ----------
+  const REASONS = {
+    'Priya Raman': ['14 similar cuts on curly hair', 0.86, [['copper', 'CURLY'], ['espresso', 'CURLY'], ['auburn', 'CURLY'], ['rose', 'CURLY']]],
+    'Amara Okafor': ['9 similar cuts on curly hair, 6 on coily', 0.81, [['plum', 'CURLY'], ['jet', 'COILY'], ['espresso', 'CURLY'], ['jet', 'COILY']]],
+    'Jess Navarro': ['6 shag cuts on wavy and curly hair', 0.74, [['rose', 'CURLY'], ['honey', 'WAVY'], ['ash', 'WAVY'], ['honey', 'WAVY']]],
+    'Dee Whitfield': ['15 cuts and locs on coily hair', 0.83, [['jet', 'COILY'], ['espresso', 'COILY'], ['jet', 'COILY'], ['plum', 'CURLY']]],
+    'Kayla Brooks': ['8 silk presses on coily hair', 0.79, [['espresso', 'COILY'], ['jet', 'COILY'], ['auburn', 'CURLY'], ['espresso', 'COILY']]],
+    'Rosa Delgado': ['7 highlights on straight and wavy hair', 0.77, [['honey', 'WAVY'], ['rose', 'STRAIGHT'], ['ash', 'STRAIGHT'], ['honey', 'WAVY']]],
+    'Mei Lin Chen': ['13 highlights and cuts on straight hair', 0.84, [['ash', 'STRAIGHT'], ['jet', 'STRAIGHT'], ['ash', 'STRAIGHT'], ['honey', 'WAVY']]],
+  };
+  const mk = (names, clicked = [], booked = null) => names.map((n) => ({ name: n, hidden: false, clicked: clicked.includes(n), booked: booked === n }));
+  const LOG = [
+    { id: 'r1', when: '10:12', who: 'Jordan', hair: 'CURLY', svc: 'Cut', state: 'live', viewed: true, matches: mk(['Priya Raman', 'Amara Okafor', 'Jess Navarro'], ['Priya Raman'], 'Priya Raman'),
+      note: 'A rounded shag that keeps my curls. Please don’t take too much length.', tone: 'copper' },
+    { id: 'r2', when: '9:58', who: 'Simone', hair: 'COILY', svc: 'Silk press', state: 'live', viewed: true, matches: mk(['Kayla Brooks', 'Amara Okafor', 'Dee Whitfield'], ['Kayla Brooks', 'Amara Okafor']),
+      note: 'Sleek, with movement. My last press left my ends fried.', tone: 'espresso' },
+    { id: 'r3', when: '9:31', who: 'Ellie', hair: 'STRAIGHT', svc: 'Highlights', state: 'live', viewed: true, matches: mk(['Mei Lin Chen', 'Rosa Delgado', 'Jess Navarro']), note: '', tone: 'honey' },
+    { id: 'r4', when: '9:05', who: 'Marcus', hair: 'COILY', svc: 'Cut', state: 'live', viewed: false, matches: mk(['Dee Whitfield', 'Amara Okafor']), flag: 'Only 2 matches',
+      note: 'Clean taper, keep the top full.', tone: 'jet' },
+    { id: 'r5', when: '8:47', who: 'Ana', hair: 'WAVY', svc: 'Balayage', state: 'live', viewed: true, matches: mk(['Jess Navarro', 'Rosa Delgado', 'Priya Raman'], ['Rosa Delgado']), note: '', tone: 'honey' },
   ];
-  let published = false;
+  const WAITING = [
+    { id: 'w1', when: '10:21', who: 'Tasha', hair: 'COILY', svc: 'Braids', state: 'waiting', viewed: false, matches: mk(['Kayla Brooks', 'Dee Whitfield', 'Amara Okafor']),
+      note: 'Knotless, mid-back. Please be gentle with my edges.', tone: 'jet' },
+    { id: 'w2', when: '10:18', who: 'Leah', hair: 'CURLY', svc: 'Color', state: 'waiting', viewed: false, matches: mk(['Priya Raman', 'Rosa Delgado', 'Jess Navarro']), flag: 'Near-type match',
+      note: 'Copper that still looks natural on my curls.', tone: 'copper' },
+  ];
+  const adm = { review: false, tab: 'all', sel: 'r1', confirm: null, hiddenStylists: new Set() };
+  const all = () => [...WAITING, ...LOG];
+  const cur = () => all().find((r) => r.id === adm.sel) || LOG[0];
+  const FAIR = [['Straight', 34], ['Wavy', 31], ['Curly', 29], ['Coily', 18]];
   function renderAdmin() {
-    $('#candList').innerHTML = cands.map((c, i) => `<div class="cand ${c.hidden ? 'hidden-c' : ''}">
-      <span class="rank">${c.hidden ? '–' : cands.filter((x, j) => !x.hidden && j <= i).length}</span>
-      <div><b>${c.name}</b> <span class="hint small">· ${c.loc}</span> ${c.sample ? '<span class="chip neutral sample">Sample</span>' : ''} ${c.hidden ? '<span class="chip neutral">Hidden</span>' : ''}
-        <p class="small" style="margin-top:.2rem">${c.reason}</p>
-        <div class="score"><span class="track"><i style="width:${c.score * 100}%"></i></span><span>${c.score.toFixed(2)}</span></div>
-        <div class="ev">${c.ev.map((e) => ph(...e)).join('')}</div></div>
-      <div class="ctrl"><button class="iconbtn" type="button" aria-label="Move ${c.name} up" data-up="${i}" ${i === 0 ? 'disabled' : ''}>↑</button>
-        <button class="iconbtn" type="button" aria-label="Move ${c.name} down" data-down="${i}" ${i === cands.length - 1 ? 'disabled' : ''}>↓</button>
-        <button class="iconbtn" type="button" aria-label="${c.hidden ? 'Show' : 'Hide'} ${c.name}" data-hide="${i}">${c.hidden ? '+' : '×'}</button></div>
-    </div>`).join('');
-    const vis = cands.filter((c) => !c.hidden);
-    $('#previewList').innerHTML = vis.map((c) => `<li><b>${c.name}</b><br><span class="hint small">${c.reason}</span></li>`).join('');
-    $('#publishBtn').textContent = published ? 'Published · update list' : `Publish ${vis.length} match${vis.length === 1 ? '' : 'es'}`;
-    $('#publishBtn').disabled = vis.length === 0;
-    $('#publishNote').textContent = vis.length === 0 ? 'Show at least one stylist to publish.' : published ? 'Jordan was emailed at 10:12. Changes update their page.' : 'Emails Jordan a private link. You can still edit after publishing.';
-    const ev = vis.flatMap((c) => c.ev);
-    const counts = HAIR.map((h) => ({ l: h.l, n: ev.filter((e) => e[1] === h.v).length }));
-    $('#fairBars').innerHTML = counts.map((c) => `<div><span>${c.l}</span><span class="track"><i style="width:${ev.length ? (c.n / ev.length) * 100 : 0}%"></i></span><span>${c.n}</span></div>`).join('');
+    const waiting = WAITING.filter((r) => r.state === 'waiting');
+    $('#sideCount').textContent = adm.review && waiting.length ? waiting.length : '';
+    const sw = $('#reviewSwitch'); sw.setAttribute('aria-checked', adm.review);
+    $('#switchHint').textContent = adm.review ? 'On: new matches wait for you' : 'Off: clients see matches in seconds';
+    $('#modeBanner').innerHTML = adm.review ? `<div class="banner"><b>Review before publish is on.</b> New requests wait here until you publish them. Clients see “A stylist is checking your matches” and get an email when you do. Turn it off once textured-hair quality looks right.</div>` : '';
+    $('#fairRow').innerHTML = FAIR.map(([l, v]) => `<div class="fair-cell ${v < 22 ? 'low' : ''}"><span>${l}</span><b>${v}%</b><span class="track"><i style="width:${v * 2}%"></i></span>${v < 22 ? '<span class="chip warn">Behind: look closer</span>' : '<span class="hint mini">&nbsp;</span>'}</div>`).join('');
+    const tabs = adm.review ? [['waiting', `Waiting for review · ${waiting.length}`], ['all', 'All requests']] : [['all', 'All requests · today']];
+    if (!adm.review) adm.tab = 'all';
+    $('#logTabs').innerHTML = tabs.map(([k, l]) => `<button class="tab" role="tab" type="button" aria-selected="${adm.tab === k}" data-tab="${k}">${l}</button>`).join('');
+    const rows = adm.tab === 'waiting' ? waiting : all().filter((r) => r.state !== 'waiting');
+    $('#logRows').innerHTML = rows.length ? rows.map((r) => {
+      const vis = r.matches.filter((m) => !m.hidden && !adm.hiddenStylists.has(m.name));
+      const clicks = r.matches.filter((m) => m.clicked).length, booked = r.matches.find((m) => m.booked);
+      return `<tr class="${adm.sel === r.id ? 'sel' : ''}" data-row="${r.id}" tabindex="0">
+        <td>${r.when}</td><td><b>${r.who}</b><br><span class="hint mini">${hairLabel(r.hair)} · ${r.svc}</span>${r.flag ? `<br><span class="chip warn">${r.flag}</span>` : ''}</td>
+        <td>${r.state === 'waiting' ? '<span class="chip info">Waiting</span>' : `${vis.length} · <span class="hint mini">${esc(vis[0]?.name.split(' ')[0] || '–')} first</span>`}</td>
+        <td>${r.viewed ? '✓' : '<span class="hint">–</span>'}</td><td>${clicks || '<span class="hint">0</span>'}</td><td>${booked ? `<span class="chip ok">${booked.name.split(' ')[0]}</span>` : '<span class="hint">–</span>'}</td></tr>`;
+    }).join('') : '<tr><td colspan="6" class="hint" style="padding:1.5rem;text-align:center">Nothing waiting. New requests appear here while review is on.</td></tr>';
+    renderDetail();
   }
-  $('#candList').addEventListener('click', (e) => {
-    const b = e.target.closest('button'); if (!b) return;
-    const sw = (a, z) => { [cands[a], cands[z]] = [cands[z], cands[a]]; };
+  function renderDetail() {
+    const r = cur(); const waiting = r.state === 'waiting';
+    const vis = r.matches.filter((m) => !m.hidden && !adm.hiddenStylists.has(m.name));
+    const evs = waiting ? [] : [[r.when + ':03', 'Request sent'], [r.when + ':07', 'Ranked and published automatically']]
+      .concat(r.viewed ? [[r.when + ':20', 'Client viewed the list']] : [])
+      .concat(r.matches.filter((m) => m.clicked).map((m) => ['', `Clicked Book · ${m.name}`]))
+      .concat(r.matches.filter((m) => m.booked).map((m) => ['Nov 21', `Booking recorded · ${m.name}`]));
+    const row = (m, i) => {
+      const [reason, score, ev] = REASONS[m.name]; const gone = m.hidden || adm.hiddenStylists.has(m.name);
+      const confirmKey = r.id + '|' + m.name;
+      const actions = waiting
+        ? `<div class="ctrl"><button class="iconbtn" type="button" aria-label="Move ${m.name} up" data-up="${i}" ${i === 0 ? 'disabled' : ''}>↑</button><button class="iconbtn" type="button" aria-label="Move ${m.name} down" data-down="${i}" ${i === r.matches.length - 1 ? 'disabled' : ''}>↓</button><button class="iconbtn" type="button" aria-label="${m.hidden ? 'Show' : 'Hide'} ${m.name}" data-hidematch="${i}">${m.hidden ? '+' : '×'}</button></div>`
+        : `<div class="ctrl" style="justify-items:end">${adm.hiddenStylists.has(m.name) ? `<button class="btn ghost mini" type="button" data-unhidestylist="${m.name}">Show stylist again</button>` :
+            `<button class="btn ghost mini" type="button" data-hidematch="${i}">${m.hidden ? 'Show to ' + r.who : 'Hide from ' + r.who}</button><button class="btn ghost mini" type="button" data-askstylist="${m.name}">Hide stylist…</button>`}</div>`;
+      return `<div class="cand ${gone ? 'hidden-c' : ''}">
+        <span class="rank">${gone ? '–' : vis.indexOf(m) + 1}</span>
+        <div><b>${m.name}</b> ${m.clicked ? '<span class="chip info">Clicked Book</span>' : ''} ${m.booked ? '<span class="chip ok">Booked</span>' : ''} ${m.hidden ? `<span class="chip neutral">Hidden from ${r.who}</span>` : ''} ${adm.hiddenStylists.has(m.name) ? '<span class="chip neutral">Stylist hidden</span>' : ''}
+          <p class="small" style="margin-top:.2rem">${reason}</p>
+          <div class="score"><span class="track"><i style="width:${score * 100}%"></i></span><span>${score.toFixed(2)}</span></div>
+          <div class="ev">${ev.map(([t, h]) => ph(t, h, hairLabel(h) + (h === r.hair ? '' : ' · near'))).join('')}</div>
+          ${adm.confirm === confirmKey ? `<div class="confirm"><span>Hide ${m.name.split(' ')[0]} everywhere? She leaves every client’s list and the directory until you show her again. Clients who already booked are not affected.</span><span style="display:flex;gap:.4rem"><button class="btn mini" type="button" data-hidestylist="${m.name}">Hide stylist</button><button class="btn quiet mini" type="button" data-cancel>Cancel</button></span></div>` : ''}
+        </div>${actions}</div>`;
+    };
+    $('#logDetail').innerHTML = `
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;gap:1rem;align-items:start">
+          <div><h4>${waiting ? 'Waiting for review' : 'Published automatically · 4 s'}</h4><h3 class="h-screen" style="font-size:1.5rem">${r.who} · ${hairLabel(r.hair).toLowerCase()} ${r.svc.toLowerCase()}</h3></div>
+          ${waiting ? `<button class="btn" type="button" data-publish ${vis.length ? '' : 'disabled'}>Publish ${vis.length}</button>` : `<span class="chip ${r.matches.some((m) => m.booked) ? 'ok' : 'neutral'}">${r.matches.some((m) => m.booked) ? 'Booked' : r.viewed ? 'Viewed' : 'Not opened yet'}</span>`}
+        </div>
+        <div style="display:grid;grid-template-columns:88px 1fr;gap:.8rem;align-items:start">${ph(r.tone, r.hair, 'Client photo')}
+          <div class="heard">${r.note ? `<b>In their words</b><q>${esc(r.note)}</q>` : '<b>No note.</b> Answers only.'}</div></div>
+      </div>
+      <div style="display:grid;gap:10px">${r.matches.map(row).join('')}</div>
+      ${waiting ? '' : `<div class="panel"><h4>What happened</h4><ol class="events">${evs.map(([t, l]) => `<li><span class="hint mini">${t}</span>${esc(l)}</li>`).join('')}</ol></div>`}`;
+  }
+  $('#reviewSwitch').addEventListener('click', () => { adm.review = !adm.review; adm.tab = adm.review ? 'waiting' : 'all'; adm.sel = adm.review && WAITING.some((w) => w.state === 'waiting') ? WAITING.find((w) => w.state === 'waiting').id : 'r1'; adm.confirm = null; renderAdmin(); });
+  $('#logTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) { adm.tab = b.dataset.tab; renderAdmin(); } });
+  const pickRow = (e) => { const tr = e.target.closest('[data-row]'); if (tr) { adm.sel = tr.dataset.row; adm.confirm = null; renderAdmin(); } };
+  $('#logRows').addEventListener('click', pickRow);
+  $('#logRows').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickRow(e); } });
+  $('#logDetail').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return; const r = cur();
+    const sw = (a, z) => { [r.matches[a], r.matches[z]] = [r.matches[z], r.matches[a]]; };
     if (b.dataset.up) sw(+b.dataset.up, +b.dataset.up - 1);
     if (b.dataset.down) sw(+b.dataset.down, +b.dataset.down + 1);
-    if (b.dataset.hide) cands[+b.dataset.hide].hidden = !cands[+b.dataset.hide].hidden;
+    if (b.dataset.hidematch) r.matches[+b.dataset.hidematch].hidden = !r.matches[+b.dataset.hidematch].hidden;
+    if (b.dataset.askstylist) adm.confirm = r.id + '|' + b.dataset.askstylist;
+    if (b.dataset.cancel !== undefined) adm.confirm = null;
+    if (b.dataset.hidestylist) { adm.hiddenStylists.add(b.dataset.hidestylist); adm.confirm = null; }
+    if (b.dataset.unhidestylist) adm.hiddenStylists.delete(b.dataset.unhidestylist);
+    if (b.dataset.publish !== undefined) { r.state = 'live'; WAITING.splice(WAITING.indexOf(r), 1); LOG.unshift(r); const next = WAITING.find((w) => w.state === 'waiting'); adm.sel = next ? next.id : r.id; if (!next) adm.tab = 'all'; }
     renderAdmin();
   });
-  $('#publishBtn').addEventListener('click', () => { published = true; renderAdmin(); });
 
   // ---------- Navigation between frames ----------
   function go(id) { document.getElementById(id)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }); }
   document.addEventListener('click', (e) => {
     const g = e.target.closest('[data-go]'); if (!g) return;
     if (g.dataset.go === 'quiz') { q.step = 0; renderQuiz(); go('quizSlot'); }
-    if (g.dataset.go === 'matches') go('matchesSlot');
+    if (g.dataset.go === 'browse') { renderBrowse(); go('browseSlot'); }
+    if (g.dataset.go === 'instant') go('findingSlot');
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-replay]')) { runInstant(); go('findingSlot'); }
   });
   $('#themeBtn').addEventListener('click', () => {
     const root = document.documentElement;
@@ -880,6 +1043,6 @@ textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
     root.dataset.theme = dark ? 'light' : 'dark';
   });
 
-  renderQuiz(); renderPhoto(); renderPortfolio(); renderLive(); renderAdmin();
+  renderQuiz(); renderPhoto(); renderInstant(); renderBrowse(); renderPortfolio(); renderLive(); renderAdmin();
 })();
 </script>
