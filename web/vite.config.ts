@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'LookMate',
-        short_name: 'LookMate',
+        name: 'Combpatible',
+        short_name: 'Combpatible',
         description: 'Match with the stylist whose work fits your look',
         theme_color: '#1f3a5f',
         background_color: '#ffffff',

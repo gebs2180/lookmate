@@ -14,7 +14,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * The stylist's booking link with LookMate's UTM tags added. Only absolute https links with a host and no user info
+ * The stylist's booking link with Combpatible's UTM tags added. Only absolute https links with a host and no user info
  * pass; anything else is refused, so the redirect can never be pointed somewhere unexpected (no open redirect).
  */
 final class BookingLinks {

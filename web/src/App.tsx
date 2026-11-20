@@ -36,7 +36,7 @@ function App() {
     <div className="shell">
       <header className="topbar">
         <Link to="/" className="brand">
-          LookMate
+          Combpatible
         </Link>
         {isAuthenticated && (
           <span className="who">
@@ -65,7 +65,7 @@ function App() {
             </>
           )}
           {location.pathname.startsWith('/invite/') && (
-            <p>You've been invited to join LookMate as a stylist. Log in, or sign up, to accept.</p>
+            <p>You've been invited to join Combpatible as a stylist. Log in, or sign up, to accept.</p>
           )}
           <button className="block" onClick={() => loginWithRedirect({ appState: { returnTo: location.pathname + location.search } })}>
             {location.pathname.startsWith('/invite/') ? 'Log in or sign up' : 'Stylist log in'}

@@ -1,6 +1,6 @@
 # Design direction: "Chair-side"
 
-Proposed 2026-11-20. The look and voice for LookMate (working name) across client, stylist and admin screens.
+Proposed 2026-11-20. The look and voice for Combpatible (named 2026-11-20; working name LookMate until then) across client, stylist and admin screens.
 Prototype: <https://claude.ai/artifact/74ApqgXdGU52ULhyr6Cvfm> (source: [prototype.html](prototype.html)). Tokens:
 [tokens.css](tokens.css). Flows: [flows.md](flows.md). How to get there: [implementation-plan.md](implementation-plan.md).
 
@@ -30,10 +30,30 @@ Editorial and confident like a good salon's own Instagram; warm like the stylist
 clinical (no medical blues, no hair-loss-clinic diagrams) and never a marketplace (no star ratings, price sorting or
 "deals"). Quiet surfaces so the photography supplies the colour.
 
-**Wordmark (name-agnostic).** Two overlapping rings, one in ink and one in the accent: two people, one match. The ring
-mark works alone (app icon, favicon) and sits beside whatever name is chosen, set in Hanken Grotesk 700 with +0.02em
-tracking. Until a name is chosen the prototype adds a small "working name" tag; production should drop that tag but
-keep the name in one component (`<Wordmark/>`) so renaming is one change.
+**Wordmark: Combpatible.** The ring mark (two overlapping rings, one in ink and one in the accent: two people, one
+match) followed by the name. Proposed setting:
+
+- **Name:** "Combpatible", sentence case, in Hanken Grotesk 700, tracking +0.01em (tighter than the +0.02em first
+  proposed: at 11 letters the word gets long, and looser tracking reads as spaced-out). Ink colour, never the accent.
+- **Not Bodoni.** The header wordmark sits at 18–20px, below Bodoni Moda's 24px floor, where its hairlines vanish.
+  Bodoni stays for screen titles and the hero; the wordmark is the same face at every size, so it doesn't change
+  between header, email and icon.
+- **One word, not split.** Don't set "Comb" and "patible" in different weights or colours: split, it reads as a typo
+  or a different name. The pun lives in the copy, not the letterforms.
+- **Ring mark** at the cap height plus a little (26px beside 18px text), 0.45rem gap. It works alone for the app icon
+  and favicon, where the full word is too long.
+- One component (`<Wordmark/>`, name from one constant), used by both shells, the emails' header text and the PWA
+  manifest (`name` "Combpatible"; `short_name` "Combpatible" fits under a home-screen icon on most phones, test it).
+- Check it at 320px wide with the "Private link" chip beside it in the client app bar.
+
+**The pun ("comb" + "compatible").** Use it lightly, at most once per screen and only where the client is relaxed and
+choosing: the landing line ("Find your Combpatible stylist" is enough; no "hair-raising", "shear" or "mane" jokes),
+a stylist's share card, the results heading. **Never** in errors, privacy copy, the wait, "no close match", consent
+or anything about deleting data: a joke there reads as not taking the client's photo or problem seriously. When in
+doubt, write the sentence as if the name had no pun.
+
+**Spelling.** People will type "compatible". Say the name out loud in onboarding videos and spell it in emails' footer;
+if a domain is bought, consider the misspelling too.
 
 ## Visual language
 
@@ -131,7 +151,7 @@ sentences. We talk about hair, not "users", "profiles" or "requests" (except whe
 | Hair-type question | How does your hair grow naturally? Think wash day, no heat or products. | Select your hair type |
 | Past stylists | What should your next stylist get right? | List your complaints |
 | Photo prompt | Show us the look you want. The hair matters, not the face. | Upload image |
-| Privacy | Only you and the LookMate team see it. We delete it after 30 days. | Your data is secured with industry-standard encryption |
+| Privacy | Only you and the Combpatible team see it. We delete it after 30 days. | Your data is secured with industry-standard encryption |
 | Waiting (seconds) | Looking through 286 photos of curly cuts | Our AI is working its magic ✨ |
 | Results | Found in 4 seconds. Jordan, these stylists have done your look on curly hair. | We found your perfect match! |
 | Next to the picks | See all stylists · Pick anyone. Our recommendations are only a starting point. | Top-rated stylists near you |
@@ -198,8 +218,9 @@ information, never as a score or a nudge to tag differently from what they actua
 5. **When to switch review on.** The "review before publish" switch exists for poor early quality on textured hair.
    Agree the trigger in advance (for example, the coily or curly Book-click rate under two-thirds of the overall rate
    after 30 requests of that type), so turning it on is a rule, not a mood.
-6. **Stylist-specific entry links** (`/find?via=<stylist>`), so a stylist can share LookMate from their own Instagram.
+6. **Stylist-specific entry links** (`/find?via=<stylist>`), so a stylist can share Combpatible from their own Instagram.
    Tracking would need to record it.
-7. **The name.** Bodoni plus a short name looks best; anything over ~10 letters needs the wordmark tested again.
+7. ~~The name~~ **Decided 2026-11-20: Combpatible.** At 11 letters it's over the length where the wordmark needed
+   testing again: the setting above (Hanken Grotesk 700, not Bodoni) is the proposal; check it in the app bar at 320px.
 8. **Instant-results copy uses real counts** ("286 photos of curly cuts by 23 stylists"). The client page needs those
    two numbers from the API, or the step falls back to "Looking through stylists' work on curly hair".

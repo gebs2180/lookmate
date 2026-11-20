@@ -79,7 +79,7 @@ Goal: a 90-day pilot with 20–40 stylists. Matching is partly manual. Keep it s
 | Stylists who'd keep using it | 75%+ |
 
 ## Open questions
-- App name (not chosen yet)
+- App name (not chosen yet). *Since decided: Combpatible, 2026-11-20 (see `CLAUDE.md`).*
 - Team roles and equity between the founders
 - Whether to stay Salon Lofts–only after the pilot
 - Business model: stylist subscription, per-booking fee, or a Salon Lofts partnership deal

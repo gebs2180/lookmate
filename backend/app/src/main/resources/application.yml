@@ -59,7 +59,7 @@ lookmate:
     email:
       enabled: ${NOTIFY_EMAIL_ENABLED:false}
       api-key: ${RESEND_API_KEY:}
-      from: ${NOTIFY_EMAIL_FROM:LookMate <notify@example.com>}
+      from: ${NOTIFY_EMAIL_FROM:Combpatible <notify@example.com>}
       app-url: ${NOTIFY_APP_URL:http://localhost:5173}
   intake:
     # Client intake (docs/modules/intake.md). Clients have no account: a link token reaches their request.

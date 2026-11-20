@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Read-only health report. Run it from a checkout, without deploying it first:
-#   ssh deploy@pilot.lookmate.example 'bash -s' < deploy/prod-check.sh
+#   ssh deploy@pilot.combpatible.example 'bash -s' < deploy/prod-check.sh
 # Add a window as the first argument, for example: 'bash -s -- 6h'
 set -uo pipefail
 
@@ -13,8 +13,8 @@ git -C ~/lookmate log -1 --format='%h %ad %s' --date=iso
 echo "== services"
 $compose ps --format 'table {{.Service}}\t{{.Status}}'
 echo "== health"
-curl -s -o /dev/null -w 'site %{http_code}\n' https://pilot.lookmate.example/
-curl -s -w '\nhealth %{http_code}\n' https://pilot.lookmate.example/actuator/health
+curl -s -o /dev/null -w 'site %{http_code}\n' https://pilot.combpatible.example/
+curl -s -w '\nhealth %{http_code}\n' https://pilot.combpatible.example/actuator/health
 echo "== backend errors since $since"
 logs="$($compose logs --since "$since" --no-log-prefix backend 2>&1)"
 printf '%s\n' "$logs" | grep -c ' ERROR ' || true

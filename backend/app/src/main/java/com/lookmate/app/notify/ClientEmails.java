@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ClientEmails {
 
-    private static final String FOOTER = "You're getting this because you asked LookMate to find you a stylist. "
+    private static final String FOOTER = "You're getting this because you asked Combpatible to find you a stylist. "
             + "Keep this link to yourself: anyone with it can see your request.";
 
     private final Notifier notifier;
@@ -29,7 +29,7 @@ public class ClientEmails {
     public void requestReceived(UUID matchRequestId, String email, String firstName, String linkPath, int photoKeptDays, Instant now) {
         EmailContent content = EmailContent.of("We got your request",
                 List.of(greeting(firstName),
-                        "Thanks for telling us about the look you want. A LookMate stylist is matching you with stylists whose own "
+                        "Thanks for telling us about the look you want. A Combpatible stylist is matching you with stylists whose own "
                                 + "work looks like it, on hair like yours. We'll email you when your matches are ready, usually within a day or two.",
                         "Your inspiration photo is private: only our team sees it, and we delete it after " + photoKeptDays + " days."),
                 "See your request", properties.link(linkPath), FOOTER);

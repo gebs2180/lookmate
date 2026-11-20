@@ -19,7 +19,7 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  */
 @ConfigurationProperties("lookmate.notify.email")
 record EmailProperties(@DefaultValue("false") boolean enabled, String apiKey,
-                       @DefaultValue("LookMate <notify@example.com>") String from,
+                       @DefaultValue("Combpatible <notify@example.com>") String from,
                        @DefaultValue("https://api.resend.com") URI baseUrl,
                        @DefaultValue("http://localhost:5173") URI appUrl,
                        @DefaultValue("5s") Duration connectTimeout,

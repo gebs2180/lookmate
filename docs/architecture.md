@@ -2,7 +2,7 @@
 
 Fast to change for a 40-stylist pilot, with no decision that has to be undone to reach thousands of stylists in
 several cities. Stack and infrastructure are pokemans' (see [hosting.md](hosting.md)); this file is what's specific
-to LookMate.
+to Combpatible.
 
 ## Shape
 

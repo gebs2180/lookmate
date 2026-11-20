@@ -1,21 +1,21 @@
 # Hosting the pilot
 
-**Decision (2026-11-20): Option A.** LookMate runs on its own small Hetzner server, a copy of pokemans' production
+**Decision (2026-11-20): Option A.** Combpatible runs on its own small Hetzner server, a copy of pokemans' production
 setup (Caddy, backend, Postgres with pgvector, backup runner). It shares *accounts* with pokemans but no running
-infrastructure, so a LookMate deploy or outage can never touch Rawmark.
+infrastructure, so a Combpatible deploy or outage can never touch Rawmark.
 
-| Service | Shared account? | New for LookMate |
+| Service | Shared account? | New for Combpatible |
 |---|---|---|
 | Hetzner | Same project | A new CX23 server (`lookmate-pilot`), its own firewall |
 | Cloudflare R2 | Same account | Buckets `lookmate-photos`, `lookmate-backups`; tokens scoped to those buckets only |
 | Sentry | Same org | Project `lookmate` (Spring Boot), its own DSN |
 | GHCR / Actions | Same owner | Images `lookmate-backend`, `lookmate-web`, `lookmate-backup` from this repo |
 | healthchecks.io / UptimeRobot | Same accounts | Three checks (backup, backup check, restore test) and one monitor |
-| Resend | Same account | A sending domain, once LookMate has a name and domain |
+| Resend | Same account | A sending domain, once Combpatible's domain is bought |
 | **Auth0** | **No: a new tenant** | Separate login page, branding, users and post-login Action ([auth.md](auth.md)) |
 | Postgres | **No** | Its own database in its own Compose stack (pgvector image) |
 
-The domain is a placeholder (`pilot.lookmate.example`) until the app is named; replace it in `deploy/`, `.claude/skills/`
+The domain is a placeholder (`pilot.combpatible.example`) until one is bought; replace it in `deploy/`, `.claude/skills/`
 and this file then.
 
 The rest of this file is pokemans' runbook with the names changed: the steps are the same.
@@ -37,7 +37,7 @@ All four use Cloudflare R2 for photos (10 GB free, then $0.015/GB-month, no egre
 | Beta cost/mo | **~$5–7** | ~$31–44 (Standard web + Basic PG) | ~$45+ managed, ~$10 self-run | ~$20–25 with backups |
 | Effort | Highest: you patch one Ubuntu box. About an hour for the first deploy with the steps below | Lowest | Medium (`fly.toml`, machines, volumes) | Low |
 
-Why Hetzner: pokemans' backend needs about 1 GB of memory (JVM, OpenCV, PDF rendering); LookMate's is lighter (no OpenCV or PDFs, capped at 768 MB), and that is where PaaS pricing jumps. At beta size the VPS costs less than one PaaS Postgres plan, and the one Compose file also runs anywhere with Docker. The cost is that you look after the box: unattended security upgrades, our own backup job and a restore test. For a 6-week beta with a handful of users that is fine. Revisit if the beta becomes a product: Render (or a managed Postgres) is the upgrade path, and the Dockerfiles carry over unchanged.
+Why Hetzner: pokemans' backend needs about 1 GB of memory (JVM, OpenCV, PDF rendering); Combpatible's is lighter (no OpenCV or PDFs, capped at 768 MB), and that is where PaaS pricing jumps. At beta size the VPS costs less than one PaaS Postgres plan, and the one Compose file also runs anywhere with Docker. The cost is that you look after the box: unattended security upgrades, our own backup job and a restore test. For a 6-week beta with a handful of users that is fine. Revisit if the beta becomes a product: Render (or a managed Postgres) is the upgrade path, and the Dockerfiles carry over unchanged.
 
 Not chosen: **Render**, unless your time matters more than ~$30/mo; it is the simplest PaaS here. **Fly.io**: managed Postgres alone costs $38. **Railway**: backups need the Pro plan, and usage billing has no cap by default.
 
@@ -99,7 +99,7 @@ You need about an hour, a personal card, and an SSH key (`ssh-keygen -t ed25519`
 
 1. Hetzner → Servers → Add server: **CX23**, Ubuntu 24.04, location Nuremberg/Falkenstein/Helsinki (the CX line is the cheapest; US locations cost about 20% more), your SSH key, IPv4 on. Optionally tick **Backups** (+20%, weekly whole-disk snapshots on top of our nightly ones).
 2. Firewalls → Create: allow inbound TCP 22 (ideally from your IP only), TCP 80, TCP 443 and UDP 443, then apply it to the server.
-3. Pick the site address. LookMate has no name or domain yet; `pilot.lookmate.example` is the placeholder. For a new server:
+3. Pick the site address. Combpatible has no domain yet; `pilot.combpatible.example` is the placeholder. For a new server:
    - add an A record for the pilot host (e.g. `pilot`) → the server's IPv4, at the registrar or wherever the domain's DNS is hosted;
    - set `SITE_ADDRESS` in `.env` (step 5) to that host name, without `https://`. `.app` domains only work over HTTPS, which Caddy provides.
    - Before DNS is ready you can test on `<ip-with-dashes>.sslip.io` (e.g. `203-0-113-7.sslip.io`), which resolves to that IP and gets a certificate too.
@@ -140,14 +140,14 @@ Every backup (the database dump and each photo) is encrypted with [age](https://
 
 1. Install age: `winget install FiloSottile.age` (Windows), `brew install age` or `apt install age`.
 2. `age-keygen -o lookmate-backup.key`. It prints `Public key: age1...` and writes a file holding a `# public key:` comment and one `AGE-SECRET-KEY-1...` line.
-3. **Private half:** paste the whole `AGE-SECRET-KEY-1...` line into a new Bitwarden secure note, `LookMate backup key`, with the public key in the note too. Then delete the file (`Remove-Item lookmate-backup.key`). Bitwarden is the only copy: **lose it and every backup is unreadable**. A second copy somewhere safe (printed, in a safe) is worth having; or make a second pair, keep its private half apart, and list both public keys.
+3. **Private half:** paste the whole `AGE-SECRET-KEY-1...` line into a new Bitwarden secure note, `Combpatible backup key`, with the public key in the note too. Then delete the file (`Remove-Item lookmate-backup.key`). Bitwarden is the only copy: **lose it and every backup is unreadable**. A second copy somewhere safe (printed, in a safe) is worth having; or make a second pair, keep its private half apart, and list both public keys.
 4. **Public half:** `BACKUP_AGE_RECIPIENT=age1...` in the server's `.env` (and the `.env` copy in Bitwarden). Several keys, space- or comma-separated, each can decrypt.
 
 Without `BACKUP_AGE_RECIPIENT`, or with something that isn't an age public key, `backup.sh` refuses to run and pings `/fail`; there is no unencrypted fallback. Changing the key: put the new public key in `.env` (both, while you switch), recreate the backup service, and keep the old private key until the last backup made with it has expired (35 days for dumps; photos copied before the switch stay encrypted to the old key for good, so keep it).
 
 ### 4. Auth0 (dev tenant, or a new prod tenant)
 
-Create a new tenant for LookMate (not Rawmark's). In the dashboard:
+Create a new tenant for Combpatible (not Rawmark's). In the dashboard:
 
 1. **Applications → (the SPA) → Settings**: add `https://<site address>` to **Allowed Callback URLs**, **Allowed Logout URLs** and **Allowed Web Origins**, comma-separated after the existing `http://localhost:5173`. Save.
 2. Refresh-token rotation, offline access, the post-login Action and the `ADMIN` role are already set up (`docs/auth.md`). Nothing else changes: the API identifier (audience) is a name, not a URL that has to resolve.
@@ -259,7 +259,7 @@ It's the same deploy for an older commit: backup, restart, health wait. The chec
 **Check prod without changing anything.** Run this from a checkout. It reports the commit, services, health and recent backend errors:
 
 ```bash
-ssh deploy@pilot.lookmate.example 'bash -s' < deploy/prod-check.sh
+ssh deploy@pilot.combpatible.example 'bash -s' < deploy/prod-check.sh
 ```
 
 **Restore after a disaster** (lost server or a bad migration):
@@ -308,7 +308,7 @@ At most a day of data is lost (the last nightly backup), plus whatever Hetzner's
 | Hetzner backups (optional) | +20%, ~€0.90 |
 | Cloudflare R2 | $0 up to 10 GB. The beta is likely 5–15 GB counting the backup copy (photos are 3–8 MB; 40 stylists × 20 photos plus client inspiration photos, deleted after 30 days), so $0–0.10; requests stay inside the free tier |
 | Sentry Developer, healthchecks.io, UptimeRobot | $0 |
-| Domain | `lookmate.example`, already bought (2026-10-25) |
+| Domain | Not bought yet (`pilot.combpatible.example` is a placeholder) |
 | **Total** | **~$5–7 a month**, about $10 for the whole 6-week beta |
 
 The embedding provider, once chosen, is billed per use on its own account and is not counted here.

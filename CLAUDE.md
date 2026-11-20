@@ -1,4 +1,7 @@
-# LookMate (working name): stylist matching app
+# Combpatible: stylist matching app
+
+Product name: Combpatible. 'lookmate' stays the internal name in packages, Gradle, databases, buckets, config keys and
+Auth0 identifiers.
 
 Matches hair clients with stylists by the stylist's actual portfolio work on similar hair, not just distance and price.
 Columbus, Ohio first, with independent stylists at Salon Lofts. The original project brief (what we build, why, the
@@ -9,6 +12,10 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
 
 ## Decisions (2026-11-20)
 
+- **Name: Combpatible** (Zach, 2026-11-20), replacing the working name LookMate. Internal identifiers keep `lookmate`
+  (the rule above): the repo, `com.lookmate`, Gradle, database, buckets, containers, GHCR images, `lookmate.*` config
+  keys, `LOOKMATE_*` variables, the Auth0 claim namespaces `https://lookmate.app/*` and the audience
+  `https://api.lookmate.app`.
 - **Stack: pokemans', not Next.js + Supabase.** Spring Boot 4.1 / Java 25 / Gradle / Spring Modulith / Flyway, React 19 +
   Vite PWA, Postgres 18 with pgvector, Cloudflare R2, Auth0, Sentry, Resend. The privacy work the brief asks for
   (private photos, presigned uploads, retention job, encrypted backups) already exists there.
@@ -32,7 +39,8 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
 - Client contact retention: **decided 2026-11-20**: anonymised 365 days after the latest request by that email
   (`lookmate.retention.client-contact-days`). Client links expire after 90 days (`lookmate.intake.link-ttl`).
 - Stylist terms text: a draft (`backend/app/src/main/resources/terms/`), needs a lawyer before the pilot.
-- App name and domain: placeholder `pilot.lookmate.example` in `deploy/` and `.claude/skills/`.
+- ~~App name~~ **Decided 2026-11-20: Combpatible** (Zach). Domain: still a placeholder, `pilot.combpatible.example` in
+  `deploy/`, docs and `.claude/skills/`, until a domain is bought.
 - Tagged photos a stylist needs before going live: 3 (`lookmate.stylists.min-tagged-photos-to-publish`).
 - Salon locations: entered by Zach on `/admin/locations`, not seeded (2026-11-20).
 - Demo stylists: made-up profiles for the proof of concept, created at `/admin/demo` and hidden all at once when real

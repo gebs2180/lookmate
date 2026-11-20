@@ -132,7 +132,7 @@ export function useApi() {
   )
 }
 
-export const UNREACHABLE = "Couldn't reach LookMate. Check your connection and try again."
+export const UNREACHABLE = "Couldn't reach Combpatible. Check your connection and try again."
 export const UPLOAD_FAILED = "The photo didn't upload. Check your connection and try again."
 
 /**

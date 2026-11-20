@@ -18,7 +18,7 @@ import java.util.zip.CRC32;
  * when and with what it was taken (EXIF with GPS and the phone's make, model and serial, XMP, comments, text chunks)
  * are left out. The EXIF orientation is the one tag kept, written fresh, so the photo still shows the right way up.
  *
- * <p>The one copy of this in LookMate: every module that stores an uploaded photo calls {@link #strip}. Ported from
+ * <p>The one copy of this in Combpatible: every module that stores an uploaded photo calls {@link #strip}. Ported from
  * pokemans' {@code ExactCopy.of}; its capture-time variant ({@code withoutLocation}) was not ported, nothing here
  * needs a capture time.
  */

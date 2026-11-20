@@ -21,12 +21,12 @@ export function useRouteFocus() {
 
   useEffect(() => {
     if (navigationType !== 'POP' && !hash) window.scrollTo(0, 0)
-    document.title = 'LookMate'
+    document.title = 'Combpatible'
     let focused = firstLoad
     const sync = () => {
       const h1 = document.querySelector('main h1')
       if (!h1) return
-      document.title = `${h1.textContent} · LookMate`
+      document.title = `${h1.textContent} · Combpatible`
       if (!focused) focused = focusHeading()
     }
     sync()

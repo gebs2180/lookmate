@@ -100,7 +100,7 @@ function ProfileForm({
           )}
         </Field>
 
-        <Field label="Your location" hint={locations.length === 0 ? 'No locations yet: ask the LookMate team to add yours.' : undefined}>
+        <Field label="Your location" hint={locations.length === 0 ? 'No locations yet: ask the Combpatible team to add yours.' : undefined}>
           {(control) => (
             <select {...control} value={locationId} onChange={(e) => setLocationId(e.target.value)}>
               <option value="">Choose your location</option>
