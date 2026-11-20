@@ -82,6 +82,8 @@ export type Profile = {
   status: ProfileStatus
   publishedAt: string | null
   updatedAt: string
+  /** A made-up stylist for the proof of concept. */
+  demo: boolean
 }
 
 export type ProfileRequest = {
@@ -146,6 +148,7 @@ export type AdminStylist = {
   readyPhotos: number
   taggedPhotos: number
   publishedAt: string | null
+  demo: boolean
 }
 
 /** "SILK_PRESS" as "Silk press". */

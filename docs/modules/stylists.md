@@ -16,11 +16,11 @@ public class Stylists {
     /** A LIVE stylist as clients may see them. */
     public record LiveProfile(UUID orgId, String displayName, String market, Location location, String bio,
                               List<ServiceType> specialties, String bookingUrl, BookingPlatform bookingPlatform,
-                              String instagram, Integer priceTier) { }
+                              String instagram, Integer priceTier, boolean demo) { }
 
     /** Any stylist profile with its status: for admin screens (DRAFT, LIVE, HIDDEN). */
     public record ProfileSummary(UUID orgId, String displayName, String market, ProfileStatus status,
-                                 UUID locationId, String bookingUrl, int readyPhotos) { }
+                                 UUID locationId, String bookingUrl, int readyPhotos, boolean demo) { }
 
     public record Location(UUID id, String brand, String name, String market, String address, String city,
                            String state, String zip, Double latitude, Double longitude) { }
@@ -102,7 +102,9 @@ Admin (`/api/admin/**`, ADMIN with MFA):
 | GET | `/api/admin/locations?market=` | All locations (active and not), optionally one market |
 | POST | `/api/admin/locations` | Create a location (brand, name, market, address, city, state, zip, lat/long) |
 | PUT | `/api/admin/locations/{id}` | Update, including `active` |
-| GET | `/api/admin/stylists` | Every stylist org with its profile status and photo count |
+| GET | `/api/admin/stylists` | Every stylist org with its profile status, photo count and demo flag |
+| POST | `/api/admin/stylists/{orgId}/demo` | Mark a stylist as made up (proof of concept) |
+| POST | `/api/admin/stylists/demo/hide` | Hide every LIVE demo stylist at once |
 
 Stylist (`/api/orgs/{orgId}/...`, member of the STYLIST org or ADMIN; anyone else gets 404):
 
@@ -141,3 +143,24 @@ Photo cap: `lookmate.storage.max-photos-per-stylist` (READY + HIDDEN + recent pe
 - **Not checked yet:** whether a pending upload slot is ever used. Rows left in `PENDING_UPLOAD` stop counting toward the
   cap after an hour; a cleanup job for them (and their objects, if any) is a follow-up.
 - **Defaults to confirm:** `lookmate.stylists.min-tagged-photos-to-publish: 3` (application.yml).
+
+## Demo stylists (proof of concept)
+
+Until real stylists join, the admin creates made-up ones at `/admin/demo` (Zach, 2026-11-20). The page creates each
+one through the normal API, acting as the admin: an org named "Demo: <name>", a profile on one of the active locations,
+`stylist_profile.demo = true` (V3), five tagged photos (before/after pairs included) and publish. Photos are drawn
+placeholders showing their tags, unless the admin picks real photos named as in `web/src/admin/demoStylists.ts`
+(`maya-1.jpg` to `nia-5.jpg`). Booking links go to `https://example.com/book/<slug>`.
+
+- **Matching and client screens:** demo stylists are LIVE and matched like real ones. `LiveProfile.demo` is true for
+  them: label them ("Sample stylist") wherever a client sees them. Placeholder photos make similarity scores
+  meaningless; use real photos for a matching demo.
+- **When real stylists join:** "Hide all demo stylists" on `/admin/demo` (`POST /api/admin/stylists/demo/hide`).
+- **Locations:** not seeded. Zach enters the Salon Lofts Columbus locations on `/admin/locations`.
+
+## Follow-ups
+
+- **Share the metadata stripping (agreed 2026-11-20).** Once `stylists` and `intake` are merged, move
+  `MetadataStripper` (and its test) into `storage` as a public class, and have both modules use it instead of their
+  own copies.
+- **Abandoned upload slots (agreed to leave for now).** No cleanup job; see above.

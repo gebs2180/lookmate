@@ -30,6 +30,8 @@ interface StylistProfileRepository extends JpaRepository<StylistProfile, UUID> {
     Optional<StylistProfile> findLocked(@Param("orgId") UUID orgId);
 
     List<StylistProfile> findByMarketAndStatusOrderByDisplayNameAsc(String market, ProfileStatus status);
+
+    List<StylistProfile> findByDemoTrueAndStatus(ProfileStatus status);
 }
 
 interface PhotoRepository extends JpaRepository<Photo, UUID> {

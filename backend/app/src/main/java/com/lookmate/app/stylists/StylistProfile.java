@@ -27,6 +27,7 @@ class StylistProfile extends AssignedIdEntity<UUID> {
     private String bookingPlatform;
     private String instagram;
     private Short priceTier;
+    private boolean demo;
     @Enumerated(EnumType.STRING)
     private ProfileStatus status;
     private Instant publishedAt;
@@ -68,6 +69,12 @@ class StylistProfile extends AssignedIdEntity<UUID> {
             publishedAt = Instant.now();
             updatedAt = publishedAt;
         }
+    }
+
+    /** A made-up stylist for the proof of concept. Only the admin sets this. */
+    void markDemo() {
+        demo = true;
+        updatedAt = Instant.now();
     }
 
     void hide() {
@@ -118,6 +125,10 @@ class StylistProfile extends AssignedIdEntity<UUID> {
 
     Integer getPriceTier() {
         return priceTier == null ? null : priceTier.intValue();
+    }
+
+    boolean isDemo() {
+        return demo;
     }
 
     ProfileStatus getStatus() {

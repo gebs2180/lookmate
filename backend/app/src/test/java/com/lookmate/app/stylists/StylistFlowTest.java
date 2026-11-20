@@ -77,12 +77,16 @@ class StylistFlowTest {
 
     /** Upload slot, the browser's PUT, confirm. Returns the photo id. */
     private String upload(String orgId, String subject, byte[] bytes, String contentType) throws Exception {
+        return upload(orgId, as(subject), bytes, contentType);
+    }
+
+    private String upload(String orgId, JwtRequestPostProcessor who, byte[] bytes, String contentType) throws Exception {
         ResultActions slot = api.postJson("/api/orgs/" + orgId + "/photos",
-                "{\"contentType\":\"" + contentType + "\",\"sizeBytes\":" + bytes.length + "}", as(subject)).andExpect(status().isCreated());
+                "{\"contentType\":\"" + contentType + "\",\"sizeBytes\":" + bytes.length + "}", who).andExpect(status().isCreated());
         String photoId = TestApi.read(slot, "$.photoId");
         assertThat(TestApi.read(slot, "$.method")).isEqualTo("PUT");
         store.upload(Photo.objectKey(UUID.fromString(orgId), UUID.fromString(photoId)), bytes, contentType);
-        mvc.perform(post("/api/orgs/" + orgId + "/photos/" + photoId + "/confirm").with(as(subject)))
+        mvc.perform(post("/api/orgs/" + orgId + "/photos/" + photoId + "/confirm").with(who))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("READY"));
         return photoId;
     }
@@ -329,6 +333,32 @@ class StylistFlowTest {
         api.get(a + "/photos", as("auth0|owner-a")).andExpect(jsonPath("$[0].status").value("READY")).andExpect(jsonPath("$[0].service").doesNotExist());
         // The admin may look.
         api.get(a + "/stylist", api.admin()).andExpect(status().isOk());
+    }
+
+    @Test
+    void theAdminCreatesDemoStylistsAndHidesThemAllAtOnce() throws Exception {
+        String loc = location("Demo Loft", "demo-oh");
+        String orgId = TestApi.read(api.postJson("/api/admin/orgs", "{\"name\":\"Demo: Maya Brooks\",\"type\":\"STYLIST\"}", api.admin())
+                .andExpect(status().isCreated()), "$.id");
+        // The admin acts for the made-up stylist: no member, no terms needed.
+        putJson("/api/orgs/" + orgId + "/stylist/profile", profileJson(loc, "https://example.com/book/maya"), api.admin()).andExpect(status().isOk());
+        api.postJson("/api/admin/stylists/" + orgId + "/demo", "{}", api.admin()).andExpect(status().isOk()).andExpect(jsonPath("$.demo").value(true));
+        for (int i = 0; i < 2; i++) {
+            String photo = upload(orgId, api.admin(), TestImages.jpeg(60 + i), "image/jpeg");
+            putJson("/api/orgs/" + orgId + "/photos/" + photo + "/tags",
+                    "{\"service\":\"CUT\",\"hairType\":\"COILY\",\"before\":false}", api.admin()).andExpect(status().isOk());
+        }
+        mvc.perform(post("/api/orgs/" + orgId + "/stylist/publish").with(api.admin())).andExpect(jsonPath("$.status").value("LIVE"));
+        assertThat(stylists.liveProfile(UUID.fromString(orgId))).hasValueSatisfying(p -> assertThat(p.demo()).isTrue());
+
+        // Only the admin may mark or hide demos.
+        String real = api.stylistOrg("Real Suite", "auth0|real");
+        api.postJson("/api/admin/stylists/" + real + "/demo", "{}", as("auth0|real")).andExpect(status().isForbidden());
+        api.postJson("/api/admin/stylists/demo/hide", "{}", as("auth0|real")).andExpect(status().isForbidden());
+
+        api.postJson("/api/admin/stylists/demo/hide", "{}", api.admin()).andExpect(status().isOk()).andExpect(jsonPath("$.hidden").value(1));
+        assertThat(stylists.liveProfile(UUID.fromString(orgId))).isEmpty();
+        api.get("/api/admin/stylists", api.admin()).andExpect(jsonPath("$[?(@.orgId == '" + orgId + "')].demo").value(org.hamcrest.Matchers.contains(true)));
     }
 
     @Test

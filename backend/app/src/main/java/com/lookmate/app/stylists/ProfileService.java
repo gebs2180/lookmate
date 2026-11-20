@@ -27,7 +27,7 @@ class ProfileService {
 
     record ProfileView(String displayName, UUID locationId, String market, String bio, List<ServiceType> specialties,
                        String bookingUrl, BookingPlatform bookingPlatform, String instagram, Integer priceTier,
-                       ProfileStatus status, Instant publishedAt, Instant updatedAt) {
+                       ProfileStatus status, Instant publishedAt, Instant updatedAt, boolean demo) {
     }
 
     /**
@@ -130,6 +130,27 @@ class ProfileService {
         return view(profile);
     }
 
+    /** Admin: marks a stylist as made up, for the proof of concept. Their profile must exist. */
+    @Transactional
+    ProfileView markDemo(UUID orgId) {
+        access.require(orgId, OrgType.STYLIST);
+        StylistProfile profile = profiles.findLocked(orgId)
+                .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, StylistError.NO_PROFILE, "Save the profile first"));
+        profile.markDemo();
+        return view(profile);
+    }
+
+    /** Admin: hides every LIVE demo stylist, e.g. when the real ones join. Returns how many were hidden. */
+    @Transactional
+    int hideDemos() {
+        List<StylistProfile> live = profiles.findByDemoTrueAndStatus(ProfileStatus.LIVE);
+        for (StylistProfile p : live) {
+            p.hide();
+            events.publishEvent(new StylistHidden(p.getOrgId()));
+        }
+        return live.size();
+    }
+
     private boolean termsAccepted(UUID orgId) {
         return currentUser.isAdmin() || consents.acceptedAt(orgId).isPresent();
     }
@@ -204,6 +225,6 @@ class ProfileService {
     static ProfileView view(StylistProfile p) {
         return new ProfileView(p.getDisplayName(), p.getLocationId(), p.getMarket(), p.getBio(), p.getSpecialties(),
                 p.getBookingUrl(), p.getBookingPlatform(), p.getInstagram(), p.getPriceTier(), p.getStatus(),
-                p.getPublishedAt(), p.getUpdatedAt());
+                p.getPublishedAt(), p.getUpdatedAt(), p.isDemo());
     }
 }

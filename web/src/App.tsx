@@ -11,6 +11,7 @@ const StylistHomePage = lazy(() => import('./stylists/StylistHomePage').then((m)
 const ProfilePage = lazy(() => import('./stylists/ProfilePage').then((m) => ({ default: m.ProfilePage })))
 const PortfolioPage = lazy(() => import('./stylists/PortfolioPage').then((m) => ({ default: m.PortfolioPage })))
 const AdminStylistsPage = lazy(() => import('./admin/AdminStylistsPage').then((m) => ({ default: m.AdminStylistsPage })))
+const AdminDemoPage = lazy(() => import('./admin/AdminDemoPage').then((m) => ({ default: m.AdminDemoPage })))
 const AdminLocationsPage = lazy(() => import('./admin/AdminLocationsPage').then((m) => ({ default: m.AdminLocationsPage })))
 
 /**
@@ -65,6 +66,7 @@ function App() {
                 <Route path="/stylist/:orgId/portfolio" element={<PortfolioPage />} />
                 <Route path="/admin/stylists" element={<AdminStylistsPage />} />
                 <Route path="/admin/locations" element={<AdminLocationsPage />} />
+                <Route path="/admin/demo" element={<AdminDemoPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

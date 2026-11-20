@@ -60,7 +60,7 @@ export function AdminStylistsPage() {
     <>
       <h1>Stylists</h1>
       <p>
-        <Link to="/admin/locations">Salon locations</Link>
+        <Link to="/admin/locations">Salon locations</Link> · <Link to="/admin/demo">Demo stylists</Link>
       </p>
 
       <form className="form panel" onSubmit={create} aria-describedby={formError.describedBy}>
@@ -100,6 +100,7 @@ export function AdminStylistsPage() {
                 <Chip tone={s.status === 'LIVE' ? 'success' : s.status === 'HIDDEN' ? 'warning' : 'neutral'}>
                   {s.status ? s.status.toLowerCase() : 'no profile'}
                 </Chip>
+                {s.demo && <Chip tone="info">demo</Chip>}
                 <span className="muted small">
                   {s.taggedPhotos} of {s.readyPhotos} photos tagged
                   {s.bookingPlatform ? ` · books on ${PLATFORM_LABEL[s.bookingPlatform]}` : ''}

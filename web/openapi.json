@@ -499,6 +499,9 @@
           "bookingUrl" : {
             "type" : "string"
           },
+          "demo" : {
+            "type" : "boolean"
+          },
           "displayName" : {
             "type" : "string"
           },
@@ -536,7 +539,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "bio", "bookingPlatform", "bookingUrl", "displayName", "instagram", "locationId", "market", "priceTier", "publishedAt", "specialties", "status", "updatedAt" ]
+        "required" : [ "bio", "bookingPlatform", "bookingUrl", "demo", "displayName", "instagram", "locationId", "market", "priceTier", "publishedAt", "specialties", "status", "updatedAt" ]
       },
       "ProfileServiceStylistHome" : {
         "properties" : {
@@ -585,6 +588,9 @@
             "enum" : [ "BOOKSY", "VAGARO", "STYLESEAT", "GLOSSGENIUS", "SQUARE", "OTHER" ],
             "type" : "string"
           },
+          "demo" : {
+            "type" : "boolean"
+          },
           "displayName" : {
             "type" : "string"
           },
@@ -615,7 +621,16 @@
             "type" : "integer"
           }
         },
-        "required" : [ "bookingPlatform", "displayName", "market", "orgId", "orgName", "publishedAt", "readyPhotos", "status", "taggedPhotos" ]
+        "required" : [ "bookingPlatform", "demo", "displayName", "market", "orgId", "orgName", "publishedAt", "readyPhotos", "status", "taggedPhotos" ]
+      },
+      "StylistControllerDemosHidden" : {
+        "properties" : {
+          "hidden" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "hidden" ]
       },
       "StylistsLocation" : {
         "properties" : {
@@ -965,6 +980,51 @@
                     "$ref" : "#/components/schemas/StylistControllerAdminStylistView"
                   },
                   "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-controller" ]
+      }
+    },
+    "/api/admin/stylists/demo/hide" : {
+      "post" : {
+        "operationId" : "hideDemos",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StylistControllerDemosHidden"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-controller" ]
+      }
+    },
+    "/api/admin/stylists/{orgId}/demo" : {
+      "post" : {
+        "operationId" : "markDemo",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfileServiceProfileView"
                 }
               }
             },

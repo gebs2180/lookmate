@@ -18,15 +18,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class Stylists {
 
-    /** A LIVE stylist as clients may see them. */
+    /**
+     * A LIVE stylist as clients may see them. {@code demo} marks a made-up stylist for the proof of concept: label
+     * it ("Sample stylist") wherever clients see it.
+     */
     public record LiveProfile(UUID orgId, String displayName, String market, Location location, String bio,
                               List<ServiceType> specialties, String bookingUrl, BookingPlatform bookingPlatform,
-                              String instagram, Integer priceTier) {
+                              String instagram, Integer priceTier, boolean demo) {
     }
 
     /** Any stylist profile with its status: for admin screens. */
     public record ProfileSummary(UUID orgId, String displayName, String market, ProfileStatus status,
-                                 UUID locationId, String bookingUrl, int readyPhotos) {
+                                 UUID locationId, String bookingUrl, int readyPhotos, boolean demo) {
     }
 
     public record Location(UUID id, String brand, String name, String market, String address, String city,
@@ -71,7 +74,7 @@ public class Stylists {
     public Optional<ProfileSummary> profile(UUID orgId) {
         return profiles.findById(orgId).map(p -> new ProfileSummary(p.getOrgId(), p.getDisplayName(), p.getMarket(),
                 p.getStatus(), p.getLocationId(), p.getBookingUrl(),
-                (int) photos.countByOrgIdAndStatusIn(orgId, List.of(Photo.Status.READY))));
+                (int) photos.countByOrgIdAndStatusIn(orgId, List.of(Photo.Status.READY)), p.isDemo()));
     }
 
     /**
@@ -120,6 +123,6 @@ public class Stylists {
     private LiveProfile live(StylistProfile p) {
         Location location = p.getLocationId() == null ? null : locations.findById(p.getLocationId()).map(SalonLocation::view).orElse(null);
         return new LiveProfile(p.getOrgId(), p.getDisplayName(), p.getMarket(), location, p.getBio(), p.getSpecialties(),
-                p.getBookingUrl(), p.getBookingPlatform(), p.getInstagram(), p.getPriceTier());
+                p.getBookingUrl(), p.getBookingPlatform(), p.getInstagram(), p.getPriceTier(), p.isDemo());
     }
 }

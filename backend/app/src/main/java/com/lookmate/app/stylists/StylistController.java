@@ -24,7 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 class StylistController {
 
     record AdminStylistView(UUID orgId, String orgName, ProfileStatus status, String displayName, String market,
-                            BookingPlatform bookingPlatform, int readyPhotos, int taggedPhotos, Instant publishedAt) {
+                            BookingPlatform bookingPlatform, int readyPhotos, int taggedPhotos, Instant publishedAt,
+                            boolean demo) {
+    }
+
+    record DemosHidden(int hidden) {
     }
 
     private final ProfileService profiles;
@@ -113,9 +117,21 @@ class StylistController {
             int ready = (int) photoRows.countByOrgIdAndStatusIn(orgId, List.of(Photo.Status.READY));
             int tagged = (int) photoRows.countTaggedReady(orgId);
             return p == null
-                    ? new AdminStylistView(orgId, directory.orgName(orgId), null, null, null, null, ready, tagged, null)
+                    ? new AdminStylistView(orgId, directory.orgName(orgId), null, null, null, null, ready, tagged, null, false)
                     : new AdminStylistView(orgId, directory.orgName(orgId), p.getStatus(), p.getDisplayName(), p.getMarket(),
-                    p.getBookingPlatform(), ready, tagged, p.getPublishedAt());
+                    p.getBookingPlatform(), ready, tagged, p.getPublishedAt(), p.isDemo());
         }).toList();
+    }
+
+    /** Admin: marks a stylist as made up (proof of concept). */
+    @PostMapping("/api/admin/stylists/{orgId}/demo")
+    ProfileService.ProfileView markDemo(@PathVariable UUID orgId) {
+        return profiles.markDemo(orgId);
+    }
+
+    /** Admin: hides every live demo stylist at once. */
+    @PostMapping("/api/admin/stylists/demo/hide")
+    DemosHidden hideDemos() {
+        return new DemosHidden(profiles.hideDemos());
     }
 }

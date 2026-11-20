@@ -26,6 +26,10 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
 - Client contact retention: undecided.
 - Stylist terms text: a draft (`backend/app/src/main/resources/terms/`), needs a lawyer before the pilot.
 - App name and domain: placeholder `pilot.lookmate.example` in `deploy/` and `.claude/skills/`.
+- Tagged photos a stylist needs before going live: 3 (`lookmate.stylists.min-tagged-photos-to-publish`).
+- Salon locations: entered by Zach on `/admin/locations`, not seeded (2026-11-20).
+- Demo stylists: made-up profiles for the proof of concept, created at `/admin/demo` and hidden all at once when real
+  stylists join (2026-11-20). See [docs/modules/stylists.md](docs/modules/stylists.md).
 
 ## Working here
 
