@@ -4,9 +4,10 @@ Proposed 2026-11-20. The look and voice for Combpatible (named 2026-11-20; worki
 Prototype: <https://claude.ai/artifact/74ApqgXdGU52ULhyr6Cvfm> (source: [prototype.html](prototype.html)). Tokens:
 [tokens.css](tokens.css). Flows: [flows.md](flows.md). How to get there: [implementation-plan.md](implementation-plan.md).
 
-> **Redesign under review (2026-11-20):** four fuller directions with clickable prototypes, and a recommendation, are in
-> [redesign-options.md](redesign-options.md). If one is approved, it replaces the type, colour and motion sections
-> below; the principles, tone, accessibility and inclusivity sections still stand.
+> **Superseded in part (2026-11-20, Zach):** the app uses **Lookbook with Strand motion** from
+> [redesign-options.md](redesign-options.md). Its type, colour and motion replace the sections marked superseded below,
+> and the Chair-side tokens were never wired in. The principles, tone, accessibility and inclusivity sections still
+> stand.
 
 The name comes from the consultation: the minute in the chair before anything is cut, when a good stylist looks at your
 photo, asks about your hair and repeats back what you want. The whole product is that minute, done before you book.
@@ -63,6 +64,8 @@ if a domain is bought, consider the misspelling too.
 
 ### Type
 
+> **Superseded (2026-11-20):** the app uses Instrument Serif and Inter Tight (Lookbook, [redesign-options.md](redesign-options.md)).
+
 | Role | Face | Use |
 |---|---|---|
 | Display | **Bodoni Moda** (variable, optical sizes, OFL) | Screen titles from 30px up, the landing hero, and the echo quote in *italic*. Weight 500, never bold. Never below 24px: its hairlines vanish. |
@@ -78,6 +81,8 @@ always 16px or larger (smaller makes iOS zoom). Headings use `text-wrap: balance
 tracking.
 
 ### Colour
+
+> **Superseded (2026-11-20):** the app uses Lookbook's paper and oxblood, light only; tokens in `web/src/index.css`.
 
 Porcelain and plum ink with one garnet accent. Garnet was chosen over the usual coral or terracotta because it reads as
 lipstick and lacquer (beauty) rather than as a home-decor brand, and it holds strong contrast in text. On dark
@@ -106,6 +111,9 @@ going cream.
   `--shadow-2`. Borders are for controls (3:1 contrast); dividers use `--color-line`.
 
 ### Motion
+
+> **Superseded (2026-11-20):** motion is the Strand's (`web/src/strand/`). The matching moment is a contact sheet with
+> the strand and no step counts or photo numbers. The rule below that the wait is never lengthened for effect still holds.
 
 Short and soft, and only where it explains something:
 

@@ -1,7 +1,8 @@
 # Redesign options: four directions for Combpatible
 
-Status: **proposal for Zach**, 2026-11-20. Nothing in `web/src` has changed. This doc compares four full redesigns,
-each with a clickable phone prototype, and recommends one.
+Status: **decided 2026-11-20 (Zach): A. Lookbook, with D. Strand's motion made prominent.** Applied to `web/` on
+branch `claude/lookbook-redesign-232f2e`. This doc compares four full redesigns, each with a clickable phone prototype,
+and recommends one; the audit below describes the app as it was before.
 
 Why now: the running app still wears Rawmark's "Ledger" theme, and Zach's verdict is that it looks too close to
 Rawmark. The goal is "very sleek, animated and right for the beauty industry", because "we are only going to get buy-in

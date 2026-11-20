@@ -27,7 +27,11 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
   Resend accounts, but a **separate Auth0 tenant** and **separate database**. Details: [docs/hosting.md](docs/hosting.md).
 - **Scale without slowing down:** see [docs/architecture.md](docs/architecture.md). Stateless API, Postgres as the
   queue (`SKIP LOCKED`), embeddings keyed by model, `market` on every place-bound row.
-- **Design (proposed):** "Chair-side" direction, flows, tokens and plan in [docs/ux/design-direction.md](docs/ux/design-direction.md).
+- **Design: Lookbook with Strand motion** (Zach, 2026-11-20). Paper and oxblood, Instrument Serif over Inter Tight,
+  photos as the hero, and the Strand (one hair that draws itself and morphs between the four hair types) as the
+  signature motion. Spec and prototypes: [docs/ux/redesign-options.md](docs/ux/redesign-options.md); live tokens in
+  `web/src/index.css`, Lookbook styles in `web/src/lookbook.css`. The principles, tone, accessibility and inclusivity
+  sections of [docs/ux/design-direction.md](docs/ux/design-direction.md) still stand; its type and colour don't.
 - **Matching publishes automatically; admin monitors** (2026-11-20, Zach). Clients choose; we recommend: a ranked list
   goes to the client as soon as it's ready, clients can browse every live stylist (`/api/public/stylists`), and the
   admin watches `/admin/matches` and steps in after the fact. Review switch `lookmate.matching.review-before-publish`,
