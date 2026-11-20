@@ -15,8 +15,8 @@ export default defineConfig({
         name: 'Combpatible',
         short_name: 'Combpatible',
         description: 'Match with the stylist whose work fits your look',
-        theme_color: '#1f3a5f',
-        background_color: '#ffffff',
+        theme_color: '#f5f0e8',
+        background_color: '#f5f0e8',
         display: 'standalone',
         start_url: '/',
         icons: [

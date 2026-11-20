@@ -1,58 +1,89 @@
 /*
- * Design tokens. Every colour, size and shadow below comes from these, so a brand direction is a swap of this block
- * (docs/brand-directions.md). The direction is Ledger (Zach, 2026-11-13): white, navy ink, one deep green, Manrope with
- * tabular figures on money and percentages. Text pairs meet WCAG AA (4.5:1) on --color-surface and --color-surface-raised;
- * *-soft backgrounds keep AA with their own *-text colour. --color-border is 3:1 or better against white, for controls.
- * The ledger greens: #0f5b4a (accent), #3f8f78 (mid), #9cc9b9 (light), #e3f2ed (tint). Mid and light are for fills such as
- * the grade-chance bar, never for text on white.
+ * Design tokens. Every colour, size and shadow below comes from these. The direction is Lookbook with Strand motion
+ * (Zach, 2026-11-20; docs/ux/redesign-options.md): warm paper, near-black ink, one oxblood accent, Instrument Serif for
+ * display type and Inter Tight for everything a person reads or taps. Both faces are self-hosted from Fontsource.
+ *
+ * The first block keeps the app's existing names (--color-*, --space-*, --radius-*) so every screen, admin included,
+ * takes the new look without its own CSS changing. The Lookbook names below them (--paper, --ink, --serif, the easings)
+ * are for the editorial pieces in lookbook.css.
+ *
+ * Contrast (WCAG 2.2, on --paper / --card): ink 16.9 / 17.9 : 1, ink-2 (muted) 8.6 / 9.1 : 1, oxblood 8.9 / 9.4 : 1,
+ * sample text on its fill 7.0 : 1, accent-ink on oxblood 9.6 : 1, control border 3.4 : 1 (non-text, 3:1 minimum).
+ * --marker is for graphics only (the strand, the grease-pencil circle), never for text. Light only: the paper is the
+ * brand, so the app no longer switches to a dark theme.
  */
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
-  --color-bg: #ffffff;
-  --color-surface: #ffffff;
-  --color-surface-raised: #ffffff;
-  --color-surface-sunken: #f4f7fa;
-  --color-text: #0f1b2d;
-  --color-muted: #566376;
-  --color-border: #8593a6;
-  --color-border-strong: #0f1b2d;
-  --color-line: #e3e7ee;
+  /* ---- Lookbook ---- */
+  --paper: #f5f0e8;
+  --paper-2: #ece5d9;
+  --card: #fffdf9;
+  --ink: #1a1614;
+  --ink-2: #4f4640;
+  --rule: #d8cfc2;
+  --accent: #8a1c2c;
+  --accent-ink: #fff6f2;
+  --marker: #c2263a;
+  --sample: #6b4b12;
+  --sample-bg: #f3e3bf;
+  --sheet: #1d1917;
+  --serif: 'Instrument Serif', 'Times New Roman', serif;
+  --sans: 'Inter Tight Variable', 'Inter Tight', system-ui, sans-serif;
+  --ease-page: cubic-bezier(0.7, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-draw: cubic-bezier(0.65, 0, 0.35, 1);
+  --t-page: 680ms;
+  --t-rise: 560ms;
+  --t-marker: 720ms;
+  --t-draw: 1600ms;
 
-  --color-accent: #0f5b4a;
-  --color-accent-hover: #0b4538;
-  --color-accent-contrast: #ffffff;
-  --color-accent-soft: #e3f2ed;
-  --color-accent-text: #0f5b4a;
-  --color-green-mid: #3f8f78;
-  --color-green-light: #9cc9b9;
+  /* ---- The app's names, mapped onto Lookbook ---- */
+  --color-bg: var(--paper);
+  --color-surface: var(--card);
+  --color-surface-raised: var(--card);
+  --color-surface-sunken: var(--paper-2);
+  --color-text: var(--ink);
+  --color-muted: var(--ink-2);
+  --color-border: #8a7f74;
+  --color-border-strong: var(--ink);
+  --color-line: var(--rule);
 
-  --color-success: #1e7a3c;
-  --color-success-soft: #dff5e6;
-  --color-success-text: #17602f;
-  --color-warning: #b26a00;
-  --color-warning-soft: #fdf1dc;
-  --color-warning-text: #7a4800;
-  --color-danger: #b42318;
-  --color-danger-hover: #931c13;
-  --color-danger-soft: #fdeceb;
-  --color-danger-text: #9a1d14;
+  --color-accent: var(--accent);
+  --color-accent-hover: #6f1522;
+  --color-accent-contrast: var(--accent-ink);
+  --color-accent-soft: #f6e6e2;
+  --color-accent-text: var(--accent);
+  /* Fills for bars and charts (admin): three steps of oxblood, never text on paper. */
+  --color-green-mid: #b4646d;
+  --color-green-light: #e2b9bb;
+
+  --color-success: #3c6b3f;
+  --color-success-soft: #e4ecdc;
+  --color-success-text: #2c5530;
+  --color-warning: #9a6a16;
+  --color-warning-soft: var(--sample-bg);
+  --color-warning-text: var(--sample);
+  --color-danger: #a3271b;
+  --color-danger-hover: #831e15;
+  --color-danger-soft: #f7e2dd;
+  --color-danger-text: #8f1f15;
   --color-info-soft: var(--color-accent-soft);
   --color-info-text: var(--color-accent-text);
-  --color-focus: #0f5b4a;
+  --color-focus: var(--accent);
 
-  --font-sans: 'Manrope Variable', system-ui, sans-serif;
-  --font-display: 'Manrope Variable', system-ui, sans-serif;
+  --font-sans: var(--sans);
+  --font-display: var(--serif);
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
-  --font-weight-display: 800;
+  --font-weight-display: 400;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.375rem;
-  --text-2xl: 1.75rem;
-  --text-3xl: 2.25rem;
-  --leading-tight: 1.2;
+  --text-lg: 1.25rem;
+  --text-xl: 1.625rem;
+  --text-2xl: 2.25rem;
+  --text-3xl: 2.875rem;
+  --leading-tight: 1.05;
   --leading-normal: 1.5;
 
   --space-1: 0.25rem;
@@ -63,13 +94,14 @@
   --space-6: 2rem;
   --space-7: 3rem;
 
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1.125rem;
+  /* Editorial corners: square-ish frames, pill buttons. */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
   --radius-pill: 999px;
 
-  --shadow-1: 0 1px 2px rgb(15 27 45 / 0.08), 0 6px 16px -8px rgb(15 27 45 / 0.25);
-  --shadow-2: 0 4px 12px rgb(16 24 40 / 0.12), 0 2px 4px rgb(16 24 40 / 0.06);
+  --shadow-1: 0 1px 0 rgb(26 22 20 / 0.06), 0 10px 24px -14px rgb(26 22 20 / 0.35);
+  --shadow-2: 0 18px 40px -18px rgb(26 22 20 / 0.45);
 
   --tap: 44px;
   --measure: 42rem;
@@ -80,44 +112,7 @@
   color: var(--color-text);
   background: var(--color-bg);
   -webkit-text-size-adjust: 100%;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #0b1524;
-    --color-surface: #101d31;
-    --color-surface-raised: #15243b;
-    --color-surface-sunken: #0d192b;
-    --color-text: #eef2f7;
-    --color-muted: #a9b6c7;
-    --color-border: #6c7d94;
-    --color-border-strong: #eef2f7;
-    --color-line: #243650;
-
-    --color-accent: #6fcfb2;
-    --color-accent-hover: #8fdcc5;
-    --color-accent-contrast: #062219;
-    --color-accent-soft: #123a30;
-    --color-accent-text: #8fdcc5;
-    --color-green-mid: #3f8f78;
-    /* Darker than the mid green, so the three steps differ in lightness against a dark page. */
-    --color-green-light: #2b5f50;
-
-    --color-success: #6fcf8f;
-    --color-success-soft: #14301f;
-    --color-success-text: #8fe3aa;
-    --color-warning: #f0b45a;
-    --color-warning-soft: #2d2212;
-    --color-warning-text: #f5c77f;
-    --color-danger: #ff8a80;
-    --color-danger-hover: #ffaba3;
-    --color-danger-soft: #331816;
-    --color-danger-text: #ffaaa2;
-    --color-focus: #8fdcc5;
-
-    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px -8px rgb(0 0 0 / 0.6);
-    --shadow-2: 0 6px 18px rgb(0 0 0 / 0.5);
-  }
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Money and percentages line up in columns. */
@@ -150,7 +145,9 @@ h3 {
   font-family: var(--font-display);
   font-weight: var(--font-weight-display);
   line-height: var(--leading-tight);
+  letter-spacing: -0.012em;
   overflow-wrap: break-word;
+  text-wrap: balance;
 }
 
 h1 {
@@ -159,13 +156,32 @@ h1 {
 }
 
 h2 {
-  font-size: var(--text-lg);
-  margin: var(--space-5) 0 var(--space-2);
+  font-size: var(--text-xl);
+  margin: var(--space-6) 0 var(--space-2);
 }
 
 h3 {
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
   margin: 0 0 var(--space-1);
+}
+
+/* Small caps-style labels above a headline, as in a magazine. */
+.eyebrow {
+  display: block;
+  margin: 0;
+  font: 600 0.6875rem/1.3 var(--sans);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 p {
@@ -191,11 +207,14 @@ img {
   outline-offset: 2px;
 }
 
+/* Reduced motion: wipes become cuts, drawn lines show already drawn, loops stop (lookbook.css has the details). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
@@ -223,11 +242,12 @@ img {
   min-height: 3.5rem;
   margin: 0 calc(-1 * var(--space-4)) var(--space-4);
   padding: var(--space-2) var(--space-4);
-  background: var(--color-surface);
-  /* Full width on a wide screen without a 100vw box (which would scroll sideways under a scrollbar). */
+  background: var(--paper);
+  /* The masthead: paper, with an ink rule under it. Full width on a wide screen without a 100vw box (which would scroll
+     sideways under a scrollbar). */
   box-shadow:
-    0 0 0 100vmax var(--color-surface),
-    0 1px 0 100vmax var(--color-border);
+    0 0 0 100vmax var(--paper),
+    0 1px 0 100vmax var(--ink);
   clip-path: inset(0 -100vmax -1px);
 }
 
@@ -236,22 +256,10 @@ img {
   align-items: center;
   gap: var(--space-2);
   min-height: var(--tap);
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: var(--text-lg);
+  font: 600 1.1875rem/1 var(--sans);
   letter-spacing: -0.01em;
   text-decoration: none;
   color: var(--color-text);
-}
-
-/* The placeholder mark: a card outline in the accent. A brand direction replaces it. */
-.brand::before {
-  content: '';
-  width: 0.85rem;
-  height: 1.15rem;
-  border: 2.5px solid var(--color-accent);
-  border-radius: 3px;
-  transform: rotate(-8deg);
 }
 
 .who {
@@ -288,6 +296,13 @@ img {
   margin-bottom: var(--space-5);
 }
 
+.topbar-note {
+  font: 500 0.6875rem var(--sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
 /* "← Back" and the like: small, but a full tap target. */
 .back {
   display: flex;
@@ -315,26 +330,48 @@ button,
   justify-content: center;
   gap: var(--space-2);
   min-height: var(--tap);
-  padding: 0.55rem 1.1rem;
+  padding: 0.55rem 1.35rem;
   font: inherit;
   font-weight: 600;
   line-height: 1.25;
   text-align: center;
   text-decoration: none;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-accent);
-  background: var(--color-accent);
-  color: var(--color-accent-contrast);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
   cursor: pointer;
   transition:
-    background-color 120ms ease,
-    border-color 120ms ease;
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms var(--ease-out);
   -webkit-tap-highlight-color: transparent;
 }
 
 button:hover:not(:disabled),
 .button:hover,
 .capture:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+button:active:not(:disabled),
+.button:active,
+.capture:active {
+  transform: scale(0.97);
+}
+
+/* The one accent action on a screen (Book). */
+.button.accent,
+button.accent {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.button.accent:hover,
+button.accent:hover:not(:disabled) {
   background: var(--color-accent-hover);
   border-color: var(--color-accent-hover);
 }
@@ -342,16 +379,18 @@ button:hover:not(:disabled),
 button.secondary,
 .button.secondary,
 .capture.secondary {
-  background: var(--color-surface);
-  color: var(--color-accent-text);
-  border-color: var(--color-border-strong);
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 0.5px var(--ink);
 }
 
 button.secondary:hover:not(:disabled),
 .button.secondary:hover,
 .capture.secondary:hover {
-  background: var(--color-accent-soft);
-  border-color: var(--color-accent);
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
 }
 
 button.danger {
@@ -371,26 +410,30 @@ button:disabled,
   cursor: not-allowed;
 }
 
-/* Busy: the button keeps its name, and a spinner says it's working. */
+/* Busy: the button keeps its name, and the strand says it's working. */
 button[aria-busy='true'] {
   cursor: progress;
 }
 
-button[aria-busy='true']::before,
-.loading::before {
+/* No spinner: a small strand of hair draws itself root to tip, over and over (the Strand signature). */
+button[aria-busy='true']::before {
   content: '';
-  width: 1em;
-  height: 1em;
+  width: 0.6em;
+  height: 1.05em;
   flex-shrink: 0;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 24'%3E%3Cpath d='M7 2c6 0 6 5 0 5s-6 5 0 5 6 5 0 5-6 5 0 5' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  animation: strand-grow 1100ms var(--ease-draw) infinite;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+@keyframes strand-grow {
+  0% {
+    clip-path: inset(0 0 100% 0);
+  }
+  60%,
+  100% {
+    clip-path: inset(0 0 0 0);
   }
 }
 
@@ -403,6 +446,7 @@ button.link {
   margin: -0.6rem -0.2rem;
   background: none;
   border: none;
+  border-radius: 0;
   color: var(--color-accent-text);
   font-weight: inherit;
   text-decoration: underline;
@@ -874,21 +918,15 @@ p.error[role='status'] {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  padding: 0.15rem 0.6rem;
-  border-radius: var(--radius-pill);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
-  font-size: var(--text-sm);
+  font-size: 0.6875rem;
   font-weight: 600;
-  line-height: 1.4;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.3;
   white-space: nowrap;
-}
-
-.chip::before {
-  content: '';
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: currentColor;
 }
 
 .chip-neutral {
@@ -1567,104 +1605,4 @@ h1[tabindex='-1']:focus {
   overflow: visible;
 }
 
-
-/* ---------- Client intake (/find, /m/:token) ---------- */
-
-.find {
-  max-width: var(--measure);
-}
-
-.quiz-progress {
-  width: 100%;
-  height: 0.5rem;
-  accent-color: var(--color-accent);
-}
-
-.question {
-  display: grid;
-  gap: var(--space-3);
-  margin: 0;
-  padding: 0;
-  border: 0;
-  min-width: 0;
-}
-
-.question legend {
-  padding: 0;
-}
-
-.question legend h1 {
-  margin: 0;
-}
-
-.choice-hint {
-  display: block;
-  font-size: var(--text-sm);
-  color: var(--color-muted);
-}
-
-.inspiration-preview {
-  display: block;
-  max-width: 100%;
-  max-height: 22rem;
-  border-radius: var(--radius-md);
-  object-fit: contain;
-}
-
-.stage-list {
-  display: grid;
-  gap: var(--space-2);
-  padding: 0;
-  list-style: none;
-}
-
-/* ---------- Stylists as clients see them: their matches and the directory (/m/:token, /stylists) ---------- */
-
-.stylist-cards {
-  list-style: none;
-  padding: 0;
-  margin: var(--space-3) 0;
-  display: grid;
-  gap: var(--space-3);
-}
-
-/* No stretched link here (unlike .tile): a card has two links, Book and Instagram, and each must stay its own target. */
-.stylist-card {
-  display: grid;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-1);
-}
-
-.stylist-card p {
-  margin: 0;
-}
-
-.stylist-card-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1) var(--space-2);
-}
-
-.stylist-card-head h3 {
-  margin: 0;
-  margin-right: auto;
-}
-
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  margin: var(--space-3) 0;
-}
-
-.filters label {
-  display: grid;
-  gap: var(--space-1);
-  flex: 1 1 12rem;
-  font-weight: 600;
-}
+/* The client-facing screens (landing, quiz, reveal, directory) and the Strand pieces are in lookbook.css. */
