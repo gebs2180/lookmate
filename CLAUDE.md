@@ -11,6 +11,8 @@ pilot metrics) is [docs/brief.md](docs/brief.md); read it before product decisio
 **Sibling project:** this repo reuses the stack and infrastructure accounts of `gebs2180/pokemans` (Rawmark), which
 stays a separate app. Code was copied, not shared: a fix in one doesn't reach the other.
 
+**Orchestrating?** Start with [docs/orchestrator-handoff.md](docs/orchestrator-handoff.md): state, standing instructions and next steps.
+
 ## Decisions (2026-11-20)
 
 - **Name: Combpatible** (Zach, 2026-11-20), replacing the working name LookMate. Internal identifiers keep `lookmate`
