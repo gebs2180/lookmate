@@ -15,7 +15,7 @@ pgvector, one private photo bucket, one React PWA. Clients never sign in; stylis
 | `storage` | `BlobStore` (presigned uploads, never overwrite), image checks | From pokemans |
 | `notify` | email outbox, Resend, retention | From pokemans |
 | `stylists` | `salon_location`, `stylist_profile`, `portfolio_photo` and tags | To build |
-| `intake` | `client`, `match_request`, inspiration upload, `/api/public/**` | To build |
+| `intake` | `client`, `match_request`, inspiration upload, `/api/public/match-requests/**` | Built ([modules/intake.md](modules/intake.md)) |
 | `matching` | embeddings, ranking, `match`, admin review | To build |
 | `tracking` | `match_event`, booking redirect, metrics | To build |
 

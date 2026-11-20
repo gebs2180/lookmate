@@ -54,6 +54,29 @@ class Notifier {
         return queued;
     }
 
+    /**
+     * Queues an email to an address that belongs to no user: a client, who has no account (intake). Stored as skipped
+     * while sending is off, like {@link #queue}. Returns whether it was queued; false if this dedupe key already was.
+     */
+    boolean queueToAddress(String dedupeKey, Template template, String email, UUID subjectId, EmailContent content, Instant now) {
+        String address = blankToNull(email);
+        Status status = Status.PENDING;
+        String reason = null;
+        if (address == null) {
+            status = Status.SKIPPED;
+            reason = NO_EMAIL;
+        } else if (!properties.enabled()) {
+            status = Status.SKIPPED;
+            reason = SENDING_OFF;
+        }
+        boolean queued = outbox.queue(new EmailOutbox.New(dedupeKey, template, null, address, null, subjectId, content, status, reason,
+                now, now));
+        if (queued) {
+            log.info("Email {} {}{}", dedupeKey, status, reason == null ? "" : " (" + reason + ")");
+        }
+        return queued;
+    }
+
     private static String blankToNull(String s) {
         return s == null || s.isBlank() ? null : s;
     }

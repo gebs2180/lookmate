@@ -61,6 +61,17 @@ lookmate:
       api-key: ${RESEND_API_KEY:}
       from: ${NOTIFY_EMAIL_FROM:LookMate <notify@example.com>}
       app-url: ${NOTIFY_APP_URL:http://localhost:5173}
+  intake:
+    # Client intake (docs/modules/intake.md). Clients have no account: a link token reaches their request.
+    link-ttl: 120d
+    # Requests one email address may have open (not yet matched) from the last 24 hours.
+    max-open-requests-per-email-per-day: 3
+    # A request claimed for matching but untouched this long is offered to the matching worker again.
+    matching-stuck-after: 15m
+    # Per IP, in memory: per instance. More than one app container needs a shared limit (Caddy or Postgres).
+    rate-limit:
+      creates-per-hour: 10
+      reads-per-minute: 60
   retention:
     # Personal data is kept only as long as it's needed (docs/data-retention.md). A daily job at 04:15 UTC.
     # The periods are defaults to confirm.
