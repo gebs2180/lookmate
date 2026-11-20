@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { publicApi, type IntakeSettings, type MatchRequestCreate, type MatchRequestCreated } from '../../api'
+import { Strand, type StrandShape } from '../../strand/Strand'
 import { useLoad } from '../../useLoad'
 import { message } from '../../format'
 import { PhotoPicker, PrivacyNote } from './PhotoPicker'
@@ -139,7 +140,12 @@ export function FindPage() {
   if (sent?.photoSent) {
     return (
       <section className="find">
-        <h1>Request sent</h1>
+        <h1 className="display">Request sent</h1>
+        {answers.hairType && (
+          <div className="sent-strand" aria-hidden="true">
+            <Strand shape={answers.hairType as StrandShape} horizontal width={240} height={56} bend={0.5} strokeWidth={3} />
+          </div>
+        )}
         <p>
           Thanks{answers.firstName.trim() ? `, ${answers.firstName.trim()}` : ''}. A Combpatible stylist is matching you with stylists whose
           own work looks like your photo, on hair like yours. We'll email <strong>{answers.email.trim()}</strong> when your matches are
@@ -163,10 +169,17 @@ export function FindPage() {
 
   return (
     <section className="find">
-      <p className="muted small" aria-live="polite">
-        Question {step + 1} of {STEPS.length}
-      </p>
-      <progress className="quiz-progress" max={STEPS.length} value={step + 1} aria-label="Quiz progress" />
+      <div className="quiz-head">
+        <p className="folio" aria-live="polite">
+          <span className="sr-only">
+            Question {step + 1} of {STEPS.length}
+          </span>
+          <span aria-hidden="true">
+            <b>{String(step + 1).padStart(2, '0')}</b> / {String(STEPS.length).padStart(2, '0')}
+          </span>
+        </p>
+        <progress className="quiz-progress" max={STEPS.length} value={step + 1} aria-label="Quiz progress" />
+      </div>
       {step === 0 && (
         <p className="muted small">
           We'll match you with stylists whose own work looks like the style you want. Or{' '}
@@ -177,15 +190,7 @@ export function FindPage() {
         {current === 'service' && (
           <Choices legend="What do you want done?" options={SERVICES} value={answers.service} onChange={(v) => set('service', v)} />
         )}
-        {current === 'hairType' && (
-          <Choices
-            legend="What's your hair type?"
-            hint="Stylists who work with your hair type rank first."
-            options={HAIR_TYPES}
-            value={answers.hairType}
-            onChange={(v) => set('hairType', v)}
-          />
-        )}
+        {current === 'hairType' && <HairTypes value={answers.hairType} onChange={(v) => set('hairType', v)} />}
         {current === 'texture' && (
           <Choices
             legend="How thick are your strands?"
@@ -234,7 +239,7 @@ export function FindPage() {
                       set('pastIssues', e.target.checked ? [...answers.pastIssues, o.value] : answers.pastIssues.filter((p) => p !== o.value))
                     }
                   />
-                  {o.label}
+                  <span>{o.label}</span>
                 </label>
               ))}
             </div>
@@ -309,6 +314,40 @@ function Question({ legend, hint, children }: { legend: string; hint?: string; c
       {hint && <p className="field-hint">{hint}</p>}
       {children}
     </fieldset>
+  )
+}
+
+/**
+ * Hair type, the question matching cares most about: four cards, each with its own strand, and one large strand above
+ * that cycles through every type until you pick, then takes your shape. The strands are decoration; the radios and
+ * their names carry the meaning.
+ */
+function HairTypes({ value, onChange }: { value: HairType | null; onChange: (value: HairType) => void }) {
+  return (
+    <Question legend="What's your hair type?" hint="Stylists who work with your hair type rank first.">
+      <div className="type-strand" aria-hidden="true">
+        <Strand shape={value ?? 'STRAIGHT'} cycle={value === null} horizontal width={300} height={72} bend={0.6} strokeWidth={3} />
+      </div>
+      <div className="types">
+        {HAIR_TYPES.map((o) => (
+          <label key={o.value} className="type">
+            <input className="sr-only" type="radio" name="hairType" checked={value === o.value} onChange={() => onChange(o.value)} />
+            <Strand
+              shape={o.value as StrandShape}
+              width={40}
+              height={56}
+              bend={0.75}
+              strokeWidth={2.5}
+              drawKey={value === o.value ? 'on' : 'off'}
+            />
+            <span>
+              <span className="name">{o.label}</span>
+              {o.hint && <span className="choice-hint">{o.hint}</span>}
+            </span>
+          </label>
+        ))}
+      </div>
+    </Question>
   )
 }
 
