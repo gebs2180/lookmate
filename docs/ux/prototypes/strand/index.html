@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Combpatible · Strand prototype</title>
+<!--
+  Direction D, "Strand": one continuous line, a strand of hair, draws the whole experience. Quiet, precise, gallery-
+  like; the line is the brand. Prototype only (docs/ux/redesign-options.md). Photos load from ../photos/ (git-ignored
+  Pexels demo photos); without them, tinted placeholders show.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bone: #f4f1ec;
+  --paper: #fbfaf7;
+  --graphite: #1e1d1b;   /* 15.6:1 on bone */
+  --grey: #5f5b55;       /* 6.2:1 on bone */
+  --hair: #cfc8bd;
+  --copper: #a54a22;     /* 5.6:1 on bone */
+  --sample-fg: #1e1d1b; --sample-bg: #e6dfd3;
+  --serif: 'Fraunces', Georgia, serif;
+  --sans: 'Instrument Sans', system-ui, sans-serif;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --draw: cubic-bezier(.65, 0, .35, 1);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: #e4dfd6; font-family: var(--sans); color: var(--graphite); display: grid; place-items: center; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+img { display: block; }
+:focus-visible { outline: 2px solid var(--copper); outline-offset: 3px; }
+.phone { position: relative; width: 390px; height: min(844px, calc(100dvh - 72px)); overflow: hidden; border-radius: 34px; background: var(--bone); box-shadow: 0 30px 80px -30px rgb(0 0 0 / .35), 0 0 0 10px #1e1d1b; }
+@media (max-width: 520px) { body { display: block; background: var(--bone); } .phone { width: 100%; height: 100dvh; border-radius: 0; box-shadow: none; } .devbar { display: none !important; } }
+.devbar { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; font: 12px var(--sans); max-width: 96vw; }
+.devbar button { background: var(--paper); border: 1px solid var(--hair); border-radius: 99px; padding: 6px 11px; cursor: pointer; }
+.devbar button[aria-pressed="true"] { background: var(--graphite); color: var(--bone); }
+
+.screen { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; visibility: hidden; scrollbar-width: none; background: var(--bone); }
+.screen::-webkit-scrollbar { display: none; }
+.screen.active { visibility: visible; z-index: 2; }
+/* "thread-cut": a copper line sweeps across; the old screen fades behind it, the new one fades in after it. */
+.screen.leaving { visibility: visible; z-index: 2; animation: fade-out 380ms var(--ease) both; }
+.screen.entering { visibility: visible; z-index: 3; animation: fade-in 520ms var(--ease) 260ms both; }
+@keyframes fade-out { to { opacity: 0; transform: translateY(-8px); } }
+@keyframes fade-in { from { opacity: 0; transform: translateY(10px); } }
+.cutline { position: absolute; left: 0; right: 0; top: 50%; height: 1.5px; background: var(--copper); z-index: 10; transform: scaleX(0); transform-origin: left; pointer-events: none; }
+.cutline.go { animation: cut 640ms var(--draw) both; }
+@keyframes cut { 0% { transform: scaleX(0); transform-origin: left; } 50% { transform: scaleX(1); transform-origin: left; } 51% { transform-origin: right; } 100% { transform: scaleX(0); transform-origin: right; } }
+.fade > * { opacity: 0; }
+.active .fade > *, .entering .fade > * { animation: up 700ms var(--ease) both; animation-delay: calc(var(--i, 0) * 80ms + 300ms); }
+@keyframes up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+.top { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; }
+.wordmark { font: 400 21px var(--serif); letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+.wordmark svg { width: 14px; height: 24px; stroke: var(--copper); stroke-width: 1.6; fill: none; stroke-linecap: round; }
+.meta { font: 500 12px var(--sans); color: var(--grey); letter-spacing: .02em; }
+.display { font: 300 46px/1.02 var(--serif); letter-spacing: -.025em; margin: 0; text-wrap: balance; font-variation-settings: "opsz" 144; }
+.display i { font-style: italic; color: var(--copper); }
+.h2 { font: 300 32px/1.1 var(--serif); margin: 0; letter-spacing: -.015em; text-wrap: balance; }
+.lede { font: 400 16px/1.55 var(--sans); color: var(--grey); margin: 0; }
+.num { font: 500 12px var(--sans); color: var(--grey); letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.btn { display: inline-flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 56px; padding: 0 22px; border: 0; border-radius: 0; cursor: pointer; font: 500 16px var(--sans); text-decoration: none; background: var(--graphite); color: var(--bone); position: relative; overflow: hidden; }
+.btn .arrow { width: 26px; height: 10px; stroke: currentColor; fill: none; stroke-width: 1.4; transition: transform 300ms var(--ease); }
+.btn:hover .arrow, .btn:focus-visible .arrow { transform: translateX(5px); }
+.btn.line { background: transparent; color: var(--graphite); box-shadow: inset 0 0 0 1px var(--graphite); }
+.btn.block { width: 100%; }
+.link { background: none; border: 0; cursor: pointer; min-height: 44px; font: 500 15px var(--sans); text-decoration: underline; text-decoration-color: var(--copper); text-underline-offset: 4px; }
+.sample { font: 500 11px var(--sans); color: var(--sample-fg); background: var(--sample-bg); padding: 3px 8px; white-space: nowrap; letter-spacing: .02em; }
+.privacy { display: flex; gap: 10px; font: 400 13px/1.45 var(--sans); color: var(--grey); padding-top: 12px; border-top: 1px solid var(--hair); }
+.privacy svg { flex: none; width: 16px; height: 16px; color: var(--copper); margin-top: 1px; }
+.photo { position: relative; overflow: hidden; background: linear-gradient(160deg, var(--tint, #b8a58e), #4a4038); }
+.photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+.photo img.missing { visibility: hidden; }
+.tag { position: absolute; left: 0; bottom: 0; font: 500 11px var(--sans); background: var(--paper); color: var(--graphite); padding: 4px 8px; }
+.pad { padding: 0 22px; }
+
+/* ---------- The strand glyph: one path that morphs between hair types ---------- */
+.strand path { fill: none; stroke: var(--copper); stroke-width: 1.6; stroke-linecap: round; transition: d 900ms var(--draw); }
+/* "strand-draw": a line draws itself from root to tip. */
+.drawn path { stroke-dasharray: var(--len, 600); stroke-dashoffset: var(--len, 600); }
+.active .drawn path, .entering .drawn path { animation: draw 1600ms var(--draw) both; animation-delay: var(--d, 300ms); }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* ---------- Landing ---------- */
+.hero-l { position: relative; padding: 4px 22px 0; display: grid; grid-template-columns: 1fr 120px; gap: 16px; align-items: end; }
+.morph { width: 120px; height: 300px; }
+.morph path { stroke-width: 1.8; }
+.morph-cap { font: 400 italic 15px var(--serif); color: var(--copper); text-align: center; min-height: 20px; }
+.land { padding: 18px 22px 0; display: grid; gap: 16px; }
+.land .actions { display: grid; gap: 4px; }
+.strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 28px 22px 0; }
+.strip .photo { aspect-ratio: 3/4; filter: grayscale(1); transition: filter 600ms; }
+.strip .photo.on { filter: none; }
+.strip figcaption { font: 500 11px var(--sans); color: var(--grey); margin-top: 6px; }
+.foot { padding: 24px 22px 40px; font: 400 13px var(--sans); color: var(--grey); display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--hair); margin: 28px 22px 0; padding-left: 0; padding-right: 0; }
+
+/* ---------- Quiz ---------- */
+.qbar { display: grid; grid-template-columns: 44px 1fr auto; gap: 14px; align-items: center; padding: 16px 22px 0; }
+.iconbtn { width: 44px; height: 44px; border: 1px solid var(--hair); background: transparent; display: grid; place-items: center; cursor: pointer; border-radius: 50%; }
+.progress { height: 1px; background: var(--hair); position: relative; }
+.progress::after { content: ""; position: absolute; left: 0; top: -.5px; height: 2px; width: var(--p); background: var(--copper); transition: width 700ms var(--draw); }
+.q { padding: 34px 22px 0; display: grid; gap: 12px; }
+.typeview { display: grid; place-items: center; height: 170px; margin-top: 10px; }
+.typeview svg { width: 220px; height: 160px; }
+.typeview path { stroke-width: 1.8; }
+.tlist { padding: 8px 22px 0; display: grid; }
+.trow { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; text-align: left; padding: 16px 0; min-height: 64px; border: 0; border-top: 1px solid var(--hair); background: none; cursor: pointer; }
+.trow:last-child { border-bottom: 1px solid var(--hair); }
+.trow .nm { font: 300 26px/1 var(--serif); display: block; transition: color 300ms, transform 400ms var(--ease); }
+.trow .hn { font: 400 13px var(--sans); color: var(--grey); display: block; margin-top: 4px; }
+.trow .mark { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--grey); position: relative; }
+.trow .mark::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--copper); transform: scale(0); transition: transform 400ms var(--ease); }
+.trow[aria-checked="true"] .nm { color: var(--copper); font-style: italic; transform: translateX(6px); }
+.trow[aria-checked="true"] .mark { border-color: var(--copper); }
+.trow[aria-checked="true"] .mark::after { transform: scale(1); }
+
+/* ---------- Matching: the thread ---------- */
+.thread-stage { position: relative; height: 400px; margin: 4px 22px 0; }
+.thread-stage svg.t { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.thread-stage svg.t path { fill: none; stroke: var(--copper); stroke-width: 1.4; stroke-linecap: round; }
+.node { position: absolute; width: 84px; aspect-ratio: 3/4; transition: opacity 500ms var(--ease), transform 600ms var(--ease), filter 500ms; }
+.node .photo { position: absolute; inset: 0; }
+.node.mine { left: 0; top: 0; width: 112px; }
+.node.mine .tag { background: var(--copper); color: #fff; }
+.node.cand { opacity: 0; transform: translateY(10px); filter: grayscale(1); }
+.node.cand.seen { opacity: .5; transform: none; }
+.node.cand.pick { opacity: 1; filter: none; transform: none; box-shadow: 0 0 0 1.5px var(--copper); }
+.node.cand.drop { opacity: .12; }
+.mtext { padding: 6px 22px 0; min-height: 90px; }
+.mtext p { margin: 0; font: 300 26px/1.15 var(--serif); }
+.mtext small { display: block; margin-top: 6px; color: var(--grey); font: 400 14px var(--sans); }
+.mtext .swap { animation: up 500ms var(--ease) both; }
+
+/* ---------- Reveal: the client's words, threaded to evidence ---------- */
+.rhead { padding: 6px 22px 0; display: grid; gap: 14px; }
+.quote { font: 300 italic 22px/1.3 var(--serif); margin: 0; padding: 18px 0 0; border-top: 1px solid var(--hair); }
+.quote small { display: block; font: 400 normal 12.5px var(--sans); color: var(--grey); margin-top: 8px; }
+.tabs { display: flex; gap: 22px; padding: 22px 22px 0; border-bottom: 1px solid var(--hair); margin: 0 22px; padding-left: 0; padding-right: 0; }
+.tabs button { min-height: 44px; border: 0; background: none; font: 500 15px var(--sans); color: var(--grey); cursor: pointer; padding: 0; position: relative; }
+.tabs button[aria-selected="true"] { color: var(--graphite); }
+.tabs button[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--copper); }
+.picks { padding: 8px 22px 0; }
+.pick { position: relative; padding: 26px 0 28px; border-bottom: 1px solid var(--hair); display: grid; gap: 14px; }
+.pick .row1 { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.pick h2 { font: 300 34px/1 var(--serif); margin: 0; letter-spacing: -.015em; }
+.pick .row1 .num { font-size: 13px; }
+.pick .loc { font: 400 13px var(--sans); color: var(--grey); display: flex; gap: 8px; align-items: center; }
+/* The connector: a copper thread runs from the reason down into the evidence photos. */
+.pick .why { position: relative; display: grid; grid-template-columns: 30px 1fr; gap: 8px; align-items: start; }
+.pick .why svg { width: 30px; height: 64px; overflow: visible; }
+.pick .why svg path { fill: none; stroke: var(--copper); stroke-width: 1.4; stroke-linecap: round; stroke-dasharray: 120; stroke-dashoffset: 120; }
+.reveal-go .pick .why svg path { animation: draw 1100ms var(--draw) forwards; animation-delay: calc(var(--i) * 300ms + 600ms); }
+.pick .why p { margin: 0; font: 500 17px/1.35 var(--sans); }
+.pick .why p small { display: block; font: 400 13.5px/1.4 var(--sans); color: var(--grey); margin-top: 2px; }
+.ev { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 4px; }
+.ev .photo { aspect-ratio: 3/4; }
+.ev .photo:first-child { grid-row: span 1; }
+.reveal-go .pick { animation: up 800ms var(--ease) both; animation-delay: calc(var(--i) * 300ms + 300ms); }
+.pick .acts { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.pick .acts .btn.line { justify-content: center; }
+.anyone { margin: 26px 22px 36px; display: grid; gap: 12px; }
+.anyone p { margin: 0; font: 300 20px/1.3 var(--serif); }
+
+/* ---------- Portfolio & directory ---------- */
+.pf { padding: 0 22px; }
+.pf-head { display: grid; gap: 10px; padding: 8px 0 18px; }
+.pf-cover { height: 420px; margin: 0 22px; }
+.pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px 22px 0; }
+.pf-grid .photo { aspect-ratio: 3/4; }
+.pf-grid .wide { grid-column: span 2; aspect-ratio: 3/2; }
+.counts { display: flex; gap: 18px; font: 400 13px var(--sans); color: var(--grey); }
+.counts b { display: block; font: 300 30px var(--serif); color: var(--graphite); }
+.dock { position: sticky; bottom: 0; padding: 14px 22px 18px; background: linear-gradient(transparent, var(--bone) 30%); display: grid; gap: 6px; margin-top: 10px; }
+.dock small { color: var(--grey); font-size: 12px; text-align: center; }
+.dfilters { display: flex; gap: 18px; overflow-x: auto; margin: 16px 22px 0; border-bottom: 1px solid var(--hair); scrollbar-width: none; }
+.dfilters button { flex: none; min-height: 44px; border: 0; background: none; font: 500 15px var(--sans); color: var(--grey); cursor: pointer; padding: 0; position: relative; }
+.dfilters button[aria-pressed="true"] { color: var(--graphite); }
+.dfilters button[aria-pressed="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--copper); }
+.dlist { padding: 4px 22px 34px; }
+.drow { display: grid; grid-template-columns: 92px 1fr; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--hair); align-items: center; }
+.drow .photo { aspect-ratio: 3/4; }
+.drow b { font: 300 24px/1.05 var(--serif); display: block; }
+.drow span { font: 400 13px var(--sans); color: var(--grey); }
+.drow .sample { display: inline-block; margin-top: 6px; color: var(--sample-fg); }
+
+html.rm *, html.rm *::before, html.rm *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; transition-delay: 0ms !important; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="cutline" id="cutline" aria-hidden="true"></div>
+
+  <!-- ================= Landing ================= -->
+  <section class="screen active" id="landing" aria-label="Home">
+    <header class="top"><span class="wordmark"><svg viewBox="0 0 14 24" aria-hidden="true"><path d="M7 2c6 0 6 5 0 5s-6 5 0 5 6 5 0 5-6 5 0 5"/></svg>Combpatible</span><span class="meta">Columbus, OH</span></header>
+    <div class="hero-l">
+      <div class="fade" style="align-self:center">
+        <h1 class="display">Matched by <i>the work</i>, not the&nbsp;map.</h1>
+      </div>
+      <div>
+        <svg class="strand morph" id="morph" viewBox="0 0 120 300" aria-hidden="true"><path id="morphPath"/></svg>
+        <p class="morph-cap" id="morphCap" aria-hidden="true"></p>
+      </div>
+    </div>
+    <div class="land fade">
+      <p class="lede">Show us the hair you want. We find Columbus stylists whose own portfolio has that look, on hair like yours.</p>
+      <div class="actions">
+        <button class="btn block" data-go="quiz-type">Find my stylist <svg class="arrow" viewBox="0 0 26 10"><path d="M0 5h24M20 1l4 4-4 4"/></svg></button>
+        <button class="link" data-go="directory" style="justify-self:start">Browse every stylist</button>
+      </div>
+      <div class="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>No account. Your photo is private to you and the Combpatible team, and deleted after 30 days.</span></div>
+    </div>
+    <div class="strip" id="strip"></div>
+    <div class="foot"><span>Independent stylists at Salon Lofts</span><button class="link" style="min-height:auto;font-size:13px">Stylist sign in</button></div>
+  </section>
+
+  <!-- ================= Quiz: hair type ================= -->
+  <section class="screen" id="quiz-type" aria-label="Question 3 of 9">
+    <div class="qbar">
+      <button class="iconbtn" data-go="back" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="progress" style="--p:33%" aria-hidden="true"></div>
+      <span class="num">03 / 09</span>
+    </div>
+    <div class="q fade">
+      <h1 class="h2" id="qType">How does your hair grow naturally?</h1>
+      <p class="lede">Wash day: no heat, no products. If it's a mix, pick what you see most.</p>
+    </div>
+    <div class="typeview"><svg class="strand" viewBox="0 0 220 160" aria-hidden="true"><path id="typePath"/></svg></div>
+    <div class="tlist" role="radiogroup" aria-labelledby="qType" id="types"></div>
+  </section>
+
+  <!-- ================= Quiz: photo ================= -->
+  <section class="screen" id="quiz-photo" aria-label="Question 8 of 9">
+    <div class="qbar">
+      <button class="iconbtn" data-go="back" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="progress" style="--p:89%" aria-hidden="true"></div>
+      <span class="num">08 / 09</span>
+    </div>
+    <div class="q fade">
+      <h1 class="h2">Show us the look you want.</h1>
+      <p class="lede">A screenshot or a saved post is perfect. We look at the hair, not the face.</p>
+    </div>
+    <div class="pad" style="padding-top:24px">
+      <button id="pick" style="width:100%;height:340px;border:1px solid var(--graphite);background:var(--paper);cursor:pointer;display:grid;place-items:center;position:relative;overflow:hidden" aria-label="Choose a photo">
+        <span style="display:grid;gap:12px;justify-items:center;font:500 15px var(--sans)"><svg width="44" height="44" viewBox="0 0 44 44" fill="none" stroke="var(--copper)" stroke-width="1.4"><path d="M22 8v28M8 22h28"/></svg>Choose a photo</span>
+      </button>
+      <div class="privacy" style="margin-top:16px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Only you and the Combpatible team see it. Location data is removed; it's deleted after 30 days.</span></div>
+    </div>
+    <div class="dock"><button class="btn block" id="findBtn" data-go="matching" disabled style="opacity:.35">Find my stylists <svg class="arrow" viewBox="0 0 26 10"><path d="M0 5h24M20 1l4 4-4 4"/></svg></button></div>
+  </section>
+
+  <!-- ================= Matching ================= -->
+  <section class="screen" id="matching" aria-label="Finding your stylists">
+    <header class="top"><span class="wordmark"><svg viewBox="0 0 14 24" aria-hidden="true"><path d="M7 2c6 0 6 5 0 5s-6 5 0 5 6 5 0 5-6 5 0 5"/></svg>Combpatible</span><span class="meta">Private to you</span></header>
+    <div class="mtext" aria-live="polite" id="mtext"></div>
+    <div class="thread-stage" id="tstage" aria-hidden="true"></div>
+  </section>
+
+  <!-- ================= Reveal ================= -->
+  <section class="screen" id="reveal" aria-label="Your stylists">
+    <header class="top"><span class="wordmark"><svg viewBox="0 0 14 24" aria-hidden="true"><path d="M7 2c6 0 6 5 0 5s-6 5 0 5 6 5 0 5-6 5 0 5"/></svg>Combpatible</span><span class="meta">Private link</span></header>
+    <div class="rhead fade">
+      <span class="num">For Amara · curly, shoulder length</span>
+      <h1 class="display" style="font-size:40px">Three stylists who've done <i>your cut</i> on curls.</h1>
+      <p class="quote">“Last time they straightened it to cut it, and it came out way shorter than I asked.”<small>You told us. Each of these stylists cuts curls dry, as they sit; the line shows the work that proves it.</small></p>
+    </div>
+    <div class="tabs" role="tablist"><button role="tab" aria-selected="true">Your 3 picks</button><button role="tab" aria-selected="false" data-go="directory">All 23 stylists</button></div>
+    <div class="picks" id="picks"></div>
+    <div class="anyone"><p>Recommendations are a starting point. Book whoever feels right.</p><button class="btn line block" data-go="directory" style="justify-content:center">See every stylist</button></div>
+  </section>
+
+  <!-- ================= Portfolio ================= -->
+  <section class="screen" id="portfolio" aria-label="Maya Brooks">
+    <div class="qbar" style="grid-template-columns:44px 1fr"><button class="iconbtn" data-go="back" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg></button><span class="sample" style="justify-self:end">Sample stylist</span></div>
+    <div class="pf fade"><div class="pf-head">
+      <span class="num">Salon Lofts · Short North</span>
+      <h1 class="display">Maya Brooks</h1>
+      <p class="lede">Curl specialist. Dry cuts, shaped for how your curls actually fall.</p>
+      <div class="counts"><span><b>3</b>curly</span><span><b>2</b>coily</span><span><b>1</b>before/after</span></div>
+    </div></div>
+    <div class="pf-cover photo" style="--tint:#9a7a5e"><img data-src="maya-2.jpg" alt="Maya's work: dry-cut layers on curly hair"><span class="tag">After · curly · dry-cut layers</span></div>
+    <div class="pf-grid">
+      <div class="photo" style="--tint:#8a6a50"><img data-src="maya-1.jpg" alt="Before: grown-out curls"><span class="tag">Before</span></div>
+      <div class="photo" style="--tint:#9a7a5e"><img data-src="maya-4.jpg" alt="Curly shag"><span class="tag">Curly shag</span></div>
+      <div class="photo wide" style="--tint:#5a4636"><img data-src="maya-3.jpg" alt="Coily shape"><span class="tag">Coily · shape</span></div>
+      <div class="photo" style="--tint:#6a5040"><img data-src="maya-5.jpg" alt="Coily treatment"><span class="tag">Coily · treatment</span></div>
+      <div class="photo" style="--tint:#9a7a5e"><img data-src="maya-2.jpg" alt="Dry-cut layers"><span class="tag">Curly · layers</span></div>
+    </div>
+    <div class="dock"><a class="btn block" href="#" onclick="return false">Book on Vagaro <span aria-hidden="true">↗</span></a><small>Opens Vagaro. Combpatible doesn't take bookings or payments.</small></div>
+  </section>
+
+  <!-- ================= Directory ================= -->
+  <section class="screen" id="directory" aria-label="All stylists">
+    <div class="qbar" style="grid-template-columns:44px 1fr"><button class="iconbtn" data-go="back" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg></button><span class="num" style="justify-self:end">23 stylists</span></div>
+    <div class="q fade" style="padding-top:20px"><h1 class="display" style="font-size:42px">Every <i>stylist</i></h1><p class="lede">Filter by hair type or service. Book anyone.</p></div>
+    <div class="dfilters" role="group" aria-label="Filters"><button aria-pressed="true">Curly</button><button aria-pressed="false">Coily</button><button aria-pressed="false">Wavy</button><button aria-pressed="false">Straight</button><button aria-pressed="false">Braids</button><button aria-pressed="false">Locs</button><button aria-pressed="false">Colour</button></div>
+    <div class="dlist" id="dlist"></div>
+  </section>
+</div>
+
+<nav class="devbar" aria-label="Prototype screens">
+  <button data-go="landing" aria-pressed="true">Landing</button><button data-go="quiz-type">Quiz</button><button data-go="quiz-photo">Photo</button><button data-go="matching">Matching</button><button data-go="reveal">Reveal</button><button data-go="portfolio">Portfolio</button><button data-go="directory">Directory</button>
+  <button id="rmToggle" aria-pressed="false">Reduced motion</button>
+</nav>
+
+<script>
+const P = '../photos/';
+const reduced = () => document.documentElement.classList.contains('rm');
+
+// Strand shapes. Every shape is built from the same number of cubic segments, so CSS can morph `d` between them.
+// amp = how far the strand swings, tight = how short each bend is. Straight is a zero-swing wave.
+function strand(x0, y0, len, amp, segs) {
+  const h = len / segs; let d = `M${x0} ${y0}`;
+  for (let i = 0; i < segs; i++) { const s = i % 2 ? -1 : 1, y = y0 + h * i; d += ` C${x0 + s * amp} ${y + h * .25} ${x0 + s * amp} ${y + h * .75} ${x0} ${y + h}`; }
+  return d;
+}
+function coil(x0, y0, len, r, segs) {
+  // loops: each segment swings out and back past the centre line, so it reads as a spiral when stroked
+  const h = len / segs; let d = `M${x0} ${y0}`;
+  for (let i = 0; i < segs; i++) { const s = i % 2 ? -1 : 1, y = y0 + h * i; d += ` C${x0 + s * r * 1.6} ${y - h * .6} ${x0 + s * r * 1.6} ${y + h * 1.6} ${x0} ${y + h}`; }
+  return d;
+}
+const SHAPES = (x, y, len, k = 1) => ({
+  Straight: strand(x, y, len, 0, 12),
+  Wavy: strand(x, y, len, 16 * k, 12),
+  Curly: coil(x, y, len, 14 * k, 12),
+  Coily: coil(x, y, len, 9 * k, 12),
+});
+
+// Landing: one strand cycles straight → wavy → curly → coily.
+const MORPH = SHAPES(60, 12, 276, 1.2), morphP = document.getElementById('morphPath'), cap = document.getElementById('morphCap');
+const ORDER = ['Straight', 'Wavy', 'Curly', 'Coily'];
+let mi = 0;
+function morphTo(n) { morphP.setAttribute('d', MORPH[ORDER[n]]); morphP.style.d = `path("${MORPH[ORDER[n]]}")`; cap.textContent = ORDER[n].toLowerCase(); }
+morphTo(2); setInterval(() => { if (reduced() || current !== 'landing') return; mi = (mi + 1) % 4; morphTo(mi); syncStrip(); }, 2400);
+const STRIP = [['elena-2.jpg', 'Straight · blunt bob', 'Straight'], ['priya-3.jpg', 'Wavy · balayage', 'Wavy'], ['maya-2.jpg', 'Curly · dry cut', 'Curly'], ['tasha-1.jpg', 'Coily · braids', 'Coily']];
+const photo = (f, alt = '', tint = '#b8a58e', tag = '') => `<div class="photo" style="--tint:${tint}"><img src="${P + f}" alt="${alt}" loading="lazy" onerror="this.classList.add('missing')">${tag ? `<span class="tag">${tag}</span>` : ''}</div>`;
+document.getElementById('strip').innerHTML = STRIP.slice(1).map(([f, c]) => `<figure style="margin:0">${photo(f, c)}<figcaption>${c}</figcaption></figure>`).join('');
+function syncStrip() { document.querySelectorAll('#strip figure').forEach((fg, n) => fg.querySelector('.photo').classList.toggle('on', STRIP[n + 1][2] === ORDER[mi])); }
+mi = 2; syncStrip();
+
+// Quiz: the strand above the list takes the shape of whatever you choose.
+const TYPES = [['Straight', 'Falls flat from root to tip'], ['Wavy', 'Loose S-shaped bends · often 2A–2C'], ['Curly', 'Defined loops or spirals · often 3A–3C'], ['Coily', 'Tight coils or zig-zags · often 4A–4C']];
+const QSH = { ...SHAPES(110, 0, 0) };
+// lay the quiz strand horizontally: build vertically, then rotate with a transform
+const typePath = document.getElementById('typePath'), QS = SHAPES(80, -100, 200, 1.5);
+typePath.setAttribute('transform', 'rotate(90 110 80) translate(30 0)');
+const setType = n => { typePath.setAttribute('d', QS[n]); typePath.style.d = `path("${QS[n]}")`; };
+setType('Straight');
+const typesEl = document.getElementById('types');
+typesEl.innerHTML = TYPES.map(([n, h]) => `<button class="trow" role="radio" aria-checked="false" data-t="${n}"><span><span class="nm">${n}</span><span class="hn">${h}</span></span><span class="mark" aria-hidden="true"></span></button>`).join('');
+typesEl.addEventListener('pointerover', e => { const b = e.target.closest('.trow'); if (b && !typesEl.querySelector('[aria-checked="true"]')) setType(b.dataset.t); });
+typesEl.addEventListener('click', e => {
+  const b = e.target.closest('.trow'); if (!b) return;
+  typesEl.querySelectorAll('.trow').forEach(x => x.setAttribute('aria-checked', x === b)); setType(b.dataset.t);
+  setTimeout(() => go('quiz-photo'), 900);
+});
+document.getElementById('pick').onclick = function () {
+  this.style.border = '0'; this.innerHTML = `<div style="position:absolute;inset:0">${photo('maya-4.jpg', 'Your inspiration photo: a curly shag', '#9a7a5e', 'Only you can see this')}</div>`;
+  this.querySelector('.photo').style.height = '100%';
+  const f = document.getElementById('findBtn'); f.disabled = false; f.style.opacity = 1;
+};
+
+let current = 'landing', hist = [];
+function go(id) {
+  if (id === 'back') id = hist.pop() || 'landing'; else hist.push(current);
+  if (id === current) return;
+  const from = document.getElementById(current), to = document.getElementById(id), cut = document.getElementById('cutline');
+  to.scrollTop = 0; to.classList.remove('active', 'reveal-go'); void to.offsetWidth;
+  cut.classList.remove('go'); void cut.offsetWidth; if (!reduced()) cut.classList.add('go');
+  from.classList.remove('active'); from.classList.add('leaving'); to.classList.add('entering');
+  setTimeout(() => { from.classList.remove('leaving'); to.classList.remove('entering'); to.classList.add('active'); }, reduced() ? 0 : 800);
+  current = id;
+  document.querySelectorAll('.devbar [data-go]').forEach(b => b.setAttribute('aria-pressed', b.dataset.go === id));
+  if (id === 'matching') runMatching();
+  if (id === 'reveal') requestAnimationFrame(() => to.classList.add('reveal-go'));
+  if (id === 'quiz-type') { typesEl.querySelectorAll('.trow').forEach(x => x.setAttribute('aria-checked', 'false')); setType('Straight'); }
+}
+document.addEventListener('click', e => { const t = e.target.closest('[data-go]'); if (t && !t.disabled) go(t.dataset.go); });
+
+// Matching: from your photo, one thread travels across a field of stylists' work, touching each; it settles on three.
+const MATCHES = [
+  { name: 'Maya Brooks', loc: 'Short North', ev: [['maya-2.jpg', 'After'], ['maya-1.jpg', 'Before'], ['maya-3.jpg', 'Coily']], why: '9 curly cuts like your photo', sub: 'Cuts curls dry. Three before/afters show the length she keeps.', site: 'Vagaro', tint: '#9a7a5e' },
+  { name: 'Nia Carter', loc: 'Grandview', ev: [['nia-4.jpg', 'Curly colour'], ['nia-1.jpg', 'Curly'], ['nia-3.jpg', 'Coily']], why: '6 cuts and colour on curly hair', sub: 'Colour that keeps the curl pattern intact.', site: 'GlossGenius', tint: '#8a6448' },
+  { name: 'Priya Nair', loc: 'Easton', ev: [['priya-1.jpg', 'Curly'], ['priya-4.jpg', 'Wavy'], ['priya-3.jpg', 'Wavy']], why: '4 layered cuts on wavy and curly hair', sub: 'Most of her work is on thick, wavy hair: a near fit.', site: 'Booksy', tint: '#a07a54' },
+];
+const FIELD = [
+  ['tasha-3.jpg', 150, 10], ['elena-4.jpg', 250, 40], ['nia-4.jpg', 160, 140, 1], ['jordan-3.jpg', 250, 160],
+  ['sam-5.jpg', 20, 210], ['maya-2.jpg', 120, 260, 0], ['claire-3.jpg', 220, 290], ['priya-1.jpg', 40, 340, 2], ['elena-3.jpg', 230, 380],
+];
+let timers = [];
+function runMatching() {
+  timers.forEach(clearTimeout); timers = [];
+  const st = document.getElementById('tstage'), tx = document.getElementById('mtext');
+  const W = st.clientWidth || 346, sx = W / 346, sy = .74;
+  st.innerHTML = `<div class="node mine">${photo('maya-4.jpg', '', '#9a7a5e', 'Your look')}</div>`
+    + FIELD.map(([f, x, y, p]) => `<div class="node cand" data-p="${p ?? ''}" style="left:${x * sx}px;top:${y * sy}px">${photo(f)}</div>`).join('')
+    + `<svg class="t" viewBox="0 0 ${W} 400"><path id="thr"/></svg>`;
+  const nodes = [...st.querySelectorAll('.cand')];
+  // the thread visits each node's centre in order, as one smooth curve
+  const pts = [[56, 75], ...FIELD.map(([, x, y]) => [x * sx + 42, y * sy + 56])];
+  let d = `M${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 1; i < pts.length; i++) { const [ax, ay] = pts[i - 1], [bx, by] = pts[i]; d += ` C${ax + (bx - ax) * .1} ${ay + 60} ${bx - (bx - ax) * .1} ${by - 60} ${bx} ${by}`; }
+  const thr = document.getElementById('thr'); thr.setAttribute('d', d);
+  const L = thr.getTotalLength(); thr.style.strokeDasharray = L; thr.style.strokeDashoffset = L; thr.style.transition = 'none';
+  const k = reduced() ? .25 : 1, at = (ms, fn) => timers.push(setTimeout(fn, ms * k));
+  const say = (t, s) => { tx.innerHTML = `<div class="swap"><p>${t}</p><small>${s}</small></div>`; };
+  say('Reading your photo.', 'Curly · medium strands · shoulder length');
+  at(500, () => { thr.style.transition = `stroke-dashoffset ${2600 * k}ms cubic-bezier(.45,.05,.4,1)`; thr.style.strokeDashoffset = 0; });
+  nodes.forEach((n, i) => at(600 + i * 270, () => n.classList.add('seen')));
+  at(1000, () => say('Following the thread through 214 photos.', 'Curly cuts by 23 stylists at Salon Lofts'));
+  at(3300, () => { say('Three stylists, tied to your look.', 'Similar cuts, on hair like yours'); nodes.forEach(n => n.classList.add(n.dataset.p !== '' ? 'pick' : 'drop')); thr.style.transition = 'opacity 600ms'; thr.style.opacity = .25; });
+  at(4600, () => { thr.style.opacity = 1; if (current === 'matching') go('reveal'); });
+}
+
+document.getElementById('picks').innerHTML = MATCHES.map((m, i) => `
+  <article class="pick" style="--i:${i}" aria-label="Pick ${i + 1}: ${m.name}">
+    <div class="row1"><h2>${m.name}</h2><span class="num">0${i + 1}</span></div>
+    <span class="loc">Salon Lofts ${m.loc} <span class="sample">Sample stylist</span></span>
+    <div class="why"><svg viewBox="0 0 30 64" aria-hidden="true"><path d="M6 4 C 6 30, 24 30, 24 64"/></svg><p>${m.why}<small>${m.sub}</small></p></div>
+    <div class="ev">${m.ev.map(([f, t]) => photo(f, `${m.name}'s work: ${t}`, m.tint, t)).join('')}</div>
+    <div class="acts"><a class="btn" href="#" onclick="return false">Book on ${m.site} ↗</a><button class="btn line" data-go="portfolio" aria-label="See all of ${m.name}'s work">Work</button></div>
+  </article>`).join('');
+
+const DIR = [['Maya Brooks', 'Curly and coily cuts · Short North', 'maya-3.jpg'], ['Nia Carter', 'Colour for curls · Grandview', 'nia-1.jpg'], ['Sam Okafor', 'Locs and silk press · Clintonville', 'sam-4.jpg'], ['Tasha Greene', 'Braids · Polaris', 'tasha-1.jpg'], ['Priya Nair', 'Balayage, thick hair · Easton', 'priya-1.jpg']];
+document.getElementById('dlist').innerHTML = DIR.map(([n, s, f]) => `<div class="drow">${photo(f, `${n}'s work`)}<div><b>${n}</b><span>${s}</span><br><span class="sample">Sample stylist</span></div></div>`).join('');
+document.querySelectorAll('img[data-src]').forEach(i => { i.onerror = () => i.classList.add('missing'); i.src = P + i.dataset.src; });
+document.querySelectorAll('.fade').forEach(g => [...g.children].forEach((c, n) => c.style.setProperty('--i', n)));
+
+const rmBtn = document.getElementById('rmToggle');
+const setRM = on => { document.documentElement.classList.toggle('rm', on); rmBtn.setAttribute('aria-pressed', on); };
+setRM(matchMedia('(prefers-reduced-motion: reduce)').matches);
+rmBtn.onclick = () => setRM(!reduced());
+</script>
+</body>
+</html>

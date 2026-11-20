@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Combpatible · Swatch prototype</title>
+<!--
+  Direction C, "Swatch": the colour swatch ring on a salon's back bar, made playful. Warm cream, bold rounded type,
+  springy motion, cards you flip through. Prototype only (docs/ux/redesign-options.md). Photos load from ../photos/
+  (git-ignored Pexels demo photos); without them, tinted placeholders show.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #fbf3e6;
+  --card: #fffaf2;
+  --ink: #23171c;        /* 16.1:1 on cream */
+  --ink-2: #5d4b52;      /* 7.6:1 on cream */
+  --copper: #b24a1f;     /* 5.3:1 on cream; text-safe */
+  --copper-bg: #c4572a;  /* fills, with white text 4.6:1 */
+  --honey: #e2a33b;
+  --plum: #5b2a5e;       /* 10.4:1 on cream */
+  --blush: #f2c9b8;
+  --sage: #a9b79a;
+  --line: #ead9c2;
+  --sample-fg: #5b2a5e; --sample-bg: #ecd9ee;
+  --display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --sans: 'DM Sans', system-ui, sans-serif;
+  --spring: cubic-bezier(.34, 1.56, .64, 1);
+  --ease: cubic-bezier(.22, 1, .36, 1);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: #e9dcc8; font-family: var(--sans); color: var(--ink); display: grid; place-items: center; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+img { display: block; }
+:focus-visible { outline: 3px solid var(--plum); outline-offset: 3px; }
+.phone { position: relative; width: 390px; height: min(844px, calc(100dvh - 72px)); overflow: hidden; border-radius: 34px; background: var(--cream); box-shadow: 0 30px 80px -24px rgb(60 30 20 / .4), 0 0 0 10px #23171c; }
+@media (max-width: 520px) { body { display: block; background: var(--cream); } .phone { width: 100%; height: 100dvh; border-radius: 0; box-shadow: none; } .devbar { display: none !important; } }
+.devbar { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; font: 12px var(--sans); max-width: 96vw; }
+.devbar button { background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 6px 11px; cursor: pointer; }
+.devbar button[aria-pressed="true"] { background: var(--ink); color: var(--cream); }
+
+.screen { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; visibility: hidden; scrollbar-width: none; background: var(--cream); }
+.screen::-webkit-scrollbar { display: none; }
+.screen.active { visibility: visible; z-index: 2; }
+/* "card-slide": the new screen slides over like the next swatch card, with a little overshoot. */
+.screen.entering { visibility: visible; z-index: 3; animation: slide-in 620ms var(--spring) both; box-shadow: -20px 0 40px -20px rgb(0 0 0 / .25); }
+.screen.leaving { visibility: visible; z-index: 2; animation: slide-out 620ms var(--ease) both; }
+.screen.entering.back { animation-name: slide-in-back; }
+@keyframes slide-in { from { transform: translateX(100%) rotate(4deg); transform-origin: 0 100%; } }
+@keyframes slide-in-back { from { transform: translateX(-100%) rotate(-4deg); } }
+@keyframes slide-out { to { transform: translateX(-24%) scale(.94); filter: brightness(.9); } }
+/* "pop": things land with a spring. */
+.pop > * { opacity: 0; }
+.active .pop > *, .entering .pop > * { animation: pop 640ms var(--spring) both; animation-delay: calc(var(--i, 0) * 70ms + 200ms); }
+@keyframes pop { from { opacity: 0; transform: translateY(22px) scale(.92); } to { opacity: 1; transform: none; } }
+
+.top { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
+.wordmark { font: 800 21px var(--display); letter-spacing: -.02em; display: flex; align-items: center; gap: 8px; }
+.wordmark i { display: inline-flex; gap: 2px; }
+.wordmark i b { width: 7px; height: 20px; border-radius: 4px; background: var(--copper-bg); }
+.wordmark i b:nth-child(2) { background: var(--honey); transform: rotate(10deg); }
+.wordmark i b:nth-child(3) { background: var(--plum); transform: rotate(20deg); }
+.chip { font: 600 12px var(--sans); padding: 6px 11px; border-radius: 99px; background: var(--card); border: 1.5px solid var(--line); }
+.display { font: 800 46px/.98 var(--display); letter-spacing: -.035em; margin: 0; text-wrap: balance; }
+.h2 { font: 800 32px/1.02 var(--display); letter-spacing: -.03em; margin: 0; text-wrap: balance; }
+.lede { font: 400 16px/1.5 var(--sans); color: var(--ink-2); margin: 0; }
+.hl { position: relative; white-space: nowrap; z-index: 0; }
+/* "swipe-highlight": a honey brushstroke paints in behind a word. */
+.hl::before { content: ""; position: absolute; left: -4px; right: -4px; bottom: .06em; height: .42em; background: var(--honey); border-radius: 6px; z-index: -1; transform: scaleX(0) rotate(-1.5deg); transform-origin: left; }
+.active .hl::before, .entering .hl::before { animation: brush 600ms var(--ease) 700ms forwards; }
+@keyframes brush { to { transform: scaleX(1) rotate(-1.5deg); } }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 56px; padding: 0 24px; border-radius: 18px; border: 0; cursor: pointer; font: 700 17px var(--display); text-decoration: none; background: var(--ink); color: var(--cream); box-shadow: 0 5px 0 var(--copper-bg); transition: transform 160ms var(--spring), box-shadow 160ms; }
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--copper-bg); }
+.btn.copper { background: var(--copper-bg); color: #fff; box-shadow: 0 5px 0 #7d3214; }
+.btn.ghost { background: var(--card); color: var(--ink); box-shadow: 0 0 0 1.5px var(--ink) inset, 0 4px 0 var(--ink); }
+.btn.block { width: 100%; }
+.link { background: none; border: 0; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; cursor: pointer; min-height: 44px; font: 600 15px var(--sans); }
+.sample { font: 700 11px var(--sans); color: var(--sample-fg); background: var(--sample-bg); padding: 4px 9px; border-radius: 99px; white-space: nowrap; }
+.privacy { display: flex; gap: 10px; font: 400 13px/1.45 var(--sans); color: var(--ink-2); padding: 12px 14px; border-radius: 16px; background: var(--card); border: 1.5px dashed var(--line); }
+.privacy svg { flex: none; width: 18px; height: 18px; color: var(--plum); }
+.photo { position: relative; overflow: hidden; background: linear-gradient(150deg, var(--tint, #c98a5e), #3a2228); }
+.photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+.photo img.missing { visibility: hidden; }
+.tag { position: absolute; left: 8px; bottom: 8px; font: 700 11px var(--sans); background: var(--card); color: var(--ink); padding: 4px 8px; border-radius: 8px; }
+.pad { padding: 0 20px; }
+
+/* ---------- Landing: a fanned swatch ring of real work ---------- */
+.fan { position: relative; height: 330px; margin-top: 4px; }
+.fan .sw { position: absolute; left: 50%; bottom: 10px; width: 150px; height: 250px; margin-left: -75px; border-radius: 22px; overflow: hidden; transform-origin: 50% 118%; background: var(--card); padding: 7px 7px 0; box-shadow: 0 10px 24px -10px rgb(60 30 20 / .4); transform: rotate(0deg); }
+.fan .sw .photo { height: 190px; border-radius: 16px; }
+.fan .sw span { display: block; padding: 8px 4px; font: 700 12px var(--display); }
+.fan .sw::after { content: ""; position: absolute; left: 50%; bottom: 8px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--cream); box-shadow: inset 0 0 0 2px var(--line); }
+/* "fan-open": the ring of swatches fans out, one by one, on a spring. */
+.active .fan .sw, .entering .fan .sw { animation: fan 900ms var(--spring) both; animation-delay: calc(var(--k) * 70ms + 150ms); }
+@keyframes fan { from { transform: rotate(0deg); } to { transform: rotate(var(--r)); } }
+.fan .sw { transform: rotate(var(--r)); }
+.sticker { position: absolute; z-index: 5; font: 800 13px/1.1 var(--display); text-align: center; display: grid; place-items: center; border-radius: 50%; }
+.st-1 { right: 18px; top: 18px; width: 86px; height: 86px; background: var(--plum); color: #fff; transform: rotate(12deg); }
+.active .st-1, .entering .st-1 { animation: stick 700ms var(--spring) 900ms both; }
+@keyframes stick { from { transform: scale(0) rotate(-40deg); } to { transform: scale(1) rotate(12deg); } }
+.land { padding: 6px 20px 0; display: grid; gap: 14px; }
+.land .actions { display: grid; gap: 6px; margin-top: 6px; }
+.how { display: grid; gap: 10px; margin: 26px 20px 0; }
+.how div { display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center; padding: 12px; border-radius: 18px; background: var(--card); border: 1.5px solid var(--line); font: 500 14px/1.35 var(--sans); }
+.how b { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; font: 800 20px var(--display); color: #fff; }
+.foot { padding: 22px 20px 40px; text-align: center; font: 400 13px var(--sans); color: var(--ink-2); }
+
+/* ---------- Quiz ---------- */
+.qbar { display: flex; align-items: center; gap: 12px; padding: 16px 20px 0; }
+.iconbtn { width: 44px; height: 44px; border-radius: 14px; border: 1.5px solid var(--ink); background: var(--card); display: grid; place-items: center; cursor: pointer; flex: none; }
+.dots { display: flex; gap: 6px; flex: 1; justify-content: center; }
+.dots i { width: 10px; height: 10px; border-radius: 4px; background: var(--line); transition: all 400ms var(--spring); }
+.dots i.done { background: var(--ink); }
+.dots i.now { width: 28px; background: var(--copper-bg); }
+.qcount { font: 700 13px var(--display); min-width: 44px; text-align: right; }
+.q { padding: 26px 20px 0; display: grid; gap: 10px; }
+.tgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 22px 20px 0; }
+.tcard { position: relative; text-align: left; padding: 14px; border-radius: 22px; border: 0; cursor: pointer; min-height: 168px; display: grid; align-content: space-between; background: var(--c); color: var(--fg, var(--ink)); transition: transform 320ms var(--spring), box-shadow 320ms; box-shadow: 0 4px 0 rgb(0 0 0 / .12); }
+.tcard:nth-child(odd) { transform: rotate(-1.5deg); } .tcard:nth-child(even) { transform: rotate(1.5deg); }
+.tcard svg { width: 54px; height: 54px; stroke: currentColor; stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.tcard .nm { font: 800 24px/1 var(--display); letter-spacing: -.02em; display: block; }
+.tcard .hn { font: 500 12.5px/1.35 var(--sans); display: block; margin-top: 5px; opacity: .85; }
+.tcard .check { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 50%; background: var(--card); color: var(--ink); display: grid; place-items: center; transform: scale(0); transition: transform 380ms var(--spring); }
+/* "squish-select": the card squashes, then springs up straight with a check sticker. */
+.tcard[aria-checked="true"] { transform: rotate(0) scale(1.04); box-shadow: 0 0 0 3px var(--ink), 0 8px 0 var(--ink); }
+.tcard[aria-checked="true"] .check { transform: scale(1); }
+.tcard:active { transform: scale(.94); }
+.tcard[aria-checked="true"] svg path { animation: wiggle 700ms var(--spring); transform-origin: center; transform-box: fill-box; }
+@keyframes wiggle { 30% { transform: scaleY(.85); } 60% { transform: scaleY(1.08); } }
+
+/* ---------- Matching: shuffle the deck ---------- */
+.deckstage { position: relative; height: 380px; margin-top: 10px; }
+.deckstage .sw { position: absolute; left: 50%; top: 30px; width: 190px; height: 290px; margin-left: -95px; border-radius: 24px; background: var(--card); padding: 8px 8px 0; box-shadow: 0 12px 30px -12px rgb(60 30 20 / .45); transition: transform 600ms var(--spring), opacity 400ms; }
+.deckstage .sw .photo { height: 230px; border-radius: 18px; }
+.deckstage .sw span { display: block; padding: 9px 4px; font: 700 13px var(--display); }
+.deckstage .mine { z-index: 20; transform: translate(-70px, 40px) rotate(-10deg) scale(.7); }
+.deckstage .mine .tag { background: var(--plum); color: #fff; }
+.mtext { text-align: center; padding: 0 28px; min-height: 110px; }
+.mtext h1 { font: 800 28px/1.05 var(--display); letter-spacing: -.03em; margin: 0; }
+.mtext p { margin: 8px 0 0; color: var(--ink-2); font: 400 15px var(--sans); }
+.mtext .swap { animation: pop 500ms var(--spring) both; }
+.counter { display: inline-block; font: 800 15px var(--display); background: var(--honey); padding: 4px 10px; border-radius: 10px; margin-top: 10px; font-variant-numeric: tabular-nums; }
+
+/* ---------- Reveal: a deck of three ---------- */
+.rhead { padding: 0 20px; display: grid; gap: 10px; }
+.quote { position: relative; margin: 6px 0 0; padding: 14px 16px 14px 46px; background: var(--card); border-radius: 18px; border: 1.5px solid var(--line); font: 500 15px/1.4 var(--sans); }
+.quote::before { content: "“"; position: absolute; left: 12px; top: 2px; font: 800 48px var(--display); color: var(--copper); }
+.quote small { display: block; margin-top: 4px; color: var(--ink-2); font-size: 12.5px; }
+.tabs { display: flex; gap: 8px; padding: 16px 20px 0; }
+.tabs button { min-height: 42px; padding: 0 16px; border-radius: 14px; border: 1.5px solid var(--ink); background: var(--card); font: 700 14px var(--display); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--cream); }
+.deck { position: relative; height: 560px; margin: 18px 20px 0; }
+.mcard { position: absolute; inset: 0; border-radius: 28px; background: var(--card); box-shadow: 0 14px 34px -14px rgb(60 30 20 / .45); padding: 10px; display: grid; grid-template-rows: auto 1fr; transition: transform 560ms var(--spring), opacity 400ms; overflow: hidden; }
+.mcard[data-pos="0"] { z-index: 3; transform: none; }
+.mcard[data-pos="1"] { z-index: 2; transform: translate(10px, 14px) rotate(3deg) scale(.96); }
+.mcard[data-pos="2"] { z-index: 1; transform: translate(-8px, 26px) rotate(-3deg) scale(.92); }
+.mcard[data-pos="gone"] { z-index: 4; transform: translate(-120%, 30px) rotate(-14deg); opacity: 0; }
+.mcard[data-pos="1"] *, .mcard[data-pos="2"] * { visibility: hidden; }
+.mcard[data-pos="1"], .mcard[data-pos="2"] { background: var(--c); }
+/* "deal": the three cards are dealt onto the table on the reveal. */
+.reveal-go .mcard { animation: deal 700ms var(--spring) both; animation-delay: calc((2 - var(--i)) * 140ms + 250ms); }
+@keyframes deal { from { transform: translateY(120%) rotate(18deg); } }
+.mcard .hero { position: relative; height: 270px; border-radius: 20px; overflow: hidden; }
+.mcard .hero .photo { position: absolute; inset: 0; }
+.mcard .hero .sample { position: absolute; top: 10px; left: 10px; }
+.mcard .num { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; border-radius: 50%; background: var(--c); color: #fff; font: 800 18px var(--display); display: grid; place-items: center; }
+.mcard .body { padding: 12px 6px 4px; display: grid; gap: 9px; align-content: start; }
+.mcard h2 { font: 800 28px/1 var(--display); letter-spacing: -.03em; margin: 0; }
+.mcard .loc { font: 500 13px var(--sans); color: var(--ink-2); }
+.why { display: inline-flex; align-self: start; justify-self: start; font: 700 14px var(--display); padding: 6px 11px; border-radius: 10px; background: color-mix(in srgb, var(--c) 18%, var(--card)); color: var(--ink); }
+.ev { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ev .photo { aspect-ratio: 1; border-radius: 12px; }
+.mcard .acts { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 2px; }
+.mcard .acts .btn { min-height: 50px; font-size: 15px; padding: 0 16px; }
+.decknav { display: flex; align-items: center; justify-content: space-between; padding: 30px 20px 0; }
+.decknav .iconbtn { width: 52px; height: 52px; border-radius: 16px; }
+.decknav .count { font: 800 16px var(--display); }
+.anyone { margin: 24px 20px 34px; padding: 16px; border-radius: 20px; background: var(--plum); color: #fff; display: grid; gap: 10px; }
+.anyone p { margin: 0; font: 500 14px/1.45 var(--sans); }
+.anyone b { font: 800 20px var(--display); }
+.anyone .btn { background: var(--card); color: var(--ink); box-shadow: 0 4px 0 #2d1230; }
+
+/* ---------- Portfolio + directory ---------- */
+.pf-cover { position: relative; margin: 0 20px; height: 380px; border-radius: 28px; overflow: hidden; }
+.pf-cover .photo { position: absolute; inset: 0; }
+.pf-cover .sample { position: absolute; left: 12px; top: 12px; }
+.pf-name { padding: 16px 20px 0; display: grid; gap: 8px; }
+.svc { display: flex; gap: 8px; flex-wrap: wrap; }
+.svc span { font: 700 13px var(--display); padding: 7px 12px; border-radius: 12px; background: var(--c); color: var(--fg, var(--ink)); }
+.ba { margin: 18px 20px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ba .photo { aspect-ratio: 4/5; border-radius: 18px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px 20px 0; }
+.grid3 .photo { aspect-ratio: 1; border-radius: 18px; }
+.grid3 .photo:nth-child(3n) { grid-column: span 2; aspect-ratio: 2/1.2; }
+.dock { position: sticky; bottom: 0; padding: 14px 20px 18px; background: linear-gradient(transparent, var(--cream) 30%); display: grid; gap: 6px; text-align: center; margin-top: 10px; }
+.dock small { color: var(--ink-2); font-size: 12px; }
+.dfilters { display: flex; gap: 8px; overflow-x: auto; padding: 14px 20px 0; scrollbar-width: none; }
+.dfilters button { flex: none; min-height: 42px; padding: 0 14px; border-radius: 14px; border: 1.5px solid var(--ink); background: var(--card); font: 700 14px var(--display); cursor: pointer; }
+.dfilters button[aria-pressed="true"] { background: var(--copper-bg); border-color: var(--copper-bg); color: #fff; }
+.dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px 20px 34px; }
+.dcard { background: var(--card); border-radius: 22px; padding: 6px 6px 10px; display: grid; gap: 6px; box-shadow: 0 4px 0 var(--line); }
+.dcard:nth-child(4n+1) { transform: rotate(-1deg); } .dcard:nth-child(4n+2) { transform: rotate(1deg); }
+.dcard .photo { aspect-ratio: 4/4.6; border-radius: 17px; }
+.dcard b { font: 800 17px var(--display); padding: 0 4px; }
+.dcard span:not(.sample) { font: 500 12px/1.3 var(--sans); color: var(--ink-2); padding: 0 4px; }
+.dcard .sample { justify-self: start; margin-left: 4px; }
+
+html.rm *, html.rm *::before, html.rm *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; transition-delay: 0ms !important; }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- ================= Landing ================= -->
+  <section class="screen active" id="landing" aria-label="Home">
+    <header class="top"><span class="wordmark"><i aria-hidden="true"><b></b><b></b><b></b></i>Combpatible</span><span class="chip">Columbus</span></header>
+    <div class="fan" id="fan" aria-hidden="true"><div class="sticker st-1">Real<br>work by<br>real stylists</div></div>
+    <div class="land pop">
+      <h1 class="display">Find your stylist by <span class="hl">their work</span>.</h1>
+      <p class="lede">Show us a photo of the hair you want. We match you with Columbus stylists who've done it, on hair like yours.</p>
+      <div class="actions">
+        <button class="btn copper block" data-go="quiz-type">Find my stylist →</button>
+        <button class="link" data-go="directory">Or browse every stylist</button>
+      </div>
+      <div class="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>No account needed. Your photo stays private and is deleted after 30 days.</span></div>
+    </div>
+    <div class="how">
+      <div><b style="background:var(--copper-bg)">1</b>Tell us about your hair. Two minutes, no sign-up.</div>
+      <div><b style="background:var(--plum)">2</b>Add one photo of the look you want.</div>
+      <div><b style="background:var(--honey);color:var(--ink)">3</b>Meet stylists whose own work matches it.</div>
+    </div>
+    <p class="foot">Independent stylists at Salon Lofts · <button class="link" style="min-height:auto;font-size:13px">Stylist sign in</button></p>
+  </section>
+
+  <!-- ================= Quiz: hair type ================= -->
+  <section class="screen" id="quiz-type" aria-label="Question 3 of 9">
+    <div class="qbar">
+      <button class="iconbtn" data-go="back" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="dots" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <span class="qcount">3 / 9</span>
+    </div>
+    <div class="q pop">
+      <h1 class="h2" id="qType">How does your hair grow <span class="hl">naturally</span>?</h1>
+      <p class="lede">Wash day, no heat, no products. Mixed? Pick what you see most.</p>
+    </div>
+    <div class="tgrid" role="radiogroup" aria-labelledby="qType" id="types"></div>
+    <p class="pad" style="color:var(--ink-2);font-size:13px;margin-top:16px">Not sure? <button class="link" style="min-height:auto;font-size:13px">See photo examples</button></p>
+  </section>
+
+  <!-- ================= Quiz: photo ================= -->
+  <section class="screen" id="quiz-photo" aria-label="Question 8 of 9">
+    <div class="qbar">
+      <button class="iconbtn" data-go="back" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="dots" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i></div>
+      <span class="qcount">8 / 9</span>
+    </div>
+    <div class="q pop">
+      <h1 class="h2">Show us <span class="hl">the look</span>.</h1>
+      <p class="lede">A screenshot or a saved post is perfect. We look at the hair, not the face.</p>
+    </div>
+    <div style="padding:22px 20px 0">
+      <button id="pick" style="width:100%;height:300px;border-radius:26px;border:2.5px dashed var(--ink-2);background:var(--card);cursor:pointer;display:grid;place-items:center;position:relative;overflow:hidden" aria-label="Choose a photo">
+        <span style="display:grid;gap:10px;justify-items:center;font:700 16px var(--display)"><span style="width:64px;height:64px;border-radius:20px;background:var(--honey);display:grid;place-items:center;font-size:34px;line-height:1">+</span>Choose a photo</span>
+      </button>
+    </div>
+    <div class="pad" style="padding-top:14px"><div class="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Only you and the Combpatible team see it. Location data is removed. Deleted after 30 days.</span></div></div>
+    <div class="dock"><button class="btn copper block" id="findBtn" data-go="matching" disabled style="opacity:.4">Find my stylists →</button></div>
+  </section>
+
+  <!-- ================= Matching ================= -->
+  <section class="screen" id="matching" aria-label="Finding your stylists">
+    <header class="top"><span class="wordmark"><i aria-hidden="true"><b></b><b></b><b></b></i>Combpatible</span></header>
+    <div class="deckstage" id="deckstage" aria-hidden="true"></div>
+    <div class="mtext" aria-live="polite" id="mtext"></div>
+  </section>
+
+  <!-- ================= Reveal ================= -->
+  <section class="screen" id="reveal" aria-label="Your stylists">
+    <header class="top"><span class="wordmark"><i aria-hidden="true"><b></b><b></b><b></b></i>Combpatible</span><span class="chip">🔒 Private link</span></header>
+    <div class="rhead pop">
+      <h1 class="display" style="font-size:38px">Amara, meet your <span class="hl">curl people</span>.</h1>
+      <div class="quote">Last time they straightened it to cut it, and it came out way shorter than I asked.<small>You told us that. These three cut curls dry, as they sit.</small></div>
+    </div>
+    <div class="tabs" role="tablist"><button role="tab" aria-selected="true">Your 3 picks</button><button role="tab" aria-selected="false" data-go="directory">All stylists</button></div>
+    <div class="deck" id="deck" aria-live="polite"></div>
+    <div class="decknav">
+      <button class="iconbtn" id="prev" aria-label="Previous stylist"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <span class="count" id="count">1 of 3</span>
+      <button class="iconbtn" id="next" aria-label="Next stylist"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="anyone"><b>These are suggestions.</b><p>You can book any stylist in Columbus, whoever feels right.</p><button class="btn block" data-go="directory">See all 23 stylists</button></div>
+  </section>
+
+  <!-- ================= Portfolio ================= -->
+  <section class="screen" id="portfolio" aria-label="Maya Brooks">
+    <div class="qbar" style="padding-bottom:14px"><button class="iconbtn" data-go="back" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 6l-6 6 6 6"/></svg></button></div>
+    <div class="pf-cover"><div class="photo" style="--tint:#b06a3e"><img data-src="maya-2.jpg" alt="Maya's work: dry-cut layers on curly hair"></div><span class="sample">Sample stylist</span></div>
+    <div class="pf-name pop">
+      <h1 class="display" style="font-size:44px">Maya Brooks</h1>
+      <p class="lede">Curl specialist at Salon Lofts Short North. Dry cuts, shaped for how your curls actually fall.</p>
+      <div class="svc"><span style="--c:var(--blush)">Curly ×3</span><span style="--c:var(--plum);--fg:#fff">Coily ×2</span><span style="--c:var(--honey)">Dry cuts</span><span style="--c:var(--sage)">Before/after</span></div>
+    </div>
+    <div class="ba"><div class="photo" style="--tint:#a0603c"><img data-src="maya-1.jpg" alt="Before: grown-out curls"><span class="tag">Before</span></div><div class="photo" style="--tint:#b06a3e"><img data-src="maya-2.jpg" alt="After: dry-cut layers"><span class="tag">After</span></div></div>
+    <div class="grid3">
+      <div class="photo" style="--tint:#8a5a3a"><img data-src="maya-4.jpg" alt="Curly shag"><span class="tag">Curly shag</span></div>
+      <div class="photo" style="--tint:#5a3a2a"><img data-src="maya-3.jpg" alt="Coily shape"><span class="tag">Coily shape</span></div>
+      <div class="photo" style="--tint:#6a4232"><img data-src="maya-5.jpg" alt="Coily treatment"><span class="tag">Coily treatment</span></div>
+    </div>
+    <div class="dock"><a class="btn copper block" href="#" onclick="return false">Book on Vagaro ↗</a><small>Opens Vagaro. Combpatible doesn't handle bookings or payments.</small></div>
+  </section>
+
+  <!-- ================= Directory ================= -->
+  <section class="screen" id="directory" aria-label="All stylists">
+    <div class="qbar"><button class="iconbtn" data-go="back" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 6l-6 6 6 6"/></svg></button><span class="chip" style="margin-left:auto">23 stylists</span></div>
+    <div class="q pop" style="padding-top:16px"><h1 class="display" style="font-size:40px">Every <span class="hl">stylist</span></h1><p class="lede">Filter by hair type or service. Book whoever you like.</p></div>
+    <div class="dfilters" role="group" aria-label="Filters"><button aria-pressed="false">Straight</button><button aria-pressed="false">Wavy</button><button aria-pressed="true">Curly</button><button aria-pressed="false">Coily</button><button aria-pressed="false">Braids</button><button aria-pressed="false">Colour</button></div>
+    <div class="dgrid" id="dgrid"></div>
+  </section>
+</div>
+
+<nav class="devbar" aria-label="Prototype screens">
+  <button data-go="landing" aria-pressed="true">Landing</button><button data-go="quiz-type">Quiz</button><button data-go="quiz-photo">Photo</button><button data-go="matching">Matching</button><button data-go="reveal">Reveal</button><button data-go="portfolio">Portfolio</button><button data-go="directory">Directory</button>
+  <button id="rmToggle" aria-pressed="false">Reduced motion</button>
+</nav>
+
+<script>
+const P = '../photos/';
+const TYPES = [
+  { name: 'Straight', hint: 'Falls flat, root to tip', c: 'var(--sage)', d: 'M14 6v42M27 6v42M40 6v42' },
+  { name: 'Wavy', hint: 'Loose S-bends · 2A–2C', c: 'var(--blush)', d: 'M14 6c-7 7 7 14 0 21s7 14 0 21M27 6c-7 7 7 14 0 21s7 14 0 21M40 6c-7 7 7 14 0 21s7 14 0 21' },
+  { name: 'Curly', hint: 'Loops and spirals · 3A–3C', c: 'var(--honey)', d: 'M20 6c9 0 9 9 0 9s-9 9 0 9 9 9 0 9-9 9 0 9M38 6c9 0 9 9 0 9s-9 9 0 9 9 9 0 9-9 9 0 9' },
+  { name: 'Coily', hint: 'Tight coils, zig-zags · 4A–4C', c: 'var(--plum)', fg: '#fff', d: 'M17 6l6 4-6 4 6 4-6 4 6 4-6 4 6 4-6 4 6 4M33 6l6 4-6 4 6 4-6 4 6 4-6 4 6 4-6 4 6 4' },
+];
+const MATCHES = [
+  { name: 'Maya Brooks', loc: 'Salon Lofts Short North', hero: 'maya-2.jpg', c: '#c4572a', why: '9 curly cuts like your photo', ev: [['maya-1.jpg', 'Before'], ['maya-2.jpg', 'After'], ['maya-3.jpg', 'Coily']], site: 'Vagaro' },
+  { name: 'Nia Carter', loc: 'Salon Lofts Grandview', hero: 'nia-4.jpg', c: '#5b2a5e', why: '6 cuts and colour on curly hair', ev: [['nia-1.jpg', 'Curly'], ['nia-3.jpg', 'Coily'], ['nia-2.jpg', 'Coily']], site: 'GlossGenius' },
+  { name: 'Priya Nair', loc: 'Salon Lofts Easton', hero: 'priya-1.jpg', c: '#b07a1f', why: '4 layered cuts on wavy and curly hair', ev: [['priya-4.jpg', 'Wavy'], ['priya-3.jpg', 'Wavy'], ['priya-1.jpg', 'Curly']], site: 'Booksy' },
+];
+const FAN = [['tasha-1.jpg', 'Braids · coily', -38], ['elena-2.jpg', 'Bob · straight', -19], ['maya-2.jpg', 'Layers · curly', 0], ['priya-3.jpg', 'Balayage · wavy', 19], ['sam-4.jpg', 'Silk press · coily', 38]];
+const SHUFFLE = [['tasha-3.jpg', 'Braids'], ['elena-4.jpg', 'Bob'], ['jordan-3.jpg', 'Fade'], ['sam-5.jpg', 'Locs'], ['claire-3.jpg', 'Blowout'], ['nia-1.jpg', 'Curly colour'], ['priya-4.jpg', 'Wavy layers'], ['maya-3.jpg', 'Coily shape']];
+
+const photo = (f, alt = '', tint = '#c98a5e', tag = '') => `<div class="photo" style="--tint:${tint}"><img src="${P + f}" alt="${alt}" loading="lazy" onerror="this.classList.add('missing')">${tag ? `<span class="tag">${tag}</span>` : ''}</div>`;
+document.querySelectorAll('img[data-src]').forEach(i => { i.onerror = () => i.classList.add('missing'); i.src = P + i.dataset.src; });
+document.querySelectorAll('.pop').forEach(g => [...g.children].forEach((c, n) => c.style.setProperty('--i', n)));
+const reduced = () => document.documentElement.classList.contains('rm');
+
+document.getElementById('fan').insertAdjacentHTML('beforeend', FAN.map(([f, l, r], k) => `<div class="sw" style="--r:${r}deg;--k:${k};z-index:${k === 2 ? 3 : 2 - Math.abs(k - 2)}">${photo(f)}<span>${l}</span></div>`).join(''));
+
+const typesEl = document.getElementById('types');
+typesEl.innerHTML = TYPES.map(t => `<button class="tcard" role="radio" aria-checked="false" style="--c:${t.c};${t.fg ? `--fg:${t.fg}` : ''}"><svg viewBox="0 0 54 54" aria-hidden="true"><path d="${t.d}"/></svg><span><span class="nm">${t.name}</span><span class="hn">${t.hint}</span></span><span class="check" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg></span></button>`).join('');
+typesEl.addEventListener('click', e => {
+  const b = e.target.closest('.tcard'); if (!b) return;
+  typesEl.querySelectorAll('.tcard').forEach(x => x.setAttribute('aria-checked', x === b));
+  setTimeout(() => go('quiz-photo'), 520);
+});
+document.getElementById('pick').onclick = function () {
+  this.style.border = '0';
+  this.innerHTML = `<div style="position:absolute;inset:0">${photo('maya-4.jpg', 'Your inspiration photo: a curly shag', '#8a5a3a')}</div><span class="sample" style="position:absolute;right:12px;top:12px;background:var(--card)">🔒 Only you</span>`;
+  this.querySelector('.photo').style.height = '100%';
+  const f = document.getElementById('findBtn'); f.disabled = false; f.style.opacity = 1;
+};
+
+let current = 'landing', hist = [];
+function go(id) {
+  let back = false;
+  if (id === 'back') { id = hist.pop() || 'landing'; back = true; } else hist.push(current);
+  if (id === current) return;
+  const from = document.getElementById(current), to = document.getElementById(id);
+  to.scrollTop = 0; to.classList.remove('active', 'reveal-go'); void to.offsetWidth;
+  from.classList.remove('active'); from.classList.add('leaving'); to.classList.add('entering'); to.classList.toggle('back', back);
+  setTimeout(() => { from.classList.remove('leaving'); to.classList.remove('entering', 'back'); to.classList.add('active'); }, reduced() ? 0 : 640);
+  current = id;
+  document.querySelectorAll('.devbar [data-go]').forEach(b => b.setAttribute('aria-pressed', b.dataset.go === id));
+  if (id === 'matching') runMatching();
+  if (id === 'reveal') { setPos(0); requestAnimationFrame(() => to.classList.add('reveal-go')); }
+  if (id === 'quiz-type') typesEl.querySelectorAll('.tcard').forEach(x => x.setAttribute('aria-checked', 'false'));
+}
+document.addEventListener('click', e => { const t = e.target.closest('[data-go]'); if (t && !t.disabled) go(t.dataset.go); });
+
+// Matching: your photo sits to one side as the stylists' swatch cards shuffle past it; three get pulled out and stacked.
+let timers = [];
+function runMatching() {
+  timers.forEach(clearTimeout); timers = [];
+  const st = document.getElementById('deckstage'), tx = document.getElementById('mtext');
+  st.innerHTML = `<div class="sw mine">${photo('maya-4.jpg', '', '#8a5a3a', 'Your look')}<span>Curly · shoulder length</span></div>` + SHUFFLE.map(([f, l], n) => `<div class="sw s" style="z-index:${n + 1};transform:translate(60px, 0) rotate(${(n % 2 ? 1 : -1) * (4 + n)}deg)">${photo(f)}<span>${l}</span></div>`).join('')
+    + MATCHES.map((m, n) => `<div class="sw p" style="z-index:${12 + n};opacity:0;transform:translate(60px,-40px) rotate(0) scale(.8)">${photo(m.hero, '', m.c)}<span>${m.name}</span></div>`).join('');
+  const k = reduced() ? .25 : 1, at = (ms, fn) => timers.push(setTimeout(fn, ms * k));
+  const say = (h, p, c) => { tx.innerHTML = `<div class="swap"><h1>${h}</h1><p>${p}</p>${c ? `<span class="counter" id="ctr">${c}</span>` : ''}</div>`; };
+  say('Reading your photo', 'Curly, medium strands, shoulder length');
+  const s = [...st.querySelectorAll('.s')], picks = [...st.querySelectorAll('.p')];
+  at(900, () => say('Flipping through the swatch book', 'Curly cuts by 23 stylists at Salon Lofts', '0 photos'));
+  // each swatch flicks off to the left, like thumbing through a swatch ring
+  s.slice().reverse().forEach((el, n) => at(1100 + n * 210, () => {
+    el.style.transform = `translate(-300px, ${20 - n * 6}px) rotate(-${24 + n * 3}deg)`; el.style.opacity = 0;
+    const c = document.getElementById('ctr'); if (c) c.textContent = `${Math.round(214 * (n + 1) / s.length)} photos`;
+  }));
+  at(2900, () => say('Three stylists stand out', 'Curly cuts like yours, on hair like yours'));
+  picks.forEach((el, n) => at(3000 + n * 180, () => { el.style.opacity = 1; el.style.transform = `translate(${40 + n * 14}px, ${n * 10}px) rotate(${(n - 1) * 6}deg)`; }));
+  at(4300, () => { if (current === 'matching') go('reveal'); });
+}
+
+// Reveal: a stack of three; next/prev buttons (and arrow keys) deal through it. No like/nope.
+const deck = document.getElementById('deck');
+deck.innerHTML = MATCHES.map((m, i) => `
+  <article class="mcard" style="--c:${m.c};--i:${i}" aria-label="Pick ${i + 1} of 3: ${m.name}">
+    <div class="hero">${photo(m.hero, `${m.name}'s work`, m.c)}<span class="sample">Sample stylist</span><span class="num" aria-hidden="true">${i + 1}</span></div>
+    <div class="body">
+      <div><h2>${m.name}</h2><span class="loc">${m.loc}</span></div>
+      <span class="why">${m.why}</span>
+      <div class="ev">${m.ev.map(([f, t]) => photo(f, `${m.name}'s work: ${t}`, m.c, t)).join('')}</div>
+      <div class="acts"><a class="btn copper" href="#" onclick="return false">Book on ${m.site} ↗</a><button class="btn ghost" data-go="portfolio" aria-label="See all of ${m.name}'s work">Work</button></div>
+    </div>
+  </article>`).join('');
+let pos = 0;
+function setPos(p) {
+  pos = (p + 3) % 3;
+  deck.querySelectorAll('.mcard').forEach((c, i) => {
+    const rel = (i - pos + 3) % 3; c.dataset.pos = rel; c.inert = rel !== 0;
+  });
+  document.getElementById('count').textContent = `${pos + 1} of 3`;
+}
+function step(d) {
+  const top = deck.querySelector('[data-pos="0"]');
+  if (d > 0 && !reduced()) { top.dataset.pos = 'gone'; setTimeout(() => setPos(pos + 1), 260); } else setPos(pos + d);
+}
+document.getElementById('next').onclick = () => step(1);
+document.getElementById('prev').onclick = () => step(-1);
+deck.tabIndex = 0; deck.addEventListener('keydown', e => { if (e.key === 'ArrowRight') step(1); if (e.key === 'ArrowLeft') step(-1); });
+setPos(0);
+
+const DIR = [['Maya Brooks', 'Curly and coily cuts', 'maya-3.jpg'], ['Nia Carter', 'Colour for curls', 'nia-1.jpg'], ['Sam Okafor', 'Locs, silk press', 'sam-4.jpg'], ['Tasha Greene', 'Braids', 'tasha-1.jpg'], ['Priya Nair', 'Balayage, thick hair', 'priya-1.jpg'], ['Elena Ruiz', 'Precision cuts', 'elena-4.jpg']];
+document.getElementById('dgrid').innerHTML = DIR.map(([n, s, f]) => `<div class="dcard">${photo(f, `${n}'s work`)}<b>${n}</b><span>${s}</span><span class="sample">Sample stylist</span></div>`).join('');
+
+const rmBtn = document.getElementById('rmToggle');
+const setRM = on => { document.documentElement.classList.toggle('rm', on); rmBtn.setAttribute('aria-pressed', on); };
+setRM(matchMedia('(prefers-reduced-motion: reduce)').matches);
+rmBtn.onclick = () => setRM(!reduced());
+</script>
+</body>
+</html>
