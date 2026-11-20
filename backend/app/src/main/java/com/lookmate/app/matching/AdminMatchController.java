@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/** Admin-only (by path, SecurityConfig): the match review queue, one request's review, and the fairness report. */
+/** Admin-only (by path, SecurityConfig): the match monitor, the review queue, one request's review, and the fairness report. */
 @RestController
 @Validated
 class AdminMatchController {
@@ -44,6 +44,16 @@ class AdminMatchController {
         this.review = review;
         this.currentUser = currentUser;
         this.defaultMarket = defaultMarket;
+    }
+
+    /**
+     * The monitor: the most recent requests in every status, newest first, with what each client was shown and did
+     * (views, Book clicks and bookings per match, directory picks), and whether lists wait for review.
+     */
+    @GetMapping("/api/admin/match-monitor")
+    ReviewService.Monitor monitor(@RequestParam(required = false) @Size(max = 64) String market,
+                                  @RequestParam(defaultValue = "50") @Min(1) @Max(200) int limit) {
+        return review.monitor(market == null || market.isBlank() ? null : market, limit);
     }
 
     /** Requests in a status, oldest first: IN_REVIEW is the queue; FAILED and MATCHING show what's stuck. */

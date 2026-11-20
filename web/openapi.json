@@ -187,6 +187,9 @@
       },
       "ClientMatch" : {
         "properties" : {
+          "demo" : {
+            "type" : "boolean"
+          },
           "instagram" : {
             "type" : "string"
           },
@@ -194,6 +197,10 @@
             "type" : "string"
           },
           "matchId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "orgId" : {
             "format" : "uuid",
             "type" : "string"
           },
@@ -214,7 +221,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "instagram", "locationName", "matchId", "photoUrls", "rank", "reason", "stylistName" ]
+        "required" : [ "demo", "instagram", "locationName", "matchId", "orgId", "photoUrls", "rank", "reason", "stylistName" ]
       },
       "ConsentControllerAcceptRequest" : {
         "properties" : {
@@ -752,6 +759,12 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "bookingsBySource" : {
+            "$ref" : "#/components/schemas/TrackingQueriesSourceSplit"
+          },
+          "clicksBySource" : {
+            "$ref" : "#/components/schemas/TrackingQueriesSourceSplit"
+          },
           "clientsBooked" : {
             "format" : "int64",
             "type" : "integer"
@@ -797,7 +810,7 @@
             "type" : "integer"
           }
         },
-        "required" : [ "bookingClicks", "bookings", "clientsBooked", "clientsClicked", "clientsMatched", "clientsRebooked", "rebookCohort", "rebookCohortRebooked", "rebookRate", "rebooks", "requestsPublished", "stylistsActive", "stylistsLive" ]
+        "required" : [ "bookingClicks", "bookings", "bookingsBySource", "clicksBySource", "clientsBooked", "clientsClicked", "clientsMatched", "clientsRebooked", "rebookCohort", "rebookCohortRebooked", "rebookRate", "rebooks", "requestsPublished", "stylistsActive", "stylistsLive" ]
       },
       "PhotoServiceOrderRequest" : {
         "properties" : {
@@ -1158,6 +1171,122 @@
         },
         "required" : [ "adminNote", "adminOverride", "evidence", "finalRank", "hidden", "id", "instagram", "locationName", "orgId", "reason", "score", "source", "stylistLive", "stylistName", "systemRank" ]
       },
+      "ReviewServiceMonitor" : {
+        "properties" : {
+          "requests" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReviewServiceMonitorItem"
+            },
+            "type" : "array"
+          },
+          "reviewBeforePublish" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "requests", "reviewBeforePublish" ]
+      },
+      "ReviewServiceMonitorItem" : {
+        "properties" : {
+          "adminChanged" : {
+            "type" : "boolean"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "directoryBookings" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "directoryClicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "firstName" : {
+            "type" : "string"
+          },
+          "firstViewedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "hairType" : {
+            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "market" : {
+            "type" : "string"
+          },
+          "matches" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReviewServiceMonitorMatch"
+            },
+            "type" : "array"
+          },
+          "publishedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "statusReason" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "adminChanged", "createdAt", "directoryBookings", "directoryClicks", "firstName", "firstViewedAt", "hairType", "id", "market", "matches", "publishedAt", "service", "status", "statusReason" ]
+      },
+      "ReviewServiceMonitorMatch" : {
+        "properties" : {
+          "bookingClicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bookings" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "finalRank" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "hidden" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "rebooks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "source" : {
+            "type" : "string"
+          },
+          "stylistLive" : {
+            "type" : "boolean"
+          },
+          "stylistName" : {
+            "type" : "string"
+          },
+          "systemRank" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "bookingClicks", "bookings", "finalRank", "hidden", "id", "orgId", "rebooks", "source", "stylistLive", "stylistName", "systemRank" ]
+      },
       "ReviewServiceQueueItem" : {
         "properties" : {
           "candidates" : {
@@ -1347,6 +1476,77 @@
         },
         "required" : [ "hidden" ]
       },
+      "StylistDirectoryDirectoryPage" : {
+        "properties" : {
+          "hairType" : {
+            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
+            "type" : "string"
+          },
+          "market" : {
+            "type" : "string"
+          },
+          "page" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "pageSize" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "service" : {
+            "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
+            "type" : "string"
+          },
+          "stylists" : {
+            "items" : {
+              "$ref" : "#/components/schemas/StylistDirectoryDirectoryStylist"
+            },
+            "type" : "array"
+          },
+          "total" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "hairType", "market", "page", "pageSize", "service", "stylists", "total" ]
+      },
+      "StylistDirectoryDirectoryStylist" : {
+        "properties" : {
+          "city" : {
+            "type" : "string"
+          },
+          "demo" : {
+            "type" : "boolean"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "instagram" : {
+            "type" : "string"
+          },
+          "locationName" : {
+            "type" : "string"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "photoUrls" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "specialties" : {
+            "items" : {
+              "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "city", "demo", "displayName", "instagram", "locationName", "orgId", "photoUrls", "specialties" ]
+      },
       "StylistTrackingControllerStylistMatch" : {
         "properties" : {
           "bookingClicks" : {
@@ -1419,6 +1619,49 @@
           }
         },
         "required" : [ "address", "brand", "city", "id", "latitude", "longitude", "market", "name", "state", "zip" ]
+      },
+      "TrackingQueriesDirectoryClick" : {
+        "properties" : {
+          "bookedEventId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "clicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientEmail" : {
+            "type" : "string"
+          },
+          "clientFirstName" : {
+            "type" : "string"
+          },
+          "lastClickedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "market" : {
+            "type" : "string"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "recommended" : {
+            "type" : "boolean"
+          },
+          "requestId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          },
+          "stylistName" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "bookedEventId", "clicks", "clientEmail", "clientFirstName", "lastClickedAt", "market", "orgId", "recommended", "requestId", "service", "stylistName" ]
       },
       "TrackingQueriesHairTypeRow" : {
         "properties" : {
@@ -1512,6 +1755,23 @@
           }
         },
         "required" : [ "bookingClicks", "bookings", "clientEmail", "clientFirstName", "finalRank", "market", "matchId", "orgId", "publishedAt", "rebooks", "requestId", "service", "stylistName" ]
+      },
+      "TrackingQueriesSourceSplit" : {
+        "properties" : {
+          "directory" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "directoryAlsoRecommended" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "recommended" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "directory", "directoryAlsoRecommended", "recommended" ]
       },
       "TrackingQueriesStylistRow" : {
         "properties" : {
@@ -1748,6 +2008,45 @@
           }
         },
         "tags" : [ "location-controller" ]
+      }
+    },
+    "/api/admin/match-monitor" : {
+      "get" : {
+        "operationId" : "monitor",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "market",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 64,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "limit",
+          "required" : false,
+          "schema" : {
+            "default" : 50,
+            "format" : "int32",
+            "maximum" : 200,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReviewServiceMonitor"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-match-controller" ]
       }
     },
     "/api/admin/match-reports/fairness" : {
@@ -1995,7 +2294,7 @@
     },
     "/api/admin/match-requests/{id}/stylists" : {
       "get" : {
-        "operationId" : "stylists",
+        "operationId" : "stylists_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2021,6 +2320,51 @@
           }
         },
         "tags" : [ "admin-match-controller" ]
+      }
+    },
+    "/api/admin/match-requests/{requestId}/stylists/{orgId}/events" : {
+      "post" : {
+        "operationId" : "recordDirectory",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "requestId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminTrackingControllerRecordBooking"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TrackingServiceRecorded"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "admin-tracking-controller" ]
       }
     },
     "/api/admin/matches/{matchId}/events" : {
@@ -2392,6 +2736,71 @@
           }
         },
         "tags" : [ "stylist-controller" ]
+      }
+    },
+    "/api/admin/stylists/{orgId}/hide" : {
+      "post" : {
+        "operationId" : "adminHide",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfileServiceProfileView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-controller" ]
+      }
+    },
+    "/api/admin/tracking/directory-clicks" : {
+      "get" : {
+        "operationId" : "directoryClicks",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "market",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TrackingQueriesDirectoryClick"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-tracking-controller" ]
       }
     },
     "/api/admin/tracking/matches" : {
@@ -3177,6 +3586,33 @@
         "tags" : [ "stylist-tracking-controller" ]
       }
     },
+    "/api/public/book-stylist/{token}/{orgId}" : {
+      "get" : {
+        "operationId" : "bookStylist",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "public-tracking-controller" ]
+      }
+    },
     "/api/public/book/{token}/{matchId}" : {
       "get" : {
         "operationId" : "book",
@@ -3338,6 +3774,59 @@
         "tags" : [ "intake-controller" ]
       }
     },
+    "/api/public/match-requests/{token}/stylists" : {
+      "get" : {
+        "operationId" : "stylists_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "service",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "hairType",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "maximum" : 1000,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StylistDirectoryDirectoryPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "client-directory-controller" ]
+      }
+    },
     "/api/public/match-requests/{token}/viewed" : {
       "post" : {
         "operationId" : "viewed",
@@ -3355,6 +3844,60 @@
           }
         },
         "tags" : [ "public-tracking-controller" ]
+      }
+    },
+    "/api/public/stylists" : {
+      "get" : {
+        "operationId" : "stylists",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "market",
+          "required" : false,
+          "schema" : {
+            "pattern" : "[a-z0-9-]{1,64}",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "service",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "hairType",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "maximum" : 1000,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StylistDirectoryDirectoryPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "directory-controller" ]
       }
     }
   },

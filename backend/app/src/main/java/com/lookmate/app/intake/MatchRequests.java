@@ -97,21 +97,50 @@ public class MatchRequests {
     }
 
     /**
-     * IN_REVIEW (or FAILED, for a list made by hand) to PUBLISHED, and the client is emailed a fresh link to their
-     * matches. Call it in the transaction that finalises the match rows.
+     * To PUBLISHED: from MATCHING (the ranker publishing on its own, {@code reviewedBy} null), IN_REVIEW (the admin), or
+     * FAILED (a list made by hand). The client is emailed a fresh link to their matches after
+     * {@code lookmate.intake.matches-ready-email-delay}, unless they open the list first ({@link #clientViewedMatches}).
+     * Call it in the transaction that finalises the match rows.
      */
     @Transactional
     public void publish(UUID id, UUID reviewedBy) {
         MatchRequestRows.Row row = rows.findLocked(id).orElseThrow(() -> new NoSuchElementException("No match request " + id));
         Status from = Status.valueOf(row.status());
-        if (from != Status.IN_REVIEW && from != Status.FAILED) {
-            throw new IllegalStateException("Only a request in review can be published; this one is " + from);
+        if (from != Status.MATCHING && from != Status.IN_REVIEW && from != Status.FAILED) {
+            throw new IllegalStateException("Only a request being matched or in review can be published; this one is " + from);
         }
         Instant now = Instant.now();
         rows.setPublished(id, reviewedBy, now);
         String token = LinkTokens.newToken();
         rows.insertLink(LinkTokens.hash(token), id, "MATCHES_READY", now, now.plus(properties.linkTtl()));
-        emails.matchesReady(id, row.email(), row.firstName(), LinkTokens.path(token), now);
+        emails.matchesReady(id, row.email(), row.firstName(), LinkTokens.path(token), now.plus(properties.matchesReadyEmailDelay()), now);
+    }
+
+    /**
+     * The client opened their published list (tracking calls this when it records VIEWED): the "matches ready" email is
+     * no longer needed, so it is cancelled if it hasn't gone yet.
+     */
+    @Transactional
+    public void clientViewedMatches(UUID id) {
+        emails.cancelMatchesReady(id, Instant.now());
+    }
+
+    /**
+     * The request a client's link token opens (any unexpired link: the one from the quiz or from a later email), or
+     * empty. For other modules' public endpoints that take the token (tracking's Book links). Every failure is empty.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Request> forToken(String token) {
+        if (!LinkTokens.wellFormed(token)) {
+            return Optional.empty();
+        }
+        return rows.requestIdForToken(LinkTokens.hash(token), Instant.now()).flatMap(rows::find).map(MatchRequests::request);
+    }
+
+    /** The most recent requests in every status, newest first, for the admin's monitor; {@code market} null for all. */
+    @Transactional(readOnly = true)
+    public List<Request> recent(String market, int limit) {
+        return rows.recent(market, Math.max(0, Math.min(limit, 500))).stream().map(MatchRequests::request).toList();
     }
 
     @Transactional(readOnly = true)

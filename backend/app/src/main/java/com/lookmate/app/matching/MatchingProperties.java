@@ -9,10 +9,14 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  *
  * @param provider      the {@link EmbeddingProvider}: only {@code fake} until one is chosen (docs/embedding-providers.md)
  * @param fakeDimension vector length of the fake provider
+ * @param reviewBeforePublish off (the default, decided 2026-11-20): the ranker publishes its list to the client as soon
+ *                            as it is ready and the admin monitors afterwards. On: every list waits IN_REVIEW for the
+ *                            admin to publish it, as in Phase 1
  */
 @ConfigurationProperties("lookmate.matching")
 record MatchingProperties(@DefaultValue("fake") String provider,
                           @DefaultValue("64") int fakeDimension,
+                          @DefaultValue("false") boolean reviewBeforePublish,
                           @DefaultValue Worker worker,
                           @DefaultValue Ranking ranking) {
 

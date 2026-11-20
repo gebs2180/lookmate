@@ -3,10 +3,12 @@ import { Link, useParams } from 'react-router'
 import { ApiError, apiPath, publicApi, type ClientMatch, type ClientView } from '../../api'
 import { message } from '../../format'
 import { Chip, Loading } from '../../ui'
-import { useLoad } from '../../useLoad'
+import { useLoad, usePoll, type Backoff } from '../../useLoad'
 import { PhotoPicker, PrivacyNote } from './PhotoPicker'
 import { sendPhoto } from './photo'
 import { HAIR_TYPES, SERVICES, labelOf } from './quiz'
+import { StylistCard } from './StylistCard'
+import { useNoReferrer } from './useNoReferrer'
 
 const STAGES: { stage: ClientView['stage']; label: string }[] = [
   { stage: 'RECEIVED', label: 'Request received' },
@@ -15,8 +17,16 @@ const STAGES: { stage: ClientView['stage']; label: string }[] = [
 ]
 
 /**
+ * While matching, check every 1.5s for the first 30s (ranking usually finishes within a worker pass), then a little
+ * less often each time (up to every 30s), for 20 minutes.
+ */
+const POLL_START_MS = 1500
+const POLL_BACKOFF: Backoff = { factor: 1.5, maxMs: 30_000, steadyMs: 30_000, giveUpMs: 20 * 60_000 }
+
+/**
  * The client's own request, reached by the private link in their email (/m/:token). No account. Book links and images
- * send no referrer, so the link never reaches a booking site.
+ * send no referrer, so the link never reaches a booking site. While the request is being matched the page checks back
+ * by itself and shows the stylists as soon as they're published (matching publishes on its own, CLAUDE.md).
  */
 export function MatchStatusPage() {
   const { token = '' } = useParams()
@@ -25,8 +35,11 @@ export function MatchStatusPage() {
     [token],
   )
   useNoReferrer()
+  const waiting = view?.stage === 'RECEIVED' || view?.stage === 'MATCHING'
+  usePoll(waiting, reload, POLL_START_MS, POLL_BACKOFF)
 
-  if (error) {
+  // A failed check while the page is already showing is retried by the next one; only a first load that fails is an error.
+  if (error && !view) {
     return (
       <section className="find">
         <h1>This link doesn't work</h1>
@@ -54,8 +67,21 @@ export function MatchStatusPage() {
       {view.stage === 'PHOTO_NEEDED' && <AddPhoto token={token} keptDays={view.photoKeptDays} onSent={reload} />}
       {view.stage === 'CLOSED' && <p className="alert alert-info">This request is closed.</p>}
       {view.stage !== 'PHOTO_NEEDED' && view.stage !== 'CLOSED' && <Progress stage={view.stage} />}
+      {waiting && (
+        <p className="muted small" role="status">
+          This page updates by itself when your matches are ready, and we'll email you too. Meanwhile you can{' '}
+          <Link to={`/m/${encodeURIComponent(token)}/stylists`}>browse all stylists</Link>.
+        </p>
+      )}
 
       {view.stage === 'READY' && <Matches token={token} matches={view.matches} />}
+      {view.stage === 'READY' && (
+        <p>
+          <Link className="button secondary" to={`/m/${encodeURIComponent(token)}/stylists`}>
+            See all stylists
+          </Link>
+        </p>
+      )}
 
       <div className="panel">
         <h2>Your inspiration photo</h2>
@@ -84,15 +110,11 @@ function Progress({ stage }: { stage: ClientView['stage'] }) {
 }
 
 /**
- * The tracked booking link: tracking records the click, then sends the client to the stylist's own booking page with
- * UTM tags. Built here because only this page has the client's token (the server stores its hash).
+ * The recommendations, best first. Each "Book" is tracking's redirect: it records the click, then sends the client to
+ * the stylist's own booking page with UTM tags. Built here because only this page has the client's token.
  */
-function bookPath(token: string, matchId: string) {
-  return apiPath`/api/public/book/${token}/${matchId}`
-}
-
 function Matches({ token, matches }: { token: string; matches: ClientMatch[] }) {
-  // Tell tracking the list was seen (the pilot's "viewed" metric); the server counts it once per request per day.
+  // Tell tracking the list was seen (the pilot's "viewed" metric, and the held "matches ready" email isn't sent).
   useEffect(() => {
     if (matches.length === 0) return
     publicApi('POST', apiPath`/api/public/match-requests/${token}/viewed`).catch(() => {
@@ -101,40 +123,25 @@ function Matches({ token, matches }: { token: string; matches: ClientMatch[] }) 
   }, [token, matches.length])
 
   if (matches.length === 0) {
-    return <p>Your matches are being put together. Check back soon.</p>
+    return <p>Your matches are being put together. Check back soon, or browse all stylists below.</p>
   }
   return (
     <>
       <h2>Stylists for your look</h2>
       <p className="muted small">These are suggestions: you can book any stylist you like. You book on the stylist's own page.</p>
-      <ol className="tile-list">
+      <ol className="stylist-cards">
         {matches.map((m) => (
-          <li key={m.matchId} className="tile match">
-            <div className="tile-head">
-              <strong>
-                {m.rank}. {m.stylistName}
-              </strong>
-              {m.locationName && <span className="muted">{m.locationName}</span>}
-            </div>
-            <p>{m.reason}</p>
-            {m.photoUrls.length > 0 && (
-              <div className="photos">
-                {m.photoUrls.map((url, i) => (
-                  <img key={url} className="thumb" src={url} alt={`${m.stylistName}'s work, photo ${i + 1}`} referrerPolicy="no-referrer" />
-                ))}
-              </div>
-            )}
-            <div className="actions">
-              <a className="button" href={bookPath(token, m.matchId)} target="_blank" rel="noreferrer noopener">
-                Book with {m.stylistName}
-              </a>
-              {m.instagram && (
-                <a className="button secondary" href={`https://instagram.com/${encodeURIComponent(m.instagram)}`} target="_blank" rel="noreferrer noopener">
-                  Instagram
-                </a>
-              )}
-            </div>
-          </li>
+          <StylistCard
+            key={m.matchId}
+            name={m.stylistName}
+            rank={m.rank}
+            location={m.locationName}
+            demo={m.demo}
+            reason={m.reason}
+            photoUrls={m.photoUrls}
+            instagram={m.instagram}
+            book={{ href: apiPath`/api/public/book/${token}/${m.matchId}` }}
+          />
         ))}
       </ol>
     </>
@@ -179,15 +186,4 @@ function AddPhoto({ token, keptDays, onSent }: { token: string; keptDays: number
       </div>
     </div>
   )
-}
-
-/** The link is the client's key: no page they open from here, and no image host, learns it from a Referer header. */
-function useNoReferrer() {
-  useEffect(() => {
-    const meta = document.createElement('meta')
-    meta.name = 'referrer'
-    meta.content = 'no-referrer'
-    document.head.appendChild(meta)
-    return () => meta.remove()
-  }, [])
 }

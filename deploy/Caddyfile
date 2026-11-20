@@ -44,12 +44,13 @@
 
 	log {
 		output stdout
-		# An invite link is a key to an org for a week, and a client's link (/m/<token>, and the API behind it) is the
-		# key to their request: the tokens are in the path.
+		# An invite link is a key to an org for a week, and a client's link (/m/<token>, the API behind it, and the
+		# tracked Book links /api/public/book/<token> and /api/public/book-stylist/<token>) is the key to their
+		# request: the tokens are in the path.
 		format filter {
 			wrap console
 			fields {
-				request>uri regexp "^/(api/invites|api/public/match-requests|m)/[^/?]+" "/${1}/REDACTED"
+				request>uri regexp "^/(api/invites|api/public/match-requests|api/public/book-stylist|api/public/book|m)/[^/?]+" "/${1}/REDACTED"
 			}
 		}
 	}

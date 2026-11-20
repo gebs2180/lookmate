@@ -12,8 +12,11 @@ const TABS: { status: MatchRequestStatus; title: string }[] = [
   { status: 'PUBLISHED', title: 'Published' },
 ]
 
-/** The admin's queue of match requests, oldest first. "To review" is the work; the other tabs show what's stuck or done. */
-export function MatchQueuePage() {
+/**
+ * The review queue, oldest first: shown on the matches page when review-before-publish is on
+ * (lookmate.matching.review-before-publish). "To review" is the work; the other tabs show what's stuck or done.
+ */
+export function ReviewQueue() {
   const api = useApi()
   const [params] = useSearchParams()
   const status = (TABS.find((t) => t.status === params.get('status'))?.status ?? 'IN_REVIEW') as MatchRequestStatus
@@ -23,11 +26,9 @@ export function MatchQueuePage() {
   )
 
   return (
-    <div className="review-page">
-      <h1>Match review</h1>
-      <p>
-        Check each client's matches before they see them. <Link to="/admin/matches/fairness">Fairness by hair type</Link>
-      </p>
+    <section aria-labelledby="queue-title">
+      <h2 id="queue-title">Review queue</h2>
+      <p>Review before publish is on: each client's list waits here until you publish it.</p>
       <nav className="tabs" aria-label="Request status">
         {TABS.map((t) => (
           <Link key={t.status} to={`/admin/matches?status=${t.status}`} aria-current={t.status === status ? 'page' : undefined}>
@@ -73,6 +74,6 @@ export function MatchQueuePage() {
           </table>
         </div>
       )}
-    </div>
+    </section>
   )
 }

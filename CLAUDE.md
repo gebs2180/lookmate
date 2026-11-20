@@ -17,6 +17,10 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
 - **Scale without slowing down:** see [docs/architecture.md](docs/architecture.md). Stateless API, Postgres as the
   queue (`SKIP LOCKED`), embeddings keyed by model, `market` on every place-bound row.
 - **Design (proposed):** "Chair-side" direction, flows, tokens and plan in [docs/ux/design-direction.md](docs/ux/design-direction.md).
+- **Matching publishes automatically; admin monitors** (2026-11-20, Zach). Clients choose; we recommend: a ranked list
+  goes to the client as soon as it's ready, clients can browse every live stylist (`/api/public/stylists`), and the
+  admin watches `/admin/matches` and steps in after the fact. Review switch `lookmate.matching.review-before-publish`,
+  off. This reverses the brief's Must-have 5 (admin review before the client sees matches).
 - **Clients don't sign in.** Intake and the match list work through `/api/public/**` and an emailed link token.
   Stylists and the admin use Auth0; ADMIN needs MFA.
 

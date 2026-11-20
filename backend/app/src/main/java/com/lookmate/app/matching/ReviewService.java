@@ -8,6 +8,7 @@ import com.lookmate.app.matching.CandidateQueries.Stylist;
 import com.lookmate.app.matching.MatchStore.MatchRow;
 import com.lookmate.app.storage.BlobStore;
 import com.lookmate.app.storage.StorageProperties;
+import com.lookmate.app.tracking.TrackingService;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
@@ -26,9 +27,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * The admin's review of a request's matches (brief, Must have 5), and the client's read of them once published.
- * Every change takes the request's row lock and needs the request IN_REVIEW, so two reviewers can't publish
- * different lists.
+ * The admin's view of matching: the monitor of recent requests (what each client was shown and did), the review of
+ * one request's matches, and the client's read of them once published. Lists publish on their own unless
+ * {@code lookmate.matching.review-before-publish} is on (then they wait IN_REVIEW, brief Must have 5). Every change
+ * takes the request's row lock; reorder, add and publish need the request IN_REVIEW, while hiding or showing a match
+ * also works after publishing (the client's list changes at once).
  */
 @Service
 class ReviewService {
@@ -63,6 +66,21 @@ class ReviewService {
     record FairnessReport(String market, Instant since, List<CandidateQueries.FairnessRow> rows) {
     }
 
+    /** One match as the monitor shows it: where the client saw it (null rank: not shown) and what they did with it. */
+    record MonitorMatch(UUID id, UUID orgId, String stylistName, boolean stylistLive, Integer finalRank, int systemRank, boolean hidden,
+                        String source, long bookingClicks, long bookings, long rebooks) {
+    }
+
+    /** A recent request: its state, the list the client was shown, and their activity (views, clicks, bookings). */
+    record MonitorItem(UUID id, String status, String statusReason, String market, String service, HairType hairType, String firstName,
+                       Instant createdAt, Instant publishedAt, boolean adminChanged, Instant firstViewedAt, List<MonitorMatch> matches,
+                       long directoryClicks, long directoryBookings) {
+    }
+
+    /** {@code reviewBeforePublish}: whether lists wait for the admin (the review queue is then the main view). */
+    record Monitor(boolean reviewBeforePublish, List<MonitorItem> requests) {
+    }
+
     private final CandidateQueries queries;
     private final MatchStore matches;
     private final MatchRequests requests;
@@ -70,10 +88,13 @@ class ReviewService {
     private final MatchingProperties properties;
     private final BlobStore blobs;
     private final StorageProperties storage;
+    private final TrackingService tracking;
+    private final org.springframework.transaction.support.TransactionTemplate tx;
     private final Clock clock;
 
     ReviewService(CandidateQueries queries, MatchStore matches, MatchRequests requests, EmbeddingProvider provider,
-                  MatchingProperties properties, BlobStore blobs, StorageProperties storage, Optional<Clock> clock) {
+                  MatchingProperties properties, BlobStore blobs, StorageProperties storage, TrackingService tracking,
+                  org.springframework.transaction.support.TransactionTemplate tx, Optional<Clock> clock) {
         this.queries = queries;
         this.matches = matches;
         this.requests = requests;
@@ -81,6 +102,8 @@ class ReviewService {
         this.properties = properties;
         this.blobs = blobs;
         this.storage = storage;
+        this.tracking = tracking;
+        this.tx = tx;
         this.clock = clock.orElse(Clock.systemUTC());
     }
 
@@ -91,6 +114,37 @@ class ReviewService {
                 .map(r -> new QueueItem(r.id(), r.status().name(), r.statusReason(), r.market(), r.service(), HairType.parse(r.hairType()),
                         r.texture(), r.length(), r.firstName(), r.createdAt(), matches.forRequest(r.id()).size()))
                 .toList();
+    }
+
+    /**
+     * The most recent requests in every status, newest first ({@code market} null for all), with the list each client
+     * was shown and what they did: views, Book clicks and bookings per match, and stylists picked from the directory.
+     */
+    @Transactional(readOnly = true)
+    Monitor monitor(String market, int limit) {
+        List<MatchRequests.Request> recent = requests.recent(market, limit);
+        Map<UUID, TrackingService.RequestActivity> activity = tracking.activity(recent.stream().map(MatchRequests.Request::id).toList());
+        Map<UUID, List<MatchRow>> rowsByRequest = new java.util.HashMap<>();
+        for (MatchRequests.Request r : recent) {
+            rowsByRequest.put(r.id(), matches.forRequest(r.id()));
+        }
+        Map<UUID, Stylist> stylists = stylistsOf(rowsByRequest.values().stream().flatMap(List::stream).toList());
+        List<MonitorItem> items = recent.stream().map(r -> {
+            TrackingService.RequestActivity a = activity.get(r.id());
+            boolean published = r.publishedAt() != null;
+            List<MonitorMatch> shown = rowsByRequest.get(r.id()).stream().map(m -> {
+                Stylist s = stylists.get(m.orgId());
+                TrackingService.MatchActivity n = a.match(m.id());
+                return new MonitorMatch(m.id(), m.orgId(), s == null ? null : s.displayName(), s != null && "LIVE".equals(s.status()),
+                        published && !m.hidden() ? m.finalRank() : null, m.systemRank(), m.hidden(), m.source(), n.bookingClicks(),
+                        n.bookings(), n.rebooks());
+            }).toList();
+            return new MonitorItem(r.id(), r.status().name(), r.statusReason(), r.market(), r.service(), HairType.parse(r.hairType()),
+                    r.firstName(), r.createdAt(), r.publishedAt(), shown.stream().anyMatch(m -> !"SYSTEM".equals(m.source()))
+                    || rowsByRequest.get(r.id()).stream().anyMatch(MatchRow::adminOverride), a.firstViewedAt(), shown,
+                    a.directoryClicks(), a.directoryBookings());
+        }).toList();
+        return new Monitor(properties.reviewBeforePublish(), items);
     }
 
     @Transactional(readOnly = true)
@@ -128,12 +182,21 @@ class ReviewService {
         return view(request(requestId));
     }
 
-    /** Hides or shows a match and sets the reviewer's note on it. */
+    /**
+     * Hides or shows a match and sets the reviewer's note on it. Also after publishing: hiding takes the stylist off the
+     * client's list at once, and showing one again puts it back (last, if it was hidden when the list was published).
+     */
     @Transactional
     Review update(UUID requestId, UUID matchId, boolean hidden, String note) {
-        lockInReview(requestId);
+        String status = lock(requestId, "IN_REVIEW", "PUBLISHED");
         MatchRow row = matches.find(requestId, matchId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        matches.update(matchId, hidden, blankToNull(note), hidden != row.hidden(), clock.instant());
+        Instant now = clock.instant();
+        matches.update(matchId, hidden, blankToNull(note), hidden != row.hidden(), now);
+        if ("PUBLISHED".equals(status) && !hidden && row.finalRank() == null) {
+            int last = matches.forRequest(requestId).stream().map(MatchRow::finalRank).filter(java.util.Objects::nonNull)
+                    .mapToInt(Integer::intValue).max().orElse(0);
+            matches.setFinalRank(matchId, last + 1, true, now);
+        }
         return view(request(requestId));
     }
 
@@ -162,11 +225,45 @@ class ReviewService {
     @Transactional
     Review publish(UUID requestId, UUID reviewer) {
         lockInReview(requestId);
-        Instant now = clock.instant();
-        List<MatchRow> rows = matches.forRequest(requestId);
-        if (rows.stream().noneMatch(MatchRow::visible)) {
+        if (matches.forRequest(requestId).stream().noneMatch(MatchRow::visible)) {
             throw new ApiException(HttpStatus.CONFLICT, Code.NO_VISIBLE_MATCHES, "Show or add at least one stylist before publishing.");
         }
+        finalizeAndPublish(requestId, reviewer);
+        return view(request(requestId));
+    }
+
+    /**
+     * With review switched off, publishes up to {@code limit} requests still waiting IN_REVIEW (from while the switch was
+     * on), each with its current list: the reviewer's order, hides and additions kept. A request with no visible match
+     * (nothing found, or everything hidden) stays for the admin. Each request in its own transaction; returns how many
+     * were published.
+     */
+    int publishWaitingReviews(int limit) {
+        if (properties.reviewBeforePublish()) {
+            return 0;
+        }
+        int published = 0;
+        for (MatchRequests.Request r : requests.list(MatchRequests.Status.IN_REVIEW, limit).reversed()) {
+            Boolean done = tx.execute(s -> {
+                // The admin may be publishing it right now: take the lock and look again.
+                if (!"IN_REVIEW".equals(queries.lockStatus(r.id()).orElse(null))
+                        || matches.forRequest(r.id()).stream().noneMatch(MatchRow::visible)) {
+                    return false;
+                }
+                finalizeAndPublish(r.id(), null);
+                return true;
+            });
+            if (Boolean.TRUE.equals(done)) {
+                published++;
+            }
+        }
+        return published;
+    }
+
+    /** Final ranks 1..n over the visible matches in the current order, then intake publishes. Caller holds the row lock. */
+    private void finalizeAndPublish(UUID requestId, UUID reviewer) {
+        Instant now = clock.instant();
+        List<MatchRow> rows = matches.forRequest(requestId);
         int rank = 0;
         for (MatchRow row : rows) {
             Integer finalRank = row.visible() ? ++rank : null;
@@ -175,7 +272,6 @@ class ReviewService {
             }
         }
         requests.publish(requestId, reviewer);
-        return view(request(requestId));
     }
 
     @Transactional(readOnly = true)
@@ -203,7 +299,8 @@ class ReviewService {
             List<String> evidence = m.evidence().stream().map(photos::get)
                     .filter(p -> p != null && "READY".equals(p.status()))
                     .map(p -> url(p.objectKey()).toString()).toList();
-            out.add(new ClientMatch(m.id(), out.size() + 1, s.displayName(), s.locationName(), m.reason(), evidence, s.instagram()));
+            out.add(new ClientMatch(m.id(), m.orgId(), out.size() + 1, s.displayName(), s.locationName(), m.reason(), evidence, s.instagram(),
+                    s.demo()));
         }
         return out;
     }
@@ -213,11 +310,17 @@ class ReviewService {
     }
 
     private void lockInReview(UUID requestId) {
+        lock(requestId, "IN_REVIEW");
+    }
+
+    /** Takes the request's row lock and returns its status, which must be one of {@code allowed}. */
+    private String lock(UUID requestId, String... allowed) {
         String status = queries.lockStatus(requestId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        if (!"IN_REVIEW".equals(status)) {
+        if (!List.of(allowed).contains(status)) {
             throw new ApiException(HttpStatus.CONFLICT, Code.NOT_IN_REVIEW, "This request isn't in review any more (it's " + status.toLowerCase()
                     .replace('_', ' ') + "). Reload the page.");
         }
+        return status;
     }
 
     private Review view(MatchRequests.Request r) {

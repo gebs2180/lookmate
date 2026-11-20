@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router'
 import { Loading, NotFound, RouteErrorBoundary } from '../../ui'
+import { DirectoryPage } from './DirectoryPage'
 import { FindPage } from './FindPage'
 import { MatchStatusPage } from './MatchStatusPage'
 
@@ -20,6 +21,8 @@ export function PublicShell() {
             <Routes>
               <Route path="/find" element={<FindPage />} />
               <Route path="/m/:token" element={<MatchStatusPage />} />
+              <Route path="/m/:token/stylists" element={<DirectoryPage />} />
+              <Route path="/stylists" element={<DirectoryPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

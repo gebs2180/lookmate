@@ -31,7 +31,10 @@ Goal: a 90-day pilot with 20–40 stylists. Matching is partly manual. Keep it s
    - Compute image embeddings for portfolio photos and the inspiration photo (an off-the-shelf model such as CLIP or SigLIP; no custom training).
    - Filter by hair-type compatibility and service first, then rank by visual similarity.
    - Return the top 3–5 stylists with a short "why" explanation and the matching portfolio photos.
-5. **Admin review screen:** an experienced stylist can review, reorder or override matches before the client sees them.
+5. > **Changed 2026-11-20:** matching publishes automatically and the admin monitors after the fact; review before
+   > publish is a switch, off (`CLAUDE.md`, Decisions: "Matching publishes automatically; admin monitors").
+
+   **Admin review screen:** an experienced stylist can review, reorder or override matches before the client sees them.
 6. **Handoff and tracking:** "Book" goes to the stylist's booking URL with UTM or referral tracking. Record clicks; record bookings and rebookings by manual entry for now.
 7. **Basic metrics dashboard:** stylists active, clients matched, booking clicks, confirmed bookings, rebooks.
 

@@ -59,6 +59,13 @@ class TrackingFixtures {
         return id;
     }
 
+    /** A client link token in intake's shape: 32 random bytes, base64url. */
+    static String token() {
+        byte[] b = new byte[32];
+        new java.security.SecureRandom().nextBytes(b);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(b);
+    }
+
     /** A request with the given link token; {@code publishedAt} null leaves it IN_REVIEW. */
     UUID request(UUID clientId, String market, String token, Instant publishedAt) {
         UUID id = UUID.randomUUID();
@@ -73,6 +80,12 @@ class TrackingFixtures {
                 .param("status", publishedAt == null ? "IN_REVIEW" : "PUBLISHED")
                 .param("published", publishedAt == null ? null : Timestamp.from(publishedAt))
                 .param("created", Timestamp.from(created)).update();
+        // The token opens the request through intake's link table, as the quiz's link does.
+        jdbc.sql("""
+                        insert into match_request_link (token_hash, match_request_id, purpose, created_at, expires_at)
+                        values (:hash, :id, 'CREATED', :created, now() + interval '1 day')
+                        """)
+                .param("hash", TrackingService.hash(token)).param("id", id).param("created", Timestamp.from(created)).update();
         return id;
     }
 

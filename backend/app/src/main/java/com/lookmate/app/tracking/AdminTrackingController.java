@@ -65,6 +65,25 @@ class AdminTrackingController {
                 request.occurredAt());
     }
 
+    /**
+     * Stylists clients picked from the directory (Book clicks with no match), newest first, to record a directory
+     * booking; each says whether that stylist was also recommended to the client.
+     */
+    @GetMapping("/api/admin/tracking/directory-clicks")
+    List<TrackingQueries.DirectoryClick> directoryClicks(@RequestParam(required = false) String market,
+                                                         @RequestParam(required = false) @Size(max = 200) String q) {
+        return queries.recentDirectoryClicks(market == null || market.isBlank() ? null : market, q, 50);
+    }
+
+    /** A booking or rebook with a stylist the client picked from the directory (no match). */
+    @PostMapping("/api/admin/match-requests/{requestId}/stylists/{orgId}/events")
+    @ResponseStatus(HttpStatus.CREATED)
+    TrackingService.Recorded recordDirectory(@PathVariable UUID requestId, @PathVariable UUID orgId,
+                                             @Valid @RequestBody RecordBooking request) {
+        return tracking.recordDirectoryBooking(requestId, orgId, request.type(), currentUser.id(), request.note(),
+                request.occurredAt());
+    }
+
     @GetMapping("/api/admin/matches/{matchId}/events")
     List<MatchEvents.Event> events(@PathVariable UUID matchId) {
         return tracking.events(matchId, null);

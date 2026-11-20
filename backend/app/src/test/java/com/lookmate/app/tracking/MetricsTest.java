@@ -162,4 +162,43 @@ class MetricsTest {
                 .andExpect(jsonPath("$.totals.rebookRate").value(Matchers.nullValue()));
         api.get("/api/admin/metrics?from=2026-10-31&to=2026-10-01", api.admin()).andExpect(status().isBadRequest());
     }
+
+    @Test
+    void bookingsFromRecommendationsAreToldApartFromDirectoryPicks() throws Exception {
+        TrackingFixtures fx = new TrackingFixtures(jdbc);
+        String market = "test-" + UUID.randomUUID().toString().substring(0, 8);
+        UUID a = fx.org("A");
+        UUID x = fx.org("X");
+        fx.profile(a, "Avery", market, "LIVE", "https://booksy.com/a");
+        fx.profile(x, "Xan", market, "LIVE", "https://booksy.com/x");
+
+        UUID r1 = fx.request(fx.client(market, "CURLY"), market, "s1-" + market, at("2026-10-05"));
+        UUID r2 = fx.request(fx.client(market, "COILY"), market, "s2-" + market, null); // never published
+        UUID r3 = fx.request(fx.client(market, "WAVY"), market, "s3-" + market, at("2026-10-05"));
+        UUID m1a = fx.match(r1, a, 1, false);
+        fx.match(r3, x, 1, true); // hidden by the admin: not "recommended"
+
+        fx.event(m1a, r1, a, "CLICKED_BOOK", at("2026-10-05")); // from the recommendation
+        fx.event(m1a, r1, a, "BOOKED", at("2026-10-06"));
+        fx.event(null, r1, a, "CLICKED_BOOK", at("2026-10-07")); // from the directory, also recommended
+        fx.event(null, r1, a, "BOOKED", at("2026-10-08"));
+        fx.event(null, r1, x, "CLICKED_BOOK", at("2026-10-07")); // from the directory only
+        fx.event(null, r1, x, "BOOKED", at("2026-10-09"));
+        fx.event(null, r2, x, "CLICKED_BOOK", at("2026-10-10"));
+        fx.event(null, r3, x, "CLICKED_BOOK", at("2026-10-11"));
+        UUID voided = fx.event(null, r3, x, "BOOKED", at("2026-10-12"));
+        fx.voidEvent(voided, null, r3, x);
+
+        TestApi api = new TestApi(mvc, security);
+        api.get("/api/admin/metrics?market=" + market + "&from=2026-10-01&to=2026-10-31", api.admin())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totals.bookingClicks").value(5))
+                .andExpect(jsonPath("$.totals.clicksBySource.recommended").value(1))
+                .andExpect(jsonPath("$.totals.clicksBySource.directory").value(4))
+                .andExpect(jsonPath("$.totals.clicksBySource.directoryAlsoRecommended").value(1))
+                .andExpect(jsonPath("$.totals.bookings").value(3))
+                .andExpect(jsonPath("$.totals.bookingsBySource.recommended").value(1))
+                .andExpect(jsonPath("$.totals.bookingsBySource.directory").value(2))
+                .andExpect(jsonPath("$.totals.bookingsBySource.directoryAlsoRecommended").value(1));
+    }
 }

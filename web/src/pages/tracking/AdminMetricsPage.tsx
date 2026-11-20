@@ -73,6 +73,44 @@ function MetricsView({ data }: { data: Metrics }) {
         />
       </ul>
 
+      <section className="metric-section" aria-labelledby="metric-source-title">
+        <h2 id="metric-source-title">Recommended or picked from the directory</h2>
+        <p className="muted">
+          Clients book from their recommendations or pick any stylist from the directory. A directory pick of a stylist who
+          was also on that client's list is counted apart.
+        </p>
+        <div className="scroll">
+          <table className="table">
+            <thead>
+              <tr>
+                <th scope="col">Where the client picked the stylist</th>
+                <th scope="col" className="num">Booking clicks</th>
+                <th scope="col" className="num">Bookings</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">From their recommendations</th>
+                <td className="num">{t.clicksBySource.recommended}</td>
+                <td className="num">{t.bookingsBySource.recommended}</td>
+              </tr>
+              <tr>
+                <th scope="row">From the directory</th>
+                <td className="num">{t.clicksBySource.directory}</td>
+                <td className="num">{t.bookingsBySource.directory}</td>
+              </tr>
+              <tr>
+                <th scope="row">
+                  <span className="muted">of which, a stylist also on their list</span>
+                </th>
+                <td className="num">{t.clicksBySource.directoryAlsoRecommended}</td>
+                <td className="num">{t.bookingsBySource.directoryAlsoRecommended}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
       <section className="metric-section">
         <WeeklyLine weeks={data.weeks} />
       </section>

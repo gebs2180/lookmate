@@ -15,8 +15,10 @@ import org.springframework.transaction.support.TransactionTemplate;
  * Takes requests from intake ({@link MatchRequests#claimNew}: NEW ones with a confirmed photo, which it sets MATCHING
  * with {@code SKIP LOCKED}), embeds the inspiration photo, filters candidates in SQL
  * ({@link CandidateQueries#similarities}), scores them in Java ({@link Scoring}), writes the top stylists as
- * {@code match} rows and moves the request to IN_REVIEW. A request with no candidates goes to review too, with a
- * reason, so the reviewer can add stylists by hand.
+ * {@code match} rows, then publishes them to the client through intake's {@link MatchRequests#publish} (the system
+ * ranking is the final ranking). With {@code lookmate.matching.review-before-publish} on, the request goes to
+ * IN_REVIEW for the admin instead. A request with no candidates always goes to IN_REVIEW, with a reason, so the admin
+ * can add stylists by hand; the client can browse the directory meanwhile.
  *
  * <p>If the photo can't be embedded, the request stays MATCHING with a reason, and intake hands it back after
  * {@code lookmate.intake.matching-stuck-after}; after {@code max-attempts} it becomes FAILED.
@@ -35,6 +37,7 @@ class Ranker {
     private final MatchStore matches;
     private final EmbeddingProvider provider;
     private final MatchingProperties.Ranking settings;
+    private final boolean reviewBeforePublish;
     private final TransactionTemplate tx;
     private final Clock clock;
 
@@ -46,6 +49,7 @@ class Ranker {
         this.matches = matches;
         this.provider = provider;
         this.settings = properties.ranking();
+        this.reviewBeforePublish = properties.reviewBeforePublish();
         this.tx = tx;
         this.clock = clock.orElse(Clock.systemUTC());
     }
@@ -93,7 +97,13 @@ class Ranker {
         for (Scoring.Ranked r : ranked) {
             matches.insertSystem(request.id(), r.orgId(), r.score(), Reasons.forRanked(r, request.service(), hair), r.evidence(), ++rank, now);
         }
-        requests.markStatus(request.id(), Status.IN_REVIEW, ranked.isEmpty() ? NO_CANDIDATES : null);
-        log.info("Ranked match request {}: {} candidate photos, {} stylists", request.id(), photos.size(), ranked.size());
+        boolean publish = !reviewBeforePublish && !ranked.isEmpty();
+        if (publish) {
+            requests.publish(request.id(), null); // nobody reviewed it: reviewed_by stays null
+        } else {
+            requests.markStatus(request.id(), Status.IN_REVIEW, ranked.isEmpty() ? NO_CANDIDATES : null);
+        }
+        log.info("Ranked match request {}: {} candidate photos, {} stylists, {}", request.id(), photos.size(), ranked.size(),
+                publish ? "published" : "in review");
     }
 }

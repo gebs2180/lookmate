@@ -57,8 +57,8 @@ class IntakeFlowTest {
         @Bean
         @Primary
         ClientMatchList testMatchList() {
-            return id -> List.of(new ClientMatch(UUID.randomUUID(), 1, "Curl Studio", "Short North", "12 similar cuts on curly hair",
-                    List.of(), "curlstudio"));
+            return id -> List.of(new ClientMatch(UUID.randomUUID(), UUID.randomUUID(), 1, "Curl Studio", "Short North",
+                    "12 similar cuts on curly hair", List.of(), "curlstudio", false));
         }
     }
 
@@ -254,7 +254,8 @@ class IntakeFlowTest {
         assertThat(requests.claimNew(50)).extracting(MatchRequests.Request::id).doesNotContain(id);
         view(ready).andExpect(jsonPath("$.stage").value("MATCHING"));
 
-        assertThatThrownBy(() -> requests.publish(id, null)).isInstanceOf(IllegalStateException.class);
+        // A request still waiting for its photo can't be published; one being matched can (the ranker publishing on its own).
+        assertThatThrownBy(() -> requests.publish(idOf(waiting), null)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> requests.markStatus(id, MatchRequests.Status.PUBLISHED, null)).isInstanceOf(IllegalStateException.class);
         requests.markStatus(id, MatchRequests.Status.IN_REVIEW, "3 stylists found");
         assertThat(requests.list(MatchRequests.Status.IN_REVIEW, 10)).extracting(MatchRequests.Request::id).contains(id);
