@@ -70,8 +70,10 @@ agrees. `claude/tender-hawking-c4yoo8` wasn't created by the old orchestrator: a
 
 ## Next build work (not started)
 
-- **The UX implementation plan:** [docs/ux/implementation-plan.md](ux/implementation-plan.md), client flow first, in small PRs.
-  Adopt `docs/ux/tokens.css`.
+- **Lookbook follow-ups** (the redesign is gebs2180/lookmate#14, replacing Chair-side and `docs/ux/tokens.css`): a client
+  note field for the reveal's pull quote (now built from quiz answers), a single-stylist endpoint for the portfolio
+  dialog, dark mode, install icons, and View Transitions between routes. Studio and admin weren't checked in the
+  browser.
 - **Module boundaries:** matching still reads the stylists, intake and tracking tables with read-only SQL (the documented
   exception in architecture.md). The follow-ups are in `docs/modules/matching.md`: intake adds `inspirationUrl` and
   `lockForReview`, and the fairness report moves into tracking.
