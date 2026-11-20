@@ -124,3 +124,20 @@ Stylist (`/api/orgs/{orgId}/...`, member of the STYLIST org or ADMIN; anyone els
 Booking URL: must be `https://`; the platform is detected from the host (`booksy.com`, `vagaro.com`,
 `styleseat.com`, `glossgenius.com`, `square.site`/`squareup.com`, else `OTHER`).
 Photo cap: `lookmate.storage.max-photos-per-stylist` (READY + HIDDEN + recent pending uploads).
+
+## Notes for the other modules
+
+- **Photo metadata.** `MetadataStripper` (package-private, ported from pokemans' `intake/ExactCopy`) copies a JPEG or
+  PNG byte for byte without EXIF/XMP/comments/text, keeping only the orientation. Intake needs the same for
+  inspiration photos; if it wants to share it, move it to `storage` as a public class in a follow-up rather than
+  calling into `stylists`. It uses `com.drewnoakes:metadata-extractor:2.22.0` (added to `backend/app/build.gradle.kts`).
+- **Width and height** are the stored pixel dimensions, before the EXIF orientation is applied (a portrait phone photo
+  with orientation 6 reads as landscape here). Browsers apply the orientation when showing it.
+- **`sha256`** is of the upload as received (before stripping), so the same photo uploaded twice is caught as a
+  duplicate within one stylist's portfolio.
+- **Before/after pairs.** Tagging photo A with `pairPhotoId = B, before = true` sets B's pair to A and B's `before` to
+  false; whatever A or B were paired with before is unpaired. A photo is in at most one pair. Deleting a photo unpairs
+  its partner.
+- **Not checked yet:** whether a pending upload slot is ever used. Rows left in `PENDING_UPLOAD` stop counting toward the
+  cap after an hour; a cleanup job for them (and their objects, if any) is a follow-up.
+- **Defaults to confirm:** `lookmate.stylists.min-tagged-photos-to-publish: 3` (application.yml).

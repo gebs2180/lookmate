@@ -71,6 +71,10 @@ lookmate:
     # A client's inspiration photo is deleted from storage this many days after the request was made
     # (CLAUDE.md, Privacy). The embedding and the match rows stay. Default to confirm.
     inspiration-photo-days: 30
+  stylists:
+    # A profile can go LIVE once it has this many READY portfolio photos tagged with a service and hair type
+    # (the brief asks for 10-20 photos; 3 lets a pilot stylist start while they add the rest).
+    min-tagged-photos-to-publish: 3
 
 management:
   endpoints:

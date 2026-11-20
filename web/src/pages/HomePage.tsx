@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import { useApi, type Me } from '../api'
 import { Loading, PageError } from '../ui'
 import { useLoad } from '../useLoad'
@@ -20,8 +21,18 @@ export function HomePage() {
       {me.memberships.length > 0 && (
         <ul>
           {me.memberships.map((m) => (
-            <li key={m.orgId}>{m.orgName}</li>
+            <li key={m.orgId}>{m.orgType === 'STYLIST' ? <Link to={`/stylist/${m.orgId}`}>{m.orgName}</Link> : m.orgName}</li>
           ))}
+        </ul>
+      )}
+      {me.roles.includes('ADMIN') && (
+        <ul>
+          <li>
+            <Link to="/admin/stylists">Stylists and invites</Link>
+          </li>
+          <li>
+            <Link to="/admin/locations">Salon locations</Link>
+          </li>
         </ul>
       )}
       {me.roles.length === 0 && <p>Open the invite link you were sent to join as a stylist.</p>}

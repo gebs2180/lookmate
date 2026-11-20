@@ -15,6 +15,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.springframework.modulith:spring-modulith-starter-core")
     implementation("software.amazon.awssdk:s3")
+    // Reads a photo's EXIF orientation so the copy without location and device metadata keeps it (stylists).
+    implementation("com.drewnoakes:metadata-extractor:2.22.0")
     // Error reports to Sentry (docs/hosting.md). Does nothing unless SENTRY_DSN is set.
     implementation("io.sentry:sentry-spring-boot-4-starter:8.64.0")
     implementation("io.sentry:sentry-logback:8.64.0")

@@ -4,6 +4,38 @@
  */
 
 export interface paths {
+    "/api/admin/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["all"];
+        put?: never;
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/locations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/orgs": {
         parameters: {
             query?: never;
@@ -84,6 +116,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/stylists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/invites/{token}": {
         parameters: {
             query?: never;
@@ -116,6 +164,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["active"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me": {
         parameters: {
             query?: never;
@@ -142,6 +206,182 @@ export interface paths {
         get: operations["status"];
         put?: never;
         post: operations["accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["photos"];
+        put?: never;
+        post: operations["requestUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["reorder"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos/{photoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deletePhoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos/{photoId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos/{photoId}/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["hidePhoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos/{photoId}/show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["showPhoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos/{photoId}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["tag"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/stylist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["home"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/stylist/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["hide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/stylist/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["saveProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/stylist/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["publish"];
         delete?: never;
         options?: never;
         head?: never;
@@ -221,6 +461,38 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
+        LocationControllerAdminLocationView: {
+            active: boolean;
+            address: string;
+            brand: string;
+            city: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            market: string;
+            name: string;
+            state: string;
+            zip: string;
+        };
+        LocationControllerLocationRequest: {
+            active: boolean;
+            address: string;
+            brand: string;
+            city: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            market: string;
+            name: string;
+            state: string;
+            zip: string;
+        };
         MeControllerMe: {
             claimedRoles: string[];
             issuer: string;
@@ -238,6 +510,146 @@ export interface components {
             /** @enum {string} */
             role: "ADMIN" | "STYLIST";
         };
+        PhotoServiceOrderRequest: {
+            photoIds: string[];
+        };
+        PhotoServicePhotoView: {
+            before: boolean;
+            contentType: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** @enum {string} */
+            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+            /** Format: int32 */
+            height: number;
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            length: "PIXIE" | "SHORT" | "MEDIUM" | "LONG";
+            /** Format: uuid */
+            pairPhotoId: string;
+            /** Format: int32 */
+            position: number;
+            /** @enum {string} */
+            service: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
+            /** @enum {string} */
+            status: "PENDING_UPLOAD" | "READY" | "HIDDEN" | "DELETED";
+            /** @enum {string} */
+            texture: "FINE" | "MEDIUM" | "THICK";
+            /** Format: uri */
+            url: string;
+            /** Format: int32 */
+            width: number;
+        };
+        PhotoServiceTagRequest: {
+            before: boolean;
+            /** @enum {string} */
+            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+            /** @enum {string} */
+            length: "PIXIE" | "SHORT" | "MEDIUM" | "LONG";
+            /** Format: uuid */
+            pairPhotoId: string;
+            /** @enum {string} */
+            service: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
+            /** @enum {string} */
+            texture: "FINE" | "MEDIUM" | "THICK";
+        };
+        PhotoServiceUploadRequest: {
+            contentType: string;
+            /** Format: int64 */
+            sizeBytes: number;
+        };
+        PhotoServiceUploadSlot: {
+            /** Format: date-time */
+            expiresAt: string;
+            headers: {
+                [key: string]: string;
+            };
+            method: string;
+            /** Format: uuid */
+            photoId: string;
+            /** Format: uri */
+            url: string;
+        };
+        ProfileServiceProfileRequest: {
+            bio: string;
+            bookingUrl: string;
+            displayName: string;
+            instagram: string;
+            /** Format: uuid */
+            locationId: string;
+            /** Format: int32 */
+            priceTier: number;
+            specialties: ("CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER")[];
+        };
+        ProfileServiceProfileView: {
+            bio: string;
+            /** @enum {string} */
+            bookingPlatform: "BOOKSY" | "VAGARO" | "STYLESEAT" | "GLOSSGENIUS" | "SQUARE" | "OTHER";
+            bookingUrl: string;
+            displayName: string;
+            instagram: string;
+            /** Format: uuid */
+            locationId: string;
+            market: string;
+            /** Format: int32 */
+            priceTier: number;
+            /** Format: date-time */
+            publishedAt: string;
+            specialties: ("CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER")[];
+            /** @enum {string} */
+            status: "DRAFT" | "LIVE" | "HIDDEN";
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ProfileServiceStylistHome: {
+            /** Format: int32 */
+            maxPhotos: number;
+            /** Format: int32 */
+            minTaggedPhotos: number;
+            missing: ("TERMS" | "PROFILE" | "LOCATION" | "BOOKING_URL" | "TAGGED_PHOTOS")[];
+            /** Format: uuid */
+            orgId: string;
+            orgName: string;
+            profile: components["schemas"]["ProfileServiceProfileView"];
+            /** Format: int32 */
+            readyPhotos: number;
+            /** Format: int32 */
+            taggedPhotos: number;
+            termsAccepted: boolean;
+        };
+        StylistControllerAdminStylistView: {
+            /** @enum {string} */
+            bookingPlatform: "BOOKSY" | "VAGARO" | "STYLESEAT" | "GLOSSGENIUS" | "SQUARE" | "OTHER";
+            displayName: string;
+            market: string;
+            /** Format: uuid */
+            orgId: string;
+            orgName: string;
+            /** Format: date-time */
+            publishedAt: string;
+            /** Format: int32 */
+            readyPhotos: number;
+            /** @enum {string} */
+            status: "DRAFT" | "LIVE" | "HIDDEN";
+            /** Format: int32 */
+            taggedPhotos: number;
+        };
+        StylistsLocation: {
+            address: string;
+            brand: string;
+            city: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            market: string;
+            name: string;
+            state: string;
+            zip: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -247,6 +659,78 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    all: {
+        parameters: {
+            query?: {
+                market?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LocationControllerAdminLocationView"][];
+                };
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocationControllerLocationRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LocationControllerAdminLocationView"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocationControllerLocationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LocationControllerAdminLocationView"];
+                };
+            };
+        };
+    };
     list: {
         parameters: {
             query?: never;
@@ -403,6 +887,26 @@ export interface operations {
             };
         };
     };
+    adminList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylistControllerAdminStylistView"][];
+                };
+            };
+        };
+    };
     preview: {
         parameters: {
             query?: never;
@@ -443,6 +947,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["InviteControllerAccepted"];
+                };
+            };
+        };
+    };
+    active: {
+        parameters: {
+            query?: {
+                market?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylistsLocation"][];
                 };
             };
         };
@@ -511,6 +1037,289 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ConsentControllerConsentStatus"];
+                };
+            };
+        };
+    };
+    photos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServicePhotoView"][];
+                };
+            };
+        };
+    };
+    requestUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoServiceUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServiceUploadSlot"];
+                };
+            };
+        };
+    };
+    reorder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoServiceOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServicePhotoView"][];
+                };
+            };
+        };
+    };
+    deletePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                photoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                photoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServicePhotoView"];
+                };
+            };
+        };
+    };
+    hidePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                photoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServicePhotoView"];
+                };
+            };
+        };
+    };
+    showPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                photoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServicePhotoView"];
+                };
+            };
+        };
+    };
+    tag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                photoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoServiceTagRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServicePhotoView"];
+                };
+            };
+        };
+    };
+    home: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileServiceStylistHome"];
+                };
+            };
+        };
+    };
+    hide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileServiceProfileView"];
+                };
+            };
+        };
+    };
+    saveProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileServiceProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileServiceProfileView"];
+                };
+            };
+        };
+    };
+    publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileServiceProfileView"];
                 };
             };
         };
