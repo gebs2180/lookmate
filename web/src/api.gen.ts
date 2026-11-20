@@ -52,6 +52,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/match-monitor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["monitor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/match-reports/fairness": {
         parameters: {
             query?: never;
@@ -171,9 +187,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["stylists"];
+        get: operations["stylists_1"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/match-requests/{requestId}/stylists/{orgId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recordDirectory"];
         delete?: never;
         options?: never;
         head?: never;
@@ -334,6 +366,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["markDemo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/stylists/{orgId}/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["adminHide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/tracking/directory-clicks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["directoryClicks"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -676,6 +740,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/book-stylist/{token}/{orgId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["bookStylist"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/book/{token}/{matchId}": {
         parameters: {
             query?: never;
@@ -788,6 +868,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/stylists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stylists"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -865,10 +961,13 @@ export interface components {
             withAdminChanges: number;
         };
         ClientMatch: {
+            demo: boolean;
             instagram: string;
             locationName: string;
             /** Format: uuid */
             matchId: string;
+            /** Format: uuid */
+            orgId: string;
             photoUrls: string[];
             /** Format: int32 */
             rank: number;
@@ -1072,6 +1171,8 @@ export interface components {
             bookingClicks: number;
             /** Format: int64 */
             bookings: number;
+            bookingsBySource: components["schemas"]["TrackingQueriesSourceSplit"];
+            clicksBySource: components["schemas"]["TrackingQueriesSourceSplit"];
             /** Format: int64 */
             clientsBooked: number;
             /** Format: int64 */
@@ -1240,6 +1341,53 @@ export interface components {
             /** Format: int32 */
             systemRank: number;
         };
+        ReviewServiceMonitor: {
+            requests: components["schemas"]["ReviewServiceMonitorItem"][];
+            reviewBeforePublish: boolean;
+        };
+        ReviewServiceMonitorItem: {
+            adminChanged: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: int64 */
+            directoryBookings: number;
+            /** Format: int64 */
+            directoryClicks: number;
+            firstName: string;
+            /** Format: date-time */
+            firstViewedAt: string;
+            /** @enum {string} */
+            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+            /** Format: uuid */
+            id: string;
+            market: string;
+            matches: components["schemas"]["ReviewServiceMonitorMatch"][];
+            /** Format: date-time */
+            publishedAt: string;
+            service: string;
+            status: string;
+            statusReason: string;
+        };
+        ReviewServiceMonitorMatch: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            /** Format: int32 */
+            finalRank: number;
+            hidden: boolean;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            orgId: string;
+            /** Format: int64 */
+            rebooks: number;
+            source: string;
+            stylistLive: boolean;
+            stylistName: string;
+            /** Format: int32 */
+            systemRank: number;
+        };
         ReviewServiceQueueItem: {
             /** Format: int32 */
             candidates: number;
@@ -1315,6 +1463,31 @@ export interface components {
             /** Format: int32 */
             hidden: number;
         };
+        StylistDirectoryDirectoryPage: {
+            /** @enum {string} */
+            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+            market: string;
+            /** Format: int32 */
+            page: number;
+            /** Format: int32 */
+            pageSize: number;
+            /** @enum {string} */
+            service: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
+            stylists: components["schemas"]["StylistDirectoryDirectoryStylist"][];
+            /** Format: int64 */
+            total: number;
+        };
+        StylistDirectoryDirectoryStylist: {
+            city: string;
+            demo: boolean;
+            displayName: string;
+            instagram: string;
+            locationName: string;
+            /** Format: uuid */
+            orgId: string;
+            photoUrls: string[];
+            specialties: ("CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER")[];
+        };
         StylistTrackingControllerStylistMatch: {
             /** Format: int64 */
             bookingClicks: number;
@@ -1345,6 +1518,24 @@ export interface components {
             name: string;
             state: string;
             zip: string;
+        };
+        TrackingQueriesDirectoryClick: {
+            /** Format: uuid */
+            bookedEventId: string;
+            /** Format: int64 */
+            clicks: number;
+            clientEmail: string;
+            clientFirstName: string;
+            /** Format: date-time */
+            lastClickedAt: string;
+            market: string;
+            /** Format: uuid */
+            orgId: string;
+            recommended: boolean;
+            /** Format: uuid */
+            requestId: string;
+            service: string;
+            stylistName: string;
         };
         TrackingQueriesHairTypeRow: {
             /** Format: int64 */
@@ -1387,6 +1578,14 @@ export interface components {
             requestId: string;
             service: string;
             stylistName: string;
+        };
+        TrackingQueriesSourceSplit: {
+            /** Format: int64 */
+            directory: number;
+            /** Format: int64 */
+            directoryAlsoRecommended: number;
+            /** Format: int64 */
+            recommended: number;
         };
         TrackingQueriesStylistRow: {
             /** Format: int64 */
@@ -1538,6 +1737,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["LocationControllerAdminLocationView"];
+                };
+            };
+        };
+    };
+    monitor: {
+        parameters: {
+            query?: {
+                market?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewServiceMonitor"];
                 };
             };
         };
@@ -1710,7 +1932,7 @@ export interface operations {
             };
         };
     };
-    stylists: {
+    stylists_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -1728,6 +1950,33 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReviewServiceStylistOption"][];
+                };
+            };
+        };
+    };
+    recordDirectory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                requestId: string;
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminTrackingControllerRecordBooking"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrackingServiceRecorded"];
                 };
             };
         };
@@ -2018,6 +2267,51 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ProfileServiceProfileView"];
+                };
+            };
+        };
+    };
+    adminHide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileServiceProfileView"];
+                };
+            };
+        };
+    };
+    directoryClicks: {
+        parameters: {
+            query?: {
+                market?: string;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrackingQueriesDirectoryClick"][];
                 };
             };
         };
@@ -2583,6 +2877,27 @@ export interface operations {
             };
         };
     };
+    bookStylist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     book: {
         parameters: {
             query?: never;
@@ -2735,6 +3050,31 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    stylists: {
+        parameters: {
+            query?: {
+                market?: string;
+                service?: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
+                hairType?: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylistDirectoryDirectoryPage"];
+                };
             };
         };
     };

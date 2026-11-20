@@ -42,11 +42,21 @@ public class MatchRequests {
     @Transactional public void markStatus(UUID id, Status status, String reason);
 
     /**
-     * IN_REVIEW (or FAILED, for a hand-made list) -> PUBLISHED: sets published_at and reviewed_by, and emails the
-     * client a fresh link to /m/<token> (template MATCHES_READY). Call it in the same transaction that finalises the
-     * match rows.
+     * MATCHING (the ranker publishing on its own, reviewedBy null), IN_REVIEW (the admin) or FAILED (a hand-made
+     * list) -> PUBLISHED: sets published_at and reviewed_by, and queues the client's email with a fresh link to
+     * /m/<token> (template MATCHES_READY), due after lookmate.intake.matches-ready-email-delay. Call it in the same
+     * transaction that finalises the match rows.
      */
     @Transactional public void publish(UUID id, UUID reviewedBy);
+
+    /** The client opened their published list (tracking calls it on VIEWED): a MATCHES_READY not yet sent is cancelled. */
+    @Transactional public void clientViewedMatches(UUID id);
+
+    /** The request an unexpired link token opens (any of its links), or empty. For tracking's Book redirects. */
+    public Optional<Request> forToken(String token);
+
+    /** Recent requests in every status, newest first; market null for all (the admin's monitor). */
+    public List<Request> recent(String market, int limit);
 
     public Optional<Request> view(UUID id);
 
@@ -66,8 +76,8 @@ public interface ClientMatchList {
     List<ClientMatch> forClient(UUID matchRequestId);
 }
 
-public record ClientMatch(UUID matchId, int rank, String stylistName, String locationName, String reason,
-                          List<String> photoUrls, String instagram) { }
+public record ClientMatch(UUID matchId, UUID orgId, int rank, String stylistName, String locationName, String reason,
+                          List<String> photoUrls, String instagram, boolean demo) { }
 ```
 
 The matching module provides the bean (matching -> intake is the only dependency direction). With no bean the list
@@ -87,10 +97,19 @@ is empty. `photoUrls` must be short-lived presigned links. The `/m/:token` page 
 
 A wrong or expired token is 404, the same for every case. 429 `RATE_LIMITED` carries `Retry-After`.
 
+## The "matches ready" email
+
+Publishing queues MATCHES_READY in the outbox due `matches-ready-email-delay` (5 min) later, not at once. When the client
+opens their list, the page posts `/viewed`; tracking records VIEWED and calls `MatchRequests.clientViewedMatches`, which
+cancels the email if it hasn't gone (status CANCELLED, reason "the client opened their matches before it went"). A
+client still on their page, which checks back by itself while matching, so never gets an email for what they've seen.
+Sent at most once per request, as before.
+
 ## Settings (`lookmate.intake` in application.yml)
 
 `link-ttl` (90d), `max-open-requests-per-email-per-day` (3), `matching-stuck-after` (15m),
-`rate-limit.creates-per-hour` (10 per IP), `rate-limit.reads-per-minute` (60 per IP).
+`matches-ready-email-delay` (5m), `rate-limit.creates-per-hour` (10 per IP), `rate-limit.reads-per-minute` (60 per IP),
+`rate-limit.browse-per-minute` (60 per IP: the stylist directory and its Book links, which this limiter also covers).
 
 The rate limiter is in memory, so it is per instance: with more than one app container, move it to Caddy or Postgres
 (docs/architecture.md, "How it scales").
@@ -134,7 +153,10 @@ the matching module should not email clients itself.
 ## Web
 
 `/find` (the quiz, one question per screen, then the photo and an email) and `/m/:token` (the client's request: stage,
-photo, matches once published; it can also take the photo if the first upload failed). Both render in
+photo, matches once published; it can also take the photo if the first upload failed). While the request is NEW or
+being matched, `/m/:token` checks back by itself (`usePoll` with a gentle backoff: 3s, ×1.5, at most every 30s, for 20
+minutes) and shows the list in place once published. `/m/:token/stylists` and `/stylists` are the directory (below the
+recommendations, never instead of them; see [stylists.md](stylists.md)). Both render in
 `web/src/pages/public/PublicShell.tsx`, outside the signed-in shell. The browser re-encodes the photo as a JPEG of at
 most 2048 px before upload (which also drops its metadata and turns HEIC into JPEG where the browser can decode it);
 the server strips metadata again regardless.

@@ -105,6 +105,13 @@ Admin (`/api/admin/**`, ADMIN with MFA):
 | GET | `/api/admin/stylists` | Every stylist org with its profile status, photo count and demo flag |
 | POST | `/api/admin/stylists/{orgId}/demo` | Mark a stylist as made up (proof of concept) |
 | POST | `/api/admin/stylists/demo/hide` | Hide every LIVE demo stylist at once |
+| POST | `/api/admin/stylists/{orgId}/hide` | Hide one stylist from every result (recommendations and the directory); they can publish again |
+
+Public (no sign-in, rate-limited per IP with intake's limiter, `rate-limit.browse-per-minute`):
+
+| Method | Path | What |
+|---|---|---|
+| GET | `/api/public/stylists?market=&service=&hairType=&page=` | The directory: LIVE stylists only, 12 a page from 0, real stylists before sample ones, then by name |
 
 Stylist (`/api/orgs/{orgId}/...`, member of the STYLIST org or ADMIN; anyone else gets 404):
 
@@ -126,6 +133,22 @@ Stylist (`/api/orgs/{orgId}/...`, member of the STYLIST org or ADMIN; anyone els
 Booking URL: must be `https://`; the platform is detected from the host (`booksy.com`, `vagaro.com`,
 `styleseat.com`, `glossgenius.com`, `square.site`/`squareup.com`, else `OTHER`).
 Photo cap: `lookmate.storage.max-photos-per-stylist` (READY + HIDDEN + recent pending uploads).
+
+## The public directory (2026-11-20)
+
+Clients choose; we recommend (CLAUDE.md): every client can browse every LIVE stylist in a market (default
+`lookmate.default-market`). `StylistDirectory` answers `/api/public/stylists` with, per stylist: `orgId`, `displayName`,
+`locationName`, `city`, `specialties`, up to 3 READY `photoUrls` (short-lived presigned links, those matching the
+filters first), `demo` (label it "Sample stylist") and `instagram`. Nothing else: no email, booking link or other
+internal id. Responses are `Cache-Control: no-store` (the photo links expire).
+
+- **Filters:** `service` and `hairType` (the enums above). A stylist matches with a READY photo tagged with both (or
+  whichever is given); a `service` alone also matches the stylist's specialties.
+- **Book:** not in the JSON. From the client's own page (`/m/:token/stylists`) the web app links to tracking's
+  `/api/public/book-stylist/{token}/{orgId}`, which records the click against the client's request and redirects.
+  Signed out (`/stylists`, reached from `/find`) there is no Book: the card says "Start a request to book". We chose
+  this over an untracked public redirect: it is the simpler safe option (no booking link leaves the server except as a
+  tracked redirect) and keeps every booking click attributable (docs/tracking.md).
 
 ## Notes for the other modules
 

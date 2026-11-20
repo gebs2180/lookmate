@@ -11,7 +11,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * Per-IP limits on the intake endpoints: new requests per hour, and everything else per minute. Token buckets in
+ * Per-IP limits on the public endpoints: new requests per hour, the stylist directory and its Book links per minute,
+ * and everything else per minute. Token buckets in
  * memory, so this is per instance: with more than one app container, move the limit to Caddy or Postgres
  * (docs/modules/intake.md). The IP is the request's remote address, which behind Caddy is the client's
  * ({@code server.forward-headers-strategy: framework}; Caddy ignores an X-Forwarded-For the client sends).
@@ -38,6 +39,9 @@ class PublicRateLimit implements HandlerInterceptor {
         }
     }
 
+    /** The public stylist directory (stylists module) and its tracked Book links (tracking): their own per-minute bucket. */
+    static final String[] BROWSE_PATHS = {"/api/public/stylists", "/api/public/stylists/**", "/api/public/book-stylist/**"};
+
     private record Bucket(double tokens, long at) {
     }
 
@@ -54,10 +58,14 @@ class PublicRateLimit implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        boolean create = "POST".equals(request.getMethod()) && request.getRequestURI().replaceAll("/+$", "").endsWith("/api/public/match-requests");
+        String uri = request.getRequestURI().replaceAll("/+$", "");
+        boolean create = "POST".equals(request.getMethod()) && uri.endsWith("/api/public/match-requests");
+        boolean browse = uri.contains("/api/public/stylists") || uri.contains("/api/public/book-stylist/");
         String ip = request.getRemoteAddr();
         long wait = create
                 ? take("create:" + ip, limits.createsPerHour(), Duration.ofHours(1), System.nanoTime())
+                : browse
+                ? take("browse:" + ip, limits.browsePerMinute(), Duration.ofMinutes(1), System.nanoTime())
                 : take("read:" + ip, limits.readsPerMinute(), Duration.ofMinutes(1), System.nanoTime());
         if (wait > 0) {
             throw new RateLimited(wait);

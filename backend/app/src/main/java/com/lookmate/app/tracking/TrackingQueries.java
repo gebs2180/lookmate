@@ -40,7 +40,14 @@ class TrackingQueries {
 
     record Totals(long stylistsLive, long stylistsActive, long requestsPublished, long clientsMatched, long bookingClicks,
                   long clientsClicked, long bookings, long clientsBooked, long rebooks, long clientsRebooked,
-                  long rebookCohort, long rebookCohortRebooked) {
+                  long rebookCohort, long rebookCohortRebooked, SourceSplit clicksBySource, SourceSplit bookingsBySource) {
+    }
+
+    /**
+     * Book clicks or bookings by where the client picked the stylist: from their recommendations (the event is on a
+     * match), or from the directory (no match), split by whether that stylist was also on the client's published list.
+     */
+    record SourceSplit(long recommended, long directory, long directoryAlsoRecommended) {
     }
 
     record WeekRow(LocalDate weekStart, long requestsPublished, long clientsMatched, long bookingClicks, long bookings,
@@ -70,27 +77,21 @@ class TrackingQueries {
 
     // --- Client link ---------------------------------------------------------------------------------------------
 
-    Optional<BookingTarget> bookingTarget(String tokenHash, UUID matchId) {
+    /** The match, if the client of this request may book through it: published, ranked, not hidden, stylist LIVE. */
+    Optional<BookingTarget> bookingTarget(UUID requestId, UUID matchId) {
         return jdbc.sql("""
                         select m.id, m.org_id, r.id as request_id, r.market, p.booking_url
                         from match m
                         join match_request r on r.id = m.match_request_id
                         join stylist_profile p on p.org_id = m.org_id
-                        where m.id = :match and r.access_token_hash = :hash
+                        where m.id = :match and r.id = :request
                           and r.status = 'PUBLISHED' and m.final_rank is not null and not m.hidden
                           and p.status = 'LIVE'
                         """)
                 .param("match", matchId)
-                .param("hash", tokenHash)
+                .param("request", requestId)
                 .query((rs, n) -> new BookingTarget(uuid(rs, "id"), uuid(rs, "org_id"), uuid(rs, "request_id"),
                         rs.getString("market"), rs.getString("booking_url")))
-                .optional();
-    }
-
-    Optional<UUID> publishedRequestId(String tokenHash) {
-        return jdbc.sql("select id from match_request where access_token_hash = :hash and status = 'PUBLISHED'")
-                .param("hash", tokenHash)
-                .query(UUID.class)
                 .optional();
     }
 
@@ -106,6 +107,96 @@ class TrackingQueries {
                 .query((rs, n) -> new EntryTarget(uuid(rs, "id"), uuid(rs, "org_id"), uuid(rs, "request_id"),
                         uuid(rs, "client_id"), rs.getTimestamp("created_at").toInstant()))
                 .optional();
+    }
+
+    /**
+     * A request a directory booking (no match) can be recorded against, with the stylist: any request, published or
+     * not, since the directory is open to every client with a link.
+     */
+    Optional<EntryTarget> directoryEntryTarget(UUID requestId, UUID orgId) {
+        return jdbc.sql("""
+                        select r.id as request_id, r.client_id, r.created_at
+                        from match_request r
+                        where r.id = :request and exists (select 1 from stylist_profile p where p.org_id = :org)
+                        """)
+                .param("request", requestId)
+                .param("org", orgId)
+                .query((rs, n) -> new EntryTarget(null, orgId, uuid(rs, "request_id"), uuid(rs, "client_id"),
+                        rs.getTimestamp("created_at").toInstant()))
+                .optional();
+    }
+
+    /** The client of a request (for the rebook checks on a directory booking, which has no match). */
+    Optional<UUID> clientOf(UUID requestId) {
+        return jdbc.sql("select client_id from match_request where id = :request").param("request", requestId)
+                .query(UUID.class).optional();
+    }
+
+    /** A stylist one client picked from the directory: their clicks, and the directory booking if one is recorded. */
+    record DirectoryClick(UUID requestId, UUID orgId, String stylistName, String clientFirstName, String clientEmail,
+                          String market, String service, Instant lastClickedAt, long clicks, boolean recommended,
+                          UUID bookedEventId) {
+    }
+
+    /**
+     * Stylists clients picked from the directory (a Book click with no match), newest first, for the admin's "record a
+     * booking" page; {@code recommended} says whether the same stylist was also on that client's published list.
+     */
+    List<DirectoryClick> recentDirectoryClicks(String market, String search, int limit) {
+        String like = search == null || search.isBlank() ? null : "%" + search.strip().toLowerCase().replace("%", "") + "%";
+        return jdbc.sql("""
+                        select e.match_request_id, e.org_id, p.display_name, c.first_name, c.email, r.market, r.service,
+                               max(e.occurred_at) as last_clicked, count(*) as clicks,
+                               exists (select 1 from match m where m.match_request_id = e.match_request_id and m.org_id = e.org_id
+                                         and m.final_rank is not null and not m.hidden and r.published_at is not null) as recommended,
+                               (select b.id from match_event_live b
+                                where b.match_request_id = e.match_request_id and b.org_id = e.org_id and b.match_id is null
+                                  and b.type = 'BOOKED' limit 1) as booked_event
+                        from match_event_live e
+                        join match_request r on r.id = e.match_request_id
+                        join client c on c.id = r.client_id
+                        left join stylist_profile p on p.org_id = e.org_id
+                        where e.type = 'CLICKED_BOOK' and e.match_id is null
+                          and (cast(:market as text) is null or r.market = :market)
+                          and (cast(:like as text) is null
+                               or lower(coalesce(p.display_name, '')) like :like
+                               or lower(coalesce(c.first_name, '')) like :like
+                               or lower(coalesce(c.email, '')) like :like)
+                        group by e.match_request_id, e.org_id, p.display_name, c.first_name, c.email, r.market, r.service,
+                                 r.published_at
+                        order by last_clicked desc
+                        limit :limit
+                        """)
+                .param("market", market)
+                .param("like", like)
+                .param("limit", limit)
+                .query((rs, n) -> new DirectoryClick(uuid(rs, "match_request_id"), uuid(rs, "org_id"), rs.getString("display_name"),
+                        rs.getString("first_name"), rs.getString("email"), rs.getString("market"), rs.getString("service"),
+                        rs.getTimestamp("last_clicked").toInstant(), rs.getLong("clicks"), rs.getBoolean("recommended"),
+                        uuid(rs, "booked_event")))
+                .list();
+    }
+
+    // --- Activity, for the admin's match monitor (TrackingService.activity) ------------------------------------------
+
+    record EventCount(UUID requestId, UUID matchId, String type, long n, Instant first) {
+    }
+
+    /** Live CLICKED_BOOK, BOOKED, REBOOKED and VIEWED counts per request and match (null for the list or the directory). */
+    List<EventCount> eventCounts(java.util.Collection<UUID> requestIds) {
+        if (requestIds.isEmpty()) {
+            return List.of();
+        }
+        return jdbc.sql("""
+                        select match_request_id, match_id, type, count(*) as n, min(occurred_at) as first
+                        from match_event_live
+                        where match_request_id in (:requests) and type in ('VIEWED', 'CLICKED_BOOK', 'BOOKED', 'REBOOKED')
+                        group by match_request_id, match_id, type
+                        """)
+                .param("requests", requestIds)
+                .query((rs, n) -> new EventCount(uuid(rs, "match_request_id"), uuid(rs, "match_id"), rs.getString("type"),
+                        rs.getLong("n"), rs.getTimestamp("first").toInstant()))
+                .list();
     }
 
     /** Whether the client had a BOOKED with this stylist (through any of their matches) before {@code before}. */
@@ -255,8 +346,28 @@ class TrackingQueries {
                 .query((rs, n) -> new long[] {rs.getLong("cohort"), rs.getLong("rebooked")})
                 .single();
 
+        java.util.Map<String, SourceSplit> split = new java.util.HashMap<>();
+        jdbc.sql("""
+                        select e.type,
+                               count(*) filter (where e.match_id is not null) as recommended,
+                               count(*) filter (where e.match_id is null) as directory,
+                               count(*) filter (where e.match_id is null and exists (
+                                 select 1 from match m where m.match_request_id = e.match_request_id and m.org_id = e.org_id
+                                   and m.final_rank is not null and not m.hidden and r.published_at is not null)) as also_recommended
+                        from match_event_live e join match_request r on r.id = e.match_request_id
+                        where e.type in ('CLICKED_BOOK', 'BOOKED')
+                          and e.occurred_at >= cast(:start as timestamptz) and e.occurred_at < cast(:end as timestamptz)
+                          and (cast(:market as text) is null or r.market = :market)
+                        group by e.type
+                        """)
+                .params(rangeParams(market, range))
+                .query((rs, n) -> split.put(rs.getString("type"), new SourceSplit(rs.getLong("recommended"),
+                        rs.getLong("directory"), rs.getLong("also_recommended"))))
+                .list();
+        SourceSplit none = new SourceSplit(0, 0, 0);
         return new Totals(stylists.live(), stylists.active(), requests[0], requests[1], events[0], events[1], events[2],
-                events[3], events[4], events[5], rebook[0], rebook[1]);
+                events[3], events[4], events[5], rebook[0], rebook[1], split.getOrDefault("CLICKED_BOOK", none),
+                split.getOrDefault("BOOKED", none));
     }
 
     /** Counts per week (Monday start, in {@code zone}). Weeks with nothing are absent; the caller fills them. */

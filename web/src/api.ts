@@ -285,3 +285,45 @@ export type RecentMatch = TrackingSchemas['schemas']['TrackingQueriesRecentMatch
 export type RecordedEvent = TrackingSchemas['schemas']['TrackingServiceRecorded']
 export type MatchEventView = TrackingSchemas['schemas']['MatchEventsEvent']
 export type StylistMatch = TrackingSchemas['schemas']['StylistTrackingControllerStylistMatch']
+
+// Matching publishes on its own (2026-11-20): the admin's monitor, the public stylist directory, directory bookings.
+type Schemas = components['schemas']
+export type MonitorMatch = Omit<Schemas['ReviewServiceMonitorMatch'], 'stylistName' | 'finalRank' | 'source'> & {
+  stylistName: string | null
+  finalRank: number | null
+  source: 'SYSTEM' | 'ADMIN'
+}
+export type MonitorItem = Omit<
+  Schemas['ReviewServiceMonitorItem'],
+  'status' | 'statusReason' | 'service' | 'hairType' | 'firstName' | 'publishedAt' | 'firstViewedAt' | 'matches'
+> & {
+  status: MatchRequestStatus
+  statusReason: string | null
+  service: string | null
+  hairType: HairType | null
+  firstName: string | null
+  publishedAt: string | null
+  firstViewedAt: string | null
+  matches: MonitorMatch[]
+}
+export type MatchMonitor = { reviewBeforePublish: boolean; requests: MonitorItem[] }
+export type DirectoryStylist = Omit<Schemas['StylistDirectoryDirectoryStylist'], 'locationName' | 'city' | 'instagram'> & {
+  locationName: string | null
+  city: string | null
+  instagram: string | null
+}
+export type DirectoryPage = Omit<Schemas['StylistDirectoryDirectoryPage'], 'service' | 'hairType' | 'stylists'> & {
+  service: string | null
+  hairType: string | null
+  stylists: DirectoryStylist[]
+}
+export type DirectoryClick = Omit<
+  Schemas['TrackingQueriesDirectoryClick'],
+  'stylistName' | 'clientFirstName' | 'clientEmail' | 'service' | 'bookedEventId'
+> & {
+  stylistName: string | null
+  clientFirstName: string | null
+  clientEmail: string | null
+  service: string | null
+  bookedEventId: string | null
+}

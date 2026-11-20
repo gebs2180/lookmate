@@ -37,11 +37,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * Matching end to end with the fake provider: the worker embeds, the ranker filters and ranks, the admin reviews and
- * publishes, and the client sees only what was published. The stylists' and intake's tables are seeded with SQL
+ * Matching end to end with the fake provider and the review switch on ({@code review-before-publish}): the worker
+ * embeds, the ranker filters and ranks, the admin reviews and publishes, and the client sees only what was published.
+ * {@link AutoPublishFlowTest} covers the default, with the switch off. The stylists' and intake's tables are seeded with SQL
  * (stylists is built in parallel); requests go through intake's real {@code MatchRequests}. Photos are in memory.
  */
 @SpringBootTest(properties = {
+        "lookmate.matching.review-before-publish=true",
         "lookmate.matching.worker.enabled=false",
         "lookmate.matching.worker.max-attempts=2",
         "lookmate.matching.worker.retry-backoff=1h",
@@ -125,7 +127,12 @@ class MatchingFlowTest {
 
         job.runOnce();
 
+        // The switch is on: the list waits for the admin, and the monitor says so (the web app shows the queue).
         assertThat(statusOf(request)).isEqualTo("IN_REVIEW");
+        api.get("/api/admin/match-monitor?market=" + market, api.admin()).andExpect(status().isOk())
+                .andExpect(jsonPath("$.reviewBeforePublish").value(true))
+                .andExpect(jsonPath("$.requests[0].status").value("IN_REVIEW"))
+                .andExpect(jsonPath("$.requests[0].matches[0].finalRank").value(org.hamcrest.Matchers.nullValue()));
         var review = api.get("/api/admin/match-requests/" + request, api.admin()).andExpect(status().isOk())
                 .andExpect(jsonPath("$.request.hairType").value("WAVY"))
                 .andExpect(jsonPath("$.inspirationUrl").value("https://storage.test/photos/inspiration/" + request + ".jpg?signed"))

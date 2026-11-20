@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 class PublicRateLimitTest {
 
     private final PublicRateLimit limit = new PublicRateLimit(
-            new IntakeProperties(Duration.ofDays(1), 3, Duration.ofMinutes(15), new IntakeProperties.RateLimit(2, 60)));
+            new IntakeProperties(Duration.ofDays(1), 3, Duration.ofMinutes(15), Duration.ofMinutes(5), new IntakeProperties.RateLimit(2, 60, 60)));
 
     @Test
     void aBucketEmptiesAndRefillsOverItsWindow() {

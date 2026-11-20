@@ -23,12 +23,12 @@ export function FairnessPage() {
   return (
     <div className="review-page">
       <p className="back">
-        <Link to="/admin/matches">Match review</Link>
+        <Link to="/admin/matches">Matches</Link>
       </p>
       <h1>Fairness by hair type</h1>
       <p>
-        Watch for a hair type with a high share of requests with no stylists found, or of reviews that needed changes.
-        Clicks and bookings fill in as tracking records them.
+        Watch for a hair type with a high share of requests with no stylists found, a low share of clients who click
+        "Book", or lists the admin had to change. Clicks and bookings fill in as tracking records them.
       </p>
       <div className="actions" role="group" aria-label="Period">
         {PERIODS.map((d) => (
@@ -40,7 +40,14 @@ export function FairnessPage() {
       {error && <PageError message={error} />}
       {!error && !report && <Loading />}
       {report && report.rows.length === 0 && <EmptyState title="No requests in this period." />}
-      {report && report.rows.length > 0 && (
+      {report && report.rows.length > 0 && <FairnessTable report={report} />}
+    </div>
+  )
+}
+
+/** Requests and outcomes by the client's hair type: the fairness check (CLAUDE.md). Also on the matches monitor. */
+export function FairnessTable({ report }: { report: FairnessReport }) {
+  return (
         <div className="scroll">
           <table className="table">
             <caption className="sr-only">Match requests by client hair type, {report.market}</caption>
@@ -49,7 +56,7 @@ export function FairnessPage() {
                 <th scope="col">Hair type</th>
                 <th scope="col">Requests</th>
                 <th scope="col">No stylists found</th>
-                <th scope="col">Reviewer changed</th>
+                <th scope="col">Admin changed</th>
                 <th scope="col">Published</th>
                 <th scope="col">Stylists shown</th>
                 <th scope="col">Clicked book</th>
@@ -74,8 +81,6 @@ export function FairnessPage() {
             </tbody>
           </table>
         </div>
-      )}
-    </div>
   )
 }
 

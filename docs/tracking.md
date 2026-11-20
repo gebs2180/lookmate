@@ -19,13 +19,16 @@ a correction is a new row (a `VOIDED` event, below).
 | Who | Method and path | What it does |
 |---|---|---|
 | Client (link token) | `GET /api/public/book/{token}/{matchId}` | Records `CLICKED_BOOK` and answers `302` to the stylist's `booking_url` with `utm_source=lookmate&utm_medium=referral&utm_campaign=<market>&utm_content=<matchId>` |
-| Client (link token) | `POST /api/public/match-requests/{token}/viewed` | Records `VIEWED` (whole list, `match_id` null), at most once per request per day. `204` |
+| Client (link token) | `GET /api/public/book-stylist/{token}/{orgId}` | Book on a stylist picked from the directory: records `CLICKED_BOOK` with `match_id` null and the stylist's `org_id`, attributed to the client's request (any status but CLOSED), and answers the same `302` with `utm_content=directory` |
+| Client (link token) | `POST /api/public/match-requests/{token}/viewed` | Records `VIEWED` (whole list, `match_id` null), at most once per request per day, and tells intake (`clientViewedMatches`), which cancels a held "matches ready" email. `204` |
 | Admin | `GET /api/admin/metrics?market=&from=&to=` | The pilot table, weekly series, per-stylist and per-hair-type breakdowns |
 | Admin | `GET /api/admin/tracking/matches?market=&q=` | The 50 most recently published visible matches, to pick one for manual entry |
 | Admin | `POST /api/admin/matches/{matchId}/events` | `{type: BOOKED\|REBOOKED, note?, occurredAt?}`, `source = ADMIN` |
 | Stylist (own org) | `POST /api/orgs/{orgId}/matches/{matchId}/events` | Same body; `OrgAccess.require(orgId, STYLIST)`, and the match must be this org's. `source = STYLIST` (or `ADMIN` if the admin uses the route) |
 | Stylist (own org) | `GET /api/orgs/{orgId}/tracking/stats` | Matches shown, clicks, bookings, rebooks: last 30 days and all time |
 | Stylist (own org) | `GET /api/orgs/{orgId}/tracking/matches` | Their 50 most recent published matches: client first name, service, counts |
+| Admin | `GET /api/admin/tracking/directory-clicks?market=&q=` | The 50 latest stylists clients picked from the directory (per request and stylist): clicks, whether that stylist was also on the client's published list, and the directory booking if recorded |
+| Admin | `POST /api/admin/match-requests/{requestId}/stylists/{orgId}/events` | `{type: BOOKED\|REBOOKED, note?, occurredAt?}` for a directory pick (no match), `source = ADMIN`. Same rules as below, per request and stylist |
 | Admin | `GET /api/admin/matches/{matchId}/events` | The match's events, newest first, voided ones marked with the reason |
 | Stylist (own org) | `GET /api/orgs/{orgId}/matches/{matchId}/events` | The same, for their own match |
 | Admin | `POST /api/admin/events/{eventId}/void` | `{reason}`: voids any event |
@@ -37,8 +40,8 @@ for the stylist home page to embed).
 
 ### The redirect
 
-- The token's SHA-256 (lower-case hex of the UTF-8 token, like invites) must equal `match_request.access_token_hash`;
-  the match must belong to that request; the request must be `PUBLISHED`; the match must have a `final_rank` and not be
+- The token must open the request through intake (`MatchRequests.forToken`: any unexpired link, the quiz's or the one in
+  the "matches ready" email); the match must belong to that request; the request must be `PUBLISHED`; the match must have a `final_rank` and not be
   `hidden`; the stylist's profile must be `LIVE`. Any failure is the same `404`, so nothing is confirmed to a guesser.
 - **No open redirect:** only an absolute `https` URL with a host and no user info is followed (`BookingLinks`). `http`,
   `javascript:`, scheme-relative, relative and malformed links are a `404` and record nothing.
@@ -46,6 +49,10 @@ for the stylist home page to embed).
   link is replaced, so the booking platform sees one value each.
 - The response is `Cache-Control: no-store` and `Referrer-Policy: no-referrer`, so the client's token in the URL never
   reaches the booking site.
+- **Directory Book** (`/book-stylist/{token}/{orgId}`): the stylist must be LIVE (`Stylists.liveProfile`) and their
+  link pass the same https check; otherwise `404` and nothing recorded. There is no tokenless Book: a client who hasn't
+  made a request is sent to `/find` first (docs/modules/stylists.md), so every click is attributed and no redirect is
+  open. Dedupe is per request and stylist; the daily cap is shared with match clicks.
 - A second click on the same match within `lookmate.tracking.click-dedupe-window` (30s) still redirects but isn't
   recorded again. At most `max-clicks-per-request-per-day` (20) clicks are counted per client link per Eastern day;
   more still redirect. Both checks and the insert run under a transaction-scoped advisory lock on the request id.
@@ -88,6 +95,8 @@ Voided events count nowhere. Range: `from`..`to` are inclusive dates in `lookmat
 | By hair type | Clients whose request was published in the range, by `client.hair_type`, and how many of those requests led to a click or a booking at any time. The fairness check (CLAUDE.md) |
 | Stylist stats | For one org: matches shown (by publish time), clicks, bookings, rebooks (by event time), last 30 days and all time |
 
+| Clicks and bookings by source | `clicksBySource` and `bookingsBySource` in the totals: **recommended** (the event is on a match), **directory** (no match: picked from the directory), and **directoryAlsoRecommended** (of the directory ones, those where the same stylist was on that client's published list, ranked and not hidden). Range by event time |
+
 The exact numbers are pinned by `MetricsTest` on a hand-counted fixture.
 
 ## Queries and indexes
@@ -107,7 +116,10 @@ every query is a small scan. What supports them:
 
 ## Not done here
 
-- No rate limit on the public routes yet (SecurityConfig says each public route rate-limits). The click dedupe and the
+- Directory bookings are entered by the admin only; a stylist's own bookings page lists their matches, not directory
+  picks.
+- No rate limit on `/api/public/book/**` yet (SecurityConfig says each public route rate-limits). `/viewed` falls under
+  intake's `/api/public/match-requests/**` limit and the directory's `/book-stylist/**` under its browse limit. The click dedupe and the
   daily cap keep repeated clicks from skewing the metrics. Plan (agreed 2026-11-20): after the Phase 1 branches merge,
   one in-memory per-IP limiter on `/api/public/**` (429 with Retry-After): "Book" 60/min, viewed 30/min, intake create
   5/hour plus 20/day per email; Postgres-backed counters when there is a second app instance.

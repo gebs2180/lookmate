@@ -127,6 +127,14 @@ class MatchRequestRows {
                 .list();
     }
 
+    List<Row> recent(String market, int limit) {
+        return jdbc.sql(SELECT + " where (cast(:market as text) is null or r.market = :market) order by r.created_at desc, r.id limit :limit")
+                .param("market", market)
+                .param("limit", limit)
+                .query(MatchRequestRows::row)
+                .list();
+    }
+
     /** Serialises creates for one address (the abuse guard), until the transaction ends. */
     void lockEmail(String email) {
         jdbc.sql("select pg_advisory_xact_lock(hashtext(lower(:email)))").param("email", email).query().listOfRows();

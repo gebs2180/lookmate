@@ -150,6 +150,9 @@ export function FindPage() {
           <Link className="button" to={sent.statusPath}>
             See your request
           </Link>
+          <Link className="button secondary" to={`${sent.statusPath}/stylists`}>
+            Browse all stylists
+          </Link>
         </div>
         <p className="muted small">
           Your photo is private{keptDays ? ` and deleted after ${keptDays} days` : ''}.
@@ -164,6 +167,12 @@ export function FindPage() {
         Question {step + 1} of {STEPS.length}
       </p>
       <progress className="quiz-progress" max={STEPS.length} value={step + 1} aria-label="Quiz progress" />
+      {step === 0 && (
+        <p className="muted small">
+          We'll match you with stylists whose own work looks like the style you want. Or{' '}
+          <Link to="/stylists">see all stylists</Link> first.
+        </p>
+      )}
       <form className="form" onSubmit={next} noValidate>
         {current === 'service' && (
           <Choices legend="What do you want done?" options={SERVICES} value={answers.service} onChange={(v) => set('service', v)} />

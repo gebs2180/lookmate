@@ -99,6 +99,31 @@ class MatchEvents {
                 .query(Boolean.class).single();
     }
 
+    /** A directory click (no match) on this stylist from this request since {@code since}: the per-stylist dedupe. */
+    boolean directoryClickedSince(UUID requestId, UUID orgId, Instant since) {
+        return jdbc.sql("""
+                        select exists (select 1 from match_event_live
+                                       where match_request_id = :request and org_id = :org and match_id is null
+                                         and type = 'CLICKED_BOOK' and occurred_at > :since)
+                        """)
+                .param("request", requestId)
+                .param("org", orgId)
+                .param("since", Timestamp.from(since))
+                .query(Boolean.class).single();
+    }
+
+    /** Whether a directory event (no match) of the type is recorded for this request and stylist. */
+    boolean directoryExists(UUID requestId, UUID orgId, Type type) {
+        return jdbc.sql("""
+                        select exists (select 1 from match_event_live
+                                       where match_request_id = :request and org_id = :org and match_id is null and type = :type)
+                        """)
+                .param("request", requestId)
+                .param("org", orgId)
+                .param("type", type.name())
+                .query(Boolean.class).single();
+    }
+
     boolean exists(UUID matchId, Type type) {
         return jdbc.sql("select exists (select 1 from match_event_live where match_id = :match and type = :type)")
                 .param("match", matchId)

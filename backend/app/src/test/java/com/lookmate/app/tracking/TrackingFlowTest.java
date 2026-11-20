@@ -62,7 +62,7 @@ class TrackingFlowTest {
             orgId = fx.org("Stylist " + UUID.randomUUID());
         }
         fx.profile(orgId, "Curl Studio", MARKET, "LIVE", bookingUrl);
-        String token = "tok_" + UUID.randomUUID().toString().replace("-", "");
+        String token = TrackingFixtures.token();
         UUID client = fx.client(MARKET, "CURLY");
         UUID request = fx.request(client, MARKET, token, Instant.now().minusSeconds(600));
         UUID match = fx.match(request, orgId, 1, false);
@@ -134,14 +134,14 @@ class TrackingFlowTest {
     void aHiddenMatchOrUnpublishedRequestIsNotFound() throws Exception {
         UUID org = fx.org("Hidden Suite");
         fx.profile(org, "Hidden Suite", MARKET, "LIVE", "https://booksy.com/h");
-        String token = "tok_" + UUID.randomUUID().toString().replace("-", "");
+        String token = TrackingFixtures.token();
         UUID request = fx.request(fx.client(MARKET, "COILY"), MARKET, token, Instant.now().minusSeconds(60));
         UUID hidden = fx.match(request, org, 1, true);
         mvc.perform(get("/api/public/book/" + token + "/" + hidden)).andExpect(status().isNotFound());
 
         UUID org2 = fx.org("Review Suite");
         fx.profile(org2, "Review Suite", MARKET, "LIVE", "https://booksy.com/r");
-        String token2 = "tok_" + UUID.randomUUID().toString().replace("-", "");
+        String token2 = TrackingFixtures.token();
         UUID inReview = fx.request(fx.client(MARKET, "WAVY"), MARKET, token2, null);
         UUID unpublished = fx.match(inReview, org2, 1, false);
         mvc.perform(get("/api/public/book/" + token2 + "/" + unpublished)).andExpect(status().isNotFound());
@@ -319,5 +319,97 @@ class TrackingFlowTest {
                 .andExpect(jsonPath("$[0].clientEmail").doesNotExist());
         api.get("/api/orgs/" + org + "/tracking/matches", api.user("auth0|list-b", List.of()))
                 .andExpect(status().isNotFound());
+    }
+
+    // --- Directory: Book on a stylist the client picked themselves -------------------------------------------------
+
+    @Test
+    void directoryBookIsAttributedToTheClientsRequestWithNoMatch() throws Exception {
+        Seeded s = seed(null, "https://booksy.com/rec"); // a recommended stylist, to show the other isn't confused with it
+        UUID picked = fx.org("Picked");
+        fx.profile(picked, "Picked From Directory", MARKET, "LIVE", "https://vagaro.com/picked?ref=ig&utm_content=old");
+
+        String expected = "https://vagaro.com/picked?ref=ig&utm_source=lookmate&utm_medium=referral&utm_campaign=columbus-oh"
+                + "&utm_content=directory";
+        mvc.perform(get("/api/public/book-stylist/" + s.token() + "/" + picked))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", expected))
+                .andExpect(header().string("Referrer-Policy", "no-referrer"))
+                .andExpect(header().string("Cache-Control", "no-store"));
+        mvc.perform(get("/api/public/book-stylist/" + s.token() + "/" + picked)).andExpect(status().isFound()); // deduped
+
+        var row = jdbc.sql("select match_id, org_id, type, source from match_event where match_request_id = :r")
+                .param("r", s.requestId()).query().singleRow();
+        assertThat(row.get("match_id")).isNull();
+        assertThat(row.get("org_id")).isEqualTo(picked);
+        assertThat(row.get("type")).isEqualTo("CLICKED_BOOK");
+        assertThat(row.get("source")).isEqualTo("CLIENT");
+
+        // The request needn't be published: a client still waiting for matches can book from the directory.
+        String waiting = TrackingFixtures.token();
+        UUID inReview = fx.request(fx.client(MARKET, "WAVY"), MARKET, waiting, null);
+        mvc.perform(get("/api/public/book-stylist/" + waiting + "/" + picked)).andExpect(status().isFound());
+        assertThat(fx.count(inReview, "CLICKED_BOOK")).isEqualTo(1);
+    }
+
+    @Test
+    void directoryBookIsNeverAnOpenRedirect() throws Exception {
+        Seeded s = seed(null, "https://booksy.com/ok");
+        UUID http = fx.org("Plain http");
+        fx.profile(http, "Plain", MARKET, "LIVE", "http://evil.example/book");
+        UUID js = fx.org("Script");
+        fx.profile(js, "Script", MARKET, "LIVE", "javascript:alert(1)");
+        UUID hidden = fx.org("Hidden");
+        fx.profile(hidden, "Hidden", MARKET, "HIDDEN", "https://booksy.com/hidden");
+        UUID draft = fx.org("Draft");
+        fx.profile(draft, "Draft", MARKET, "DRAFT", "https://booksy.com/draft");
+
+        for (UUID org : List.of(http, js, hidden, draft, UUID.randomUUID())) {
+            mvc.perform(get("/api/public/book-stylist/" + s.token() + "/" + org)).andExpect(status().isNotFound())
+                    .andExpect(header().doesNotExist("Location"));
+        }
+        // No token, a wrong token, an expired link: no redirect at all.
+        mvc.perform(get("/api/public/book-stylist/" + s.orgId())).andExpect(status().isNotFound());
+        mvc.perform(get("/api/public/book-stylist/" + TrackingFixtures.token() + "/" + s.orgId())).andExpect(status().isNotFound());
+        mvc.perform(get("/api/public/book-stylist/not-a-token/" + s.orgId())).andExpect(status().isNotFound());
+        jdbc.sql("update match_request_link set expires_at = now() - interval '1 minute' where match_request_id = :r")
+                .param("r", s.requestId()).update();
+        mvc.perform(get("/api/public/book-stylist/" + s.token() + "/" + s.orgId())).andExpect(status().isNotFound());
+        mvc.perform(get("/api/public/book/" + s.token() + "/" + s.matchId())).andExpect(status().isNotFound());
+        assertThat(fx.count(s.requestId(), "CLICKED_BOOK")).isZero();
+    }
+
+    @Test
+    void theAdminRecordsADirectoryBookingAndSeesWhetherTheStylistWasAlsoRecommended() throws Exception {
+        Seeded s = seed(null, "https://booksy.com/rec");
+        UUID other = fx.org("Other");
+        fx.profile(other, "Only In Directory", MARKET, "LIVE", "https://booksy.com/other");
+        mvc.perform(get("/api/public/book-stylist/" + s.token() + "/" + s.orgId())).andExpect(status().isFound());
+        mvc.perform(get("/api/public/book-stylist/" + s.token() + "/" + other)).andExpect(status().isFound());
+
+        api.get("/api/admin/tracking/directory-clicks?q=directory", api.admin())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.requestId=='%s')].recommended".formatted(s.requestId())).value(false));
+        api.get("/api/admin/tracking/directory-clicks?market=" + MARKET, api.admin())
+                .andExpect(jsonPath("$[?(@.requestId=='%s' && @.orgId=='%s')].recommended".formatted(s.requestId(), s.orgId()))
+                        .value(true));
+
+        String path = "/api/admin/match-requests/" + s.requestId() + "/stylists/" + other + "/events";
+        api.postJson(path, "{\"type\":\"REBOOKED\"}", api.admin()).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("REBOOK_WITHOUT_BOOKING"));
+        String booked = TestApi.read(api.postJson(path, "{\"type\":\"BOOKED\",\"note\":\"Saw her on the directory\"}", api.admin())
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.matchId").doesNotExist()), "$.id");
+        api.postJson(path, "{\"type\":\"BOOKED\"}", api.admin()).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("ALREADY_BOOKED"));
+        api.postJson(path, "{\"type\":\"REBOOKED\"}", api.admin()).andExpect(status().isCreated());
+        api.get("/api/admin/tracking/directory-clicks?market=" + MARKET, api.admin())
+                .andExpect(jsonPath("$[?(@.requestId=='%s' && @.orgId=='%s')].bookedEventId".formatted(s.requestId(), other)).value(booked));
+        // The rebook counts on that booking, as for a recommended one.
+        api.postJson("/api/admin/events/" + booked + "/void", "{\"reason\":\"test\"}", api.admin()).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("BOOKING_HAS_REBOOKS"));
+
+        api.postJson("/api/admin/match-requests/" + UUID.randomUUID() + "/stylists/" + other + "/events", "{\"type\":\"BOOKED\"}",
+                api.admin()).andExpect(status().isNotFound());
+        api.postJson(path, "{\"type\":\"BOOKED\"}", api.user("auth0|not-admin", List.of())).andExpect(status().isForbidden());
     }
 }

@@ -5,7 +5,7 @@ import { useLoad } from '../useLoad'
 
 /**
  * Signed-in landing page. Scaffold only: shows who you are, so the Auth0 wiring can be checked. Stylists get their
- * profile and portfolio here, the admin the review queue (CLAUDE.md, Phase 1).
+ * profile and portfolio here, the admin the matches monitor (CLAUDE.md).
  */
 export function HomePage() {
   const api = useApi()
@@ -32,6 +32,15 @@ export function HomePage() {
           </li>
           <li>
             <Link to="/admin/locations">Salon locations</Link>
+          </li>
+          <li>
+            <Link to="/admin/matches">Matches and fairness</Link>
+          </li>
+          <li>
+            <Link to="/admin/metrics">Pilot metrics</Link>
+          </li>
+          <li>
+            <Link to="/admin/bookings">Record a booking</Link>
           </li>
         </ul>
       )}

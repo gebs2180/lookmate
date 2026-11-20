@@ -6,7 +6,7 @@ import { InvitePage } from './pages/InvitePage'
 import { PublicShell } from './pages/public/PublicShell'
 import { isPublicPath } from './pages/public/publicPaths'
 import { FairnessPage } from './pages/admin/FairnessPage'
-import { MatchQueuePage } from './pages/admin/MatchQueuePage'
+import { MatchMonitorPage } from './pages/admin/MatchMonitorPage'
 import { MatchReviewPage } from './pages/admin/MatchReviewPage'
 import { AdminMetricsPage } from './pages/tracking/AdminMetricsPage'
 import { RecordBookingPage, StylistBookingsPage } from './pages/tracking/RecordBookingPage'
@@ -55,9 +55,14 @@ function App() {
         <main className="welcome">
           <p className="lead">Find the stylist whose work matches the look you want.</p>
           {!location.pathname.startsWith('/invite/') && (
-            <Link className="button block" to="/find">
-              Find my stylist
-            </Link>
+            <>
+              <Link className="button block" to="/find">
+                Find my stylist
+              </Link>
+              <Link className="button secondary block" to="/stylists">
+                See all stylists
+              </Link>
+            </>
           )}
           {location.pathname.startsWith('/invite/') && (
             <p>You've been invited to join LookMate as a stylist. Log in, or sign up, to accept.</p>
@@ -81,7 +86,7 @@ function App() {
                 <Route path="/admin/stylists" element={<AdminStylistsPage />} />
                 <Route path="/admin/locations" element={<AdminLocationsPage />} />
                 <Route path="/admin/demo" element={<AdminDemoPage />} />
-                <Route path="/admin/matches" element={<MatchQueuePage />} />
+                <Route path="/admin/matches" element={<MatchMonitorPage />} />
                 <Route path="/admin/matches/fairness" element={<FairnessPage />} />
                 <Route path="/admin/matches/:id" element={<MatchReviewPage />} />
                 <Route path="/admin/metrics" element={<AdminMetricsPage />} />
