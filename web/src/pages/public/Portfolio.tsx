@@ -52,7 +52,17 @@ export function Portfolio({ stylist, onClose }: { stylist: StylistView; onClose:
   const [first, ...rest] = stylist.photoUrls
   const alt = (i: number) => `${stylist.name}'s work, photo ${i + 1}`
   return (
-    <dialog ref={ref} className="portfolio" aria-labelledby={titleId} onClose={onClose}>
+    <dialog
+      ref={ref}
+      className="portfolio"
+      aria-labelledby={titleId}
+      // Escape closes through onCancel, not onClose: the effect's cleanup calls close(), and in StrictMode that
+      // close event would unmount the dialog it had just reopened.
+      onCancel={(e) => {
+        e.preventDefault()
+        onClose()
+      }}
+    >
       <div className="pf-hero">
         {first && (
           <div className="frame">

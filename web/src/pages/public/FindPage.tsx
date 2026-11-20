@@ -334,9 +334,10 @@ function HairTypes({ value, onChange }: { value: HairType | null; onChange: (val
             <input className="sr-only" type="radio" name="hairType" checked={value === o.value} onChange={() => onChange(o.value)} />
             <Strand
               shape={o.value as StrandShape}
-              width={40}
-              height={56}
-              bend={0.75}
+              horizontal
+              width={120}
+              height={32}
+              bend={0.38}
               strokeWidth={2.5}
               drawKey={value === o.value ? 'on' : 'off'}
             />
