@@ -23,5 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-# Openly licensed demo photos from npm run demo:photos (never committed)
+# Pexels demo photos from npm run demo:photos (never committed)
 demo-photos/

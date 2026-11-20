@@ -62,14 +62,21 @@ After a fresh setup, or a change to auth, matching or the client flow. Log in as
 in"; after login the app shows the roles the backend sees, from `/api/me`: ADMIN should be there).
 
 1. **`/admin/locations`:** add one salon location (any Salon Lofts address). Demo stylists need one to go live.
-2. **`/admin/demo`:** first fetch openly licensed photos for the 40 slots: `cd web && npm run demo:photos`
-   (`npm.cmd` on Windows). It searches [Openverse](https://openverse.org) (no key; about 3 minutes) and saves
-   `maya-1.jpg` to `nia-5.jpg` with their credits in `web/demo-photos/`, which is git-ignored: never commit them.
-   Re-running fetches only missing files (delete a poor pick to replace it); `--force` fetches all again. Expect about
-   half the slots to stay empty (braids, locs and silk press especially: open-licensed photos of them are scarce), and
-   look through the rest before a demo; empty slots get a drawn placeholder. Then choose every file in
-   `web/demo-photos/` on the page and create the demo stylists. They go live, marked as demo, with booking links to
-   example.com. Without photos they get drawn placeholders, which are fine for the screens but not for step 3.
+2. **`/admin/demo`:** first fetch photos for the 40 slots from [Pexels](https://www.pexels.com/api/):
+   - Get a free Pexels API key at pexels.com/api and add `PEXELS_API_KEY=<key>` to `web/.env.local` (git-ignored; see
+     `web/.env.example`). No `VITE_` prefix: Vite would bundle it into the app. Never commit it.
+   - Run `cd web && npm run demo:photos` (`npm.cmd` on Windows). It searches Pexels for salon shots that fit each slot's
+     tags (a few searches a slot, under the 200-an-hour limit; a few minutes) and saves `maya-1.jpg` to `nia-5.jpg`,
+     `CREDITS.md` and a contact sheet, `index.html`, in `web/demo-photos/`, which is git-ignored: never commit them.
+   - Open `web/demo-photos/index.html` and review every pick against its tags. Delete any poor one and run again: it
+     fetches only missing slots and won't pick a deleted photo twice (`--force` fetches all again). Slots with no
+     fitting photo stay empty and get a drawn placeholder; "before" slots stay empty unless one photographer has the
+     same client before and after. Files you put in by hand are kept.
+   - **Demo display only.** Pexels' terms forbid using these photos for machine learning: never use them for
+     embeddings, matching evaluation or labelled sets. Show the photographer credit from `CREDITS.md` when you can.
+   - Then choose every file in `web/demo-photos/` on the page and create the demo stylists. They go live, marked as
+     demo, with booking links to example.com. Without photos they get drawn placeholders, which are fine for the
+     screens but not for step 3.
 3. **`/find`** in a private window (clients don't sign in): answer the quiz with the service and hair type of one demo
    photo (its tags are in `demoStylists.ts`) and upload **that same file from `web/demo-photos/`**. The fake matcher
    only matches identical files: it seeds a vector from the photo's SHA-256, so any other photo, even a similar one,
