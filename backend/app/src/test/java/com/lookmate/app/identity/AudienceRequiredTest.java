@@ -22,7 +22,7 @@ class AudienceRequiredTest {
     @Test
     void anIssuerWithAnAudienceStarts() {
         MockEnvironment env = new MockEnvironment().withProperty(ISSUER, "https://tenant.example/")
-                .withProperty(AUDIENCES, "https://api.lookmate.app");
+                .withProperty(AUDIENCES, "https://api.combpatible.app");
         assertThatCode(() -> SecurityConfig.requireAudienceWithIssuer(env)).doesNotThrowAnyException();
     }
 
