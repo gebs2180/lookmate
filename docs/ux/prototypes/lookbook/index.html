@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Combpatible · Lookbook prototype</title>
+<!--
+  Direction A, "Lookbook": an editorial fashion-magazine layout. Prototype only (docs/ux/redesign-options.md).
+  Photos load from ../photos/ (git-ignored Pexels demo photos copied from web/demo-photos). Without them, tinted
+  placeholders show instead. Fonts from Google Fonts here; production would self-host them.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5f0e8;
+  --paper-2: #ece5d9;
+  --card: #fffdf9;
+  --ink: #1a1614;
+  --ink-2: #4f4640;      /* 8.6:1 on paper */
+  --rule: #d8cfc2;
+  --accent: #8a1c2c;     /* oxblood, 8.9:1 on paper */
+  --accent-ink: #fff6f2;
+  --marker: #c2263a;     /* grease-pencil red, graphic only */
+  --sample: #6b4b12;
+  --sample-bg: #f3e3bf;
+  --serif: 'Instrument Serif', 'Times New Roman', serif;
+  --sans: 'Inter Tight', system-ui, sans-serif;
+  --ease-page: cubic-bezier(.7, 0, .2, 1);
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+  --t-page: 680ms;
+  --t-rise: 560ms;
+  --t-marker: 720ms;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: #2a2522; font-family: var(--sans); color: var(--ink);
+  display: grid; place-items: center; -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; }
+img { display: block; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- Phone frame (desktop) / full screen (phone) ---------- */
+.phone {
+  position: relative; width: 390px; height: min(844px, calc(100dvh - 72px));
+  background: var(--paper); overflow: hidden; border-radius: 34px;
+  box-shadow: 0 40px 80px -20px rgb(0 0 0 / .6), 0 0 0 10px #111, 0 0 0 11px #3a3330;
+}
+@media (max-width: 520px) {
+  body { display: block; background: var(--paper); }
+  .phone { width: 100%; height: 100dvh; border-radius: 0; box-shadow: none; }
+  .devbar { display: none !important; }
+}
+.devbar {
+  position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 6px; flex-wrap: wrap;
+  justify-content: center; font: 12px var(--sans); color: #e9e1d6; max-width: 96vw;
+}
+.devbar button { background: #3a3330; border: 0; border-radius: 99px; padding: 6px 11px; cursor: pointer; color: #e9e1d6; }
+.devbar button[aria-pressed="true"] { background: #e9e1d6; color: #1a1614; }
+
+.screen {
+  position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; background: var(--paper);
+  visibility: hidden; scrollbar-width: none;
+}
+.screen::-webkit-scrollbar { display: none; }
+.screen.active { visibility: visible; z-index: 2; }
+/* "page-lift": the new page wipes up over the old one like a magazine page being turned upward. */
+.screen.entering { visibility: visible; z-index: 3; animation: page-lift var(--t-page) var(--ease-page) both; }
+.screen.leaving { visibility: visible; z-index: 1; animation: page-sink var(--t-page) var(--ease-page) both; }
+@keyframes page-lift { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes page-sink { to { transform: translateY(-6%); opacity: .4; } }
+
+/* "ink-rise": headline words rise out of a mask, 45ms apart. */
+.rise .w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .08em; margin-bottom: -.08em; }
+.rise .w > span { display: inline-block; transform: translateY(105%); }
+.active .rise .w > span, .entering .rise .w > span {
+  animation: ink-rise var(--t-rise) var(--ease-out) both; animation-delay: calc(var(--i) * 45ms + 180ms);
+}
+@keyframes ink-rise { to { transform: translateY(0); } }
+.fade-up { opacity: 0; }
+.active .fade-up, .entering .fade-up { animation: fade-up 600ms var(--ease-out) both; animation-delay: var(--d, 400ms); }
+@keyframes fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Shared pieces ---------- */
+.mast {
+  display: flex; align-items: baseline; justify-content: space-between; padding: 18px 20px 12px;
+  border-bottom: 1px solid var(--ink); position: sticky; top: 0; background: var(--paper); z-index: 5;
+}
+.wordmark { font: 600 19px/1 var(--sans); letter-spacing: -.01em; display: flex; align-items: center; gap: 7px; }
+.wordmark svg { width: 24px; height: 16px; }
+.mast small { font: 500 11px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-2); }
+.eyebrow { font: 600 11px var(--sans); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+.display { font: 400 46px/1.0 var(--serif); letter-spacing: -.015em; margin: 0; text-wrap: balance; }
+.display em { font-style: italic; color: var(--accent); }
+.h2 { font: 400 32px/1.05 var(--serif); margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.lede { font: 400 16px/1.55 var(--sans); color: var(--ink-2); margin: 0; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 52px; padding: 0 22px;
+  border-radius: 99px; border: 0; background: var(--ink); color: var(--paper); font: 600 16px var(--sans); cursor: pointer;
+  text-decoration: none; transition: transform 160ms var(--ease-out), background 160ms;
+}
+.btn:active { transform: scale(.97); }
+.btn.accent { background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.btn.block { width: 100%; }
+.link { background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; font: 500 15px var(--sans); color: var(--ink); min-height: 44px; }
+.chip-sample {
+  display: inline-flex; align-items: center; gap: 5px; font: 600 11px var(--sans); letter-spacing: .04em;
+  color: var(--sample); background: var(--sample-bg); padding: 4px 8px; border-radius: 4px; text-transform: uppercase;
+}
+.privacy { display: flex; gap: 10px; font: 400 13px/1.45 var(--sans); color: var(--ink-2); }
+.privacy svg { flex: none; width: 18px; height: 18px; margin-top: 1px; }
+.photo { position: relative; overflow: hidden; background: linear-gradient(160deg, var(--tint, #8a6a52), #2e2420); }
+.photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+.photo img.missing { visibility: hidden; }
+.photo .tag {
+  position: absolute; left: 8px; bottom: 8px; font: 600 11px var(--sans); color: #fff; padding: 4px 7px;
+  border-radius: 3px; background: rgb(20 14 12 / .72); letter-spacing: .02em;
+}
+.pad { padding: 0 20px; }
+.rule { height: 1px; background: var(--rule); margin: 0 20px; }
+
+/* ---------- Landing ---------- */
+.hero-strip { display: flex; gap: 8px; padding: 18px 0 0 20px; overflow: hidden; }
+.hero-strip .track { display: flex; gap: 8px; animation: drift 38s linear infinite; }
+.hero-strip .photo { width: 132px; aspect-ratio: 4/5; flex: none; border-radius: 2px; }
+.hero-strip .photo:nth-child(even) { margin-top: 26px; }
+@keyframes drift { to { transform: translateX(-50%); } }
+.landing-copy { padding: 22px 20px 0; display: grid; gap: 16px; }
+.issue { display: flex; justify-content: space-between; border-top: 1px solid var(--ink); padding-top: 8px; }
+.how { list-style: none; margin: 8px 0 0; padding: 0; counter-reset: n; }
+.how li { counter-increment: n; display: grid; grid-template-columns: 44px 1fr; padding: 14px 0; border-top: 1px solid var(--rule); }
+.how li::before { content: "0" counter(n); font: 400 28px/1 var(--serif); color: var(--accent); }
+.how b { display: block; font: 600 15px var(--sans); margin-bottom: 2px; }
+.how span { font: 400 14px/1.45 var(--sans); color: var(--ink-2); }
+.foot { padding: 22px 20px 40px; display: grid; gap: 6px; font: 400 13px var(--sans); color: var(--ink-2); }
+
+/* ---------- Quiz ---------- */
+.quiz-top { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 0; }
+.back { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--rule); background: var(--card); cursor: pointer; display: grid; place-items: center; }
+.folio { font: 400 22px var(--serif); }
+.folio b { font-weight: 400; color: var(--accent); }
+.progress { height: 2px; background: var(--rule); margin: 14px 20px 0; position: relative; }
+.progress i { position: absolute; inset: 0 auto 0 0; background: var(--ink); width: var(--p); transition: width 600ms var(--ease-out); }
+.q { padding: 26px 20px 0; display: grid; gap: 10px; }
+.types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 20px 20px 0; }
+.type {
+  position: relative; text-align: left; padding: 14px 14px 12px; min-height: 168px; background: var(--card); cursor: pointer;
+  border: 1px solid var(--rule); border-radius: 2px; display: flex; flex-direction: column; justify-content: space-between;
+  transition: border-color 200ms, transform 200ms var(--ease-out), background 200ms;
+}
+.type svg { width: 54px; height: 54px; stroke: var(--ink); stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.type svg path { stroke-dasharray: 120; stroke-dashoffset: 0; }
+.type:hover svg path, .type[aria-checked="true"] svg path { animation: redraw 900ms var(--ease-out); }
+@keyframes redraw { from { stroke-dashoffset: 120; } }
+.type .name { font: 400 26px/1 var(--serif); }
+.type .hint { font: 400 13px/1.35 var(--sans); color: var(--ink-2); margin-top: 4px; }
+.type .code { font: 500 11px var(--sans); color: var(--ink-2); letter-spacing: .04em; margin-top: 6px; }
+.type[aria-checked="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1.5px var(--accent); background: #fbf1ee; }
+.type[aria-checked="true"]::after {
+  content: ""; position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4 8-9' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E") center/16px no-repeat;
+  animation: pop 320ms var(--ease-out);
+}
+@keyframes pop { from { transform: scale(0); } }
+.quiz-note { padding: 16px 20px 0; font: 400 13px/1.45 var(--sans); color: var(--ink-2); }
+
+.drop {
+  margin: 20px 20px 0; aspect-ratio: 4/5; border: 1.5px dashed var(--ink-2); display: grid; place-items: center;
+  text-align: center; position: relative; background: var(--card); overflow: hidden;
+}
+.drop .inner { display: grid; gap: 10px; justify-items: center; padding: 20px; }
+.drop .photo { position: absolute; inset: 0; clip-path: inset(0 0 100% 0); transition: clip-path 800ms var(--ease-page); }
+.drop.has .photo { clip-path: inset(0 0 0 0); }
+.drop .private {
+  position: absolute; top: 10px; left: 10px; font: 600 11px var(--sans); color: #fff; background: rgb(20 14 12 / .72);
+  padding: 5px 8px; border-radius: 3px; display: flex; gap: 5px; align-items: center;
+}
+.bottom-cta { position: sticky; bottom: 0; padding: 16px 20px 22px; background: linear-gradient(transparent, var(--paper) 30%); display: grid; gap: 10px; }
+
+/* ---------- Matching: the contact sheet ---------- */
+.sheet-wrap { padding: 18px 20px 0; }
+.mine { display: flex; gap: 12px; align-items: center; padding: 12px; background: var(--card); border: 1px solid var(--rule); }
+.mine .photo { width: 56px; aspect-ratio: 4/5; flex: none; }
+.mine p { margin: 0; font: 400 13px/1.4 var(--sans); color: var(--ink-2); }
+.mine b { color: var(--ink); font-weight: 600; }
+.contact { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 14px; padding: 8px; background: #1d1917; position: relative; }
+.contact .photo { aspect-ratio: 4/5; opacity: 0; transform: scale(.94); filter: grayscale(1) contrast(1.05); transition: filter 500ms, opacity 300ms; }
+.contact .photo.in { animation: frame-in 420ms var(--ease-out) forwards; animation-delay: calc(var(--i) * 70ms); }
+@keyframes frame-in { to { opacity: .85; transform: none; } }
+.contact .photo.picked { filter: none; opacity: 1 !important; }
+.contact .photo.dim { opacity: .28 !important; }
+.contact .frameno { position: absolute; left: 3px; top: 2px; font: 500 8px var(--sans); color: #f2c94c; letter-spacing: .05em; }
+.marker { position: absolute; inset: -6px; pointer-events: none; overflow: visible; }
+.marker path { fill: none; stroke: var(--marker); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 260; stroke-dashoffset: 260; }
+.picked .marker path { animation: marker-draw var(--t-marker) var(--ease-out) forwards; }
+@keyframes marker-draw { to { stroke-dashoffset: 0; } }
+.steps { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 10px; }
+.steps li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: center; font: 400 15px var(--sans); color: var(--ink-2); opacity: .45; transition: opacity 300ms; }
+.steps li.now, .steps li.done { opacity: 1; color: var(--ink); }
+.steps .dot { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid currentColor; display: grid; place-items: center; }
+.steps li.now .dot { border-color: var(--accent); border-right-color: transparent; animation: spin 800ms linear infinite; }
+.steps li.done .dot { background: var(--ink); border-color: var(--ink); }
+.steps li.done .dot::after { content: ""; width: 8px; height: 5px; border: 2px solid var(--paper); border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Reveal: the covers ---------- */
+.reveal-head { padding: 22px 20px 0; display: grid; gap: 12px; }
+.echo { margin: 6px 0 0; padding: 14px 0 0; border-top: 1px solid var(--ink); font: italic 400 22px/1.25 var(--serif); }
+.echo cite { display: block; font: 500 12px var(--sans); font-style: normal; color: var(--ink-2); margin-top: 6px; letter-spacing: .02em; }
+.tabs { display: flex; gap: 22px; padding: 18px 20px 0; border-bottom: 1px solid var(--rule); margin: 0 0 0; }
+.tabs button { background: none; border: 0; padding: 10px 0; font: 600 14px var(--sans); color: var(--ink-2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; min-height: 44px; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-color: var(--ink); }
+.covers { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 18px 20px 8px; scrollbar-width: none; }
+.covers::-webkit-scrollbar { display: none; }
+.cover { flex: 0 0 86%; scroll-snap-align: center; background: var(--card); border: 1px solid var(--rule); opacity: 0; transform: translateY(40px); }
+.reveal-go .cover { animation: cover-in 760ms var(--ease-out) forwards; animation-delay: calc(var(--i) * 140ms + 300ms); }
+@keyframes cover-in { to { opacity: 1; transform: none; } }
+.cover .photo { aspect-ratio: 4/5; }
+.cover .photo img { transform: scale(1.12); transition: transform 1400ms var(--ease-out); }
+.reveal-go .cover .photo img { transform: scale(1); }
+.cover .no { position: absolute; top: 10px; left: 12px; font: 400 15px var(--sans); color: #fff; text-shadow: 0 1px 8px rgb(0 0 0 / .5); letter-spacing: .08em; }
+.cover .name {
+  position: absolute; left: 12px; right: 12px; bottom: 10px; color: #fff; font: 400 46px/.92 var(--serif);
+  text-shadow: 0 2px 18px rgb(0 0 0 / .35);
+}
+.cover .scrim { position: absolute; inset: 45% 0 0; background: linear-gradient(transparent, rgb(15 10 8 / .7)); }
+.cover .sample-on { position: absolute; top: 10px; right: 10px; }
+.cover .body { padding: 14px 14px 16px; display: grid; gap: 12px; }
+.reason { font: 600 16px/1.35 var(--sans); margin: 0; }
+.reason small { display: block; font: 400 13px var(--sans); color: var(--ink-2); margin-top: 3px; }
+.evidence { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+.evidence .photo { aspect-ratio: 4/5; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.cover .actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.dots { display: flex; gap: 6px; justify-content: center; padding: 6px 0 4px; }
+.dots i { width: 6px; height: 6px; border-radius: 99px; background: var(--rule); transition: width 300ms var(--ease-out), background 300ms; }
+.dots i.on { width: 22px; background: var(--ink); }
+.anyone { margin: 14px 20px 30px; padding: 16px; border: 1px solid var(--ink); display: grid; gap: 8px; }
+.anyone p { margin: 0; font: 400 14px/1.45 var(--sans); color: var(--ink-2); }
+
+/* ---------- Portfolio ---------- */
+.pf-hero { position: relative; aspect-ratio: 4/5; }
+.pf-hero .photo { position: absolute; inset: 0; }
+.pf-hero .back { position: absolute; top: 14px; left: 14px; z-index: 2; background: rgb(255 253 249 / .9); }
+.pf-title { padding: 18px 20px 0; display: grid; gap: 8px; }
+.pf-title .display { font-size: 52px; }
+.filters { display: flex; gap: 8px; overflow-x: auto; padding: 16px 20px 0; scrollbar-width: none; }
+.filters button { flex: none; min-height: 40px; padding: 0 14px; border-radius: 99px; border: 1px solid var(--ink); background: transparent; font: 500 14px var(--sans); cursor: pointer; }
+.filters button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 14px 20px 0; }
+.grid2 .photo { aspect-ratio: 4/5; transition: opacity 300ms, transform 400ms var(--ease-out); }
+.grid2 .wide { grid-column: span 2; }
+.grid2 .wide .pair .photo { aspect-ratio: 4/5; }
+.grid2 .photo.hide { display: none; }
+.cap { font: 400 12px var(--sans); color: var(--ink-2); padding: 4px 0 0; grid-column: span 2; }
+.stickybook { position: sticky; bottom: 0; padding: 12px 20px 18px; background: var(--paper); border-top: 1px solid var(--ink); display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 24px; }
+.stickybook small { font: 400 12px var(--sans); color: var(--ink-2); text-align: center; }
+
+/* ---------- Directory ---------- */
+.index { list-style: none; margin: 14px 0 30px; padding: 0; }
+.index li { border-top: 1px solid var(--rule); padding: 14px 20px; display: grid; gap: 10px; }
+.index .row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.index .nm { font: 400 30px/1 var(--serif); }
+.index .meta { font: 400 13px var(--sans); color: var(--ink-2); }
+.index .thumbs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+.index .thumbs .photo { aspect-ratio: 4/5; }
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) { html:not(.motion-on) { --rm: 1; } }
+html.rm *, html.rm *::before, html.rm *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
+html.rm .hero-strip .track { animation: none !important; }
+html.rm .steps li.now .dot { animation: none !important; border-right-color: var(--accent); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="phone" id="phone">
+
+  <!-- ================= Landing ================= -->
+  <section class="screen active" id="landing" aria-label="Home">
+    <header class="mast">
+      <span class="wordmark"><svg viewBox="0 0 24 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="8" r="6.5" fill="none" stroke="#8a1c2c" stroke-width="2"/></svg>Combpatible</span>
+      <small>Columbus</small>
+    </header>
+    <div class="hero-strip" aria-hidden="true">
+      <div class="track" id="strip"></div>
+    </div>
+    <div class="landing-copy">
+      <div class="issue"><span class="eyebrow">Stylists at Salon Lofts</span><span class="eyebrow">No. 01</span></div>
+      <h1 class="display rise" data-rise>The stylist who's already done <em>your</em> look.</h1>
+      <p class="lede fade-up" style="--d:620ms">Show us a photo of the hair you want. We find the Columbus stylists whose own work looks like it, on hair like yours.</p>
+      <div class="fade-up" style="--d:760ms; display:grid; gap:8px">
+        <button class="btn block" data-go="quiz-type">Find my stylist</button>
+        <button class="link" data-go="directory">or browse every stylist</button>
+      </div>
+      <div class="privacy fade-up" style="--d:860ms">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        <span>No account. Your photo stays private: only you and the Combpatible team see it, and we delete it after 30 days.</span>
+      </div>
+      <ol class="how">
+        <li><div><b>Two minutes of questions</b><span>Your hair type, the service, what your next stylist should get right.</span></div></li>
+        <li><div><b>One photo of the look</b><span>A screenshot or saved post is perfect.</span></div></li>
+        <li><div><b>Stylists who've done it</b><span>With the photos that prove it. Book on their own page.</span></div></li>
+      </ol>
+    </div>
+    <div class="foot"><span>Are you a stylist? <button class="link" style="min-height:auto;font-size:13px" data-go="directory">Stylist sign in</button></span><span>Our picks are suggestions. Book any stylist you like.</span></div>
+  </section>
+
+  <!-- ================= Quiz: hair type ================= -->
+  <section class="screen" id="quiz-type" aria-label="Question 3 of 9">
+    <div class="quiz-top">
+      <button class="back" data-go="landing" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <span class="folio" aria-live="polite"><b>03</b> / 09</span>
+      <span style="width:44px"></span>
+    </div>
+    <div class="progress" style="--p:33%"><i></i></div>
+    <div>
+      <div class="q">
+        <span class="eyebrow">Your hair</span>
+        <h1 class="h2 rise" data-rise id="qType" style="font-size:36px">How does your hair grow naturally?</h1>
+        <p class="lede fade-up" style="--d:420ms">Think wash day: no heat, no products. If it's a mix, pick what you see most.</p>
+      </div>
+      <div class="types" role="radiogroup" aria-labelledby="qType" id="types"></div>
+    </div>
+    <p class="quiz-note">Not sure? <button class="link" style="min-height:auto;font-size:13px">See photo examples</button></p>
+  </section>
+
+  <!-- ================= Quiz: photo ================= -->
+  <section class="screen" id="quiz-photo" aria-label="Question 8 of 9">
+    <div class="quiz-top">
+      <button class="back" data-go="quiz-type" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <span class="folio"><b>08</b> / 09</span>
+      <span style="width:44px"></span>
+    </div>
+    <div class="progress" style="--p:88%"><i></i></div>
+    <div class="q">
+      <span class="eyebrow">The look</span>
+      <h2 class="h2 rise" data-rise style="font-size:36px">Show us the look you want.</h2>
+      <p class="lede fade-up" style="--d:420ms">The hair matters, not the face. A screenshot or saved post is perfect.</p>
+    </div>
+    <div class="drop" id="drop">
+      <div class="inner">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></svg>
+        <button class="btn" id="pick">Choose a photo</button>
+        <span class="eyebrow">JPEG or PNG · up to 10 MB</span>
+      </div>
+      <div class="photo" style="--tint:#7a5a44"><img data-src="maya-4.jpg" alt="Your inspiration photo: a curly shag"><span class="private"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Private to you</span></div>
+    </div>
+    <div class="pad" style="padding-top:14px">
+      <div class="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Only you and the Combpatible team see it. Location data is removed, and we delete it after 30 days.</span></div>
+    </div>
+    <div class="bottom-cta">
+      <button class="btn accent block" id="findBtn" data-go="matching" disabled style="opacity:.4">Find my stylists</button>
+    </div>
+  </section>
+
+  <!-- ================= Matching ================= -->
+  <section class="screen" id="matching" aria-label="Finding your stylists">
+    <header class="mast"><span class="wordmark">Combpatible</span><small>Finding your stylists</small></header>
+    <div class="sheet-wrap">
+      <div class="mine">
+        <div class="photo" style="--tint:#7a5a44"><img data-src="maya-4.jpg" alt=""></div>
+        <p><b>Your look</b> · curly, medium strands, shoulder length. A curly cut.</p>
+      </div>
+      <div class="contact" id="contact" aria-hidden="true"></div>
+      <ul class="steps" id="steps" aria-live="polite">
+        <li><span class="dot"></span>Reading your photo</li>
+        <li><span class="dot"></span>Looking through 214 photos of curly cuts by 23 stylists</li>
+        <li><span class="dot"></span>Choosing your closest stylists</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= Reveal ================= -->
+  <section class="screen" id="reveal" aria-label="Your stylists">
+    <header class="mast"><span class="wordmark">Combpatible</span><small>Private link</small></header>
+    <div class="reveal-head">
+      <span class="eyebrow fade-up" style="--d:100ms">Found in 4 seconds</span>
+      <h1 class="display rise" data-rise style="font-size:40px">Amara, these three have done <em>your look</em> on curly hair.</h1>
+      <blockquote class="echo fade-up" style="--d:700ms">“Last time they straightened it to cut it, and it came out way shorter than I asked.”<cite>You told us. Each stylist below cuts curls as they sit.</cite></blockquote>
+    </div>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true">Your 3 picks</button>
+      <button role="tab" aria-selected="false" data-go="directory">All stylists</button>
+    </div>
+    <div class="covers" id="covers"></div>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+    <div class="anyone">
+      <span class="eyebrow">Pick anyone</span>
+      <p>Our recommendations are only a starting point. Every stylist on Combpatible can be booked.</p>
+      <button class="btn ghost" data-go="directory">See all 23 stylists</button>
+    </div>
+  </section>
+
+  <!-- ================= Portfolio ================= -->
+  <section class="screen" id="portfolio" aria-label="Maya Brooks">
+    <div class="pf-hero">
+      <button class="back" data-go="reveal" aria-label="Back to your picks"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="photo" style="--tint:#6b4a3a"><img data-src="maya-2.jpg" alt="Maya's work: after, dry-cut layers on curly hair"></div>
+    </div>
+    <div class="pf-title">
+      <div style="display:flex;gap:8px;align-items:center"><span class="eyebrow">Salon Lofts · Short North</span><span class="chip-sample">Sample stylist</span></div>
+      <h1 class="display rise" data-rise>Maya Brooks</h1>
+      <p class="lede">Curl specialist. Dry cuts, shaped for the way your curls actually fall.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Filter by hair type" id="pfFilters">
+      <button aria-pressed="true" data-f="all">All 5</button>
+      <button aria-pressed="false" data-f="CURLY">Curly 3</button>
+      <button aria-pressed="false" data-f="COILY">Coily 2</button>
+    </div>
+    <div class="grid2" id="pfGrid">
+      <div class="wide" data-ht="CURLY">
+        <div class="pair">
+          <div class="photo" style="--tint:#5b4436"><img data-src="maya-1.jpg" alt="Before: grown-out curls"><span class="tag">Before</span></div>
+          <div class="photo" style="--tint:#6b4a3a"><img data-src="maya-2.jpg" alt="After: dry-cut layers"><span class="tag">After · curly</span></div>
+        </div>
+        <p class="cap">Grown-out curls to dry-cut layers. Curly, medium strands.</p>
+      </div>
+      <div class="photo" data-ht="CURLY" style="--tint:#7a5a44"><img data-src="maya-4.jpg" alt="Curly shag"><span class="tag">Curly shag</span></div>
+      <div class="photo" data-ht="COILY" style="--tint:#3e2e26"><img data-src="maya-3.jpg" alt="Rounded coily shape"><span class="tag">Coily · rounded shape</span></div>
+      <div class="photo wide" data-ht="COILY" style="--tint:#4a3329;aspect-ratio:16/10"><img data-src="maya-5.jpg" alt="Deep-conditioning treatment on coily hair"><span class="tag">Coily · treatment</span></div>
+    </div>
+    <div class="stickybook">
+      <a class="btn accent block" href="#" onclick="return false">Book on Vagaro <span aria-hidden="true">↗</span></a>
+      <small>Opens Vagaro. Combpatible doesn't take bookings or payments.</small>
+    </div>
+  </section>
+
+  <!-- ================= Directory ================= -->
+  <section class="screen" id="directory" aria-label="All stylists">
+    <header class="mast"><button class="link" style="min-height:auto" data-go="back">← Back</button><small>All stylists</small></header>
+    <div class="pad" style="padding-top:20px;display:grid;gap:10px">
+      <h1 class="display rise" data-rise style="font-size:44px">Every stylist, <em>A to Z</em>.</h1>
+      <p class="lede">Filter by what you want and your hair type. Then book anyone.</p>
+    </div>
+    <div class="filters" role="group" aria-label="Hair type">
+      <button aria-pressed="false">Straight</button><button aria-pressed="false">Wavy</button><button aria-pressed="true">Curly</button><button aria-pressed="false">Coily</button>
+    </div>
+    <ul class="index" id="index"></ul>
+  </section>
+</div>
+
+<nav class="devbar" aria-label="Prototype screens">
+  <button data-go="landing">Landing</button><button data-go="quiz-type">Quiz</button><button data-go="quiz-photo">Photo</button><button data-go="matching">Matching</button><button data-go="reveal">Reveal</button><button data-go="portfolio">Portfolio</button><button data-go="directory">Directory</button>
+  <button id="rmToggle" aria-pressed="false">Reduced motion</button>
+</nav>
+
+<script>
+const P = '../photos/';
+const TYPES = [
+  { v: 'STRAIGHT', name: 'Straight', hint: 'Falls flat from root to tip', code: 'Often called 1', d: 'M14 6v42M27 6v42M40 6v42' },
+  { v: 'WAVY', name: 'Wavy', hint: 'Loose S-shaped bends', code: 'Often called 2A–2C', d: 'M14 6c-7 7 7 14 0 21s7 14 0 21M27 6c-7 7 7 14 0 21s7 14 0 21M40 6c-7 7 7 14 0 21s7 14 0 21' },
+  { v: 'CURLY', name: 'Curly', hint: 'Defined loops or spirals', code: 'Often called 3A–3C', d: 'M20 6c9 0 9 9 0 9s-9 9 0 9 9 9 0 9-9 9 0 9M38 6c9 0 9 9 0 9s-9 9 0 9 9 9 0 9-9 9 0 9' },
+  { v: 'COILY', name: 'Coily', hint: 'Tight coils or zig-zags', code: 'Often called 4A–4C', d: 'M17 6l6 4-6 4 6 4-6 4 6 4-6 4 6 4-6 4 6 4M33 6l6 4-6 4 6 4-6 4 6 4-6 4 6 4-6 4 6 4' },
+];
+const MATCHES = [
+  { name: 'Maya Brooks', loc: 'Salon Lofts · Short North', hero: 'maya-2.jpg', tint: '#6b4a3a', reason: '9 curly cuts like your photo', why: 'Cuts curls dry, as they sit. 3 before/afters on curly hair.', ev: ['maya-1.jpg', 'maya-2.jpg', 'maya-3.jpg'], evTags: ['Before', 'After · curly', 'Coily'], site: 'Vagaro' },
+  { name: 'Nia Carter', loc: 'Salon Lofts · Grandview', hero: 'nia-4.jpg', tint: '#7a4a2e', reason: '6 cuts and colour on curly hair', why: 'Colour for curls and coils, without the damage.', ev: ['nia-1.jpg', 'nia-3.jpg', 'nia-2.jpg'], evTags: ['Curly · copper', 'Coily · tapered', 'Coily · honey'], site: 'GlossGenius' },
+  { name: 'Priya Nair', loc: 'Salon Lofts · Easton', hero: 'priya-1.jpg', tint: '#8a6040', reason: '4 layered cuts on wavy and curly hair', why: 'Closest work is on thick, wavy hair; one on curls.', ev: ['priya-4.jpg', 'priya-3.jpg', 'priya-2.jpg'], evTags: ['Wavy · layers', 'Wavy · honey', 'Wavy · highlights'], site: 'Booksy' },
+];
+const SHEET = ['tasha-1.jpg','elena-2.jpg','maya-2.jpg','jordan-3.jpg','sam-4.jpg','nia-4.jpg','claire-4.jpg','tasha-3.jpg','elena-4.jpg','priya-1.jpg','jordan-5.jpg','nia-1.jpg','sam-5.jpg','claire-3.jpg','maya-3.jpg','tasha-5.jpg'];
+const PICKS = [2, 5, 9];
+const DIRECTORY = [
+  { name: 'Maya Brooks', meta: 'Short North · Curly and coily cuts', ph: ['maya-2.jpg','maya-3.jpg','maya-4.jpg','maya-5.jpg'] },
+  { name: 'Nia Carter', meta: 'Grandview · Colour for curls and coils', ph: ['nia-1.jpg','nia-2.jpg','nia-3.jpg','nia-4.jpg'] },
+  { name: 'Sam Okafor', meta: 'Clintonville · Locs and silk press', ph: ['sam-4.jpg','sam-5.jpg','tasha-5.jpg','nia-3.jpg'] },
+  { name: 'Tasha Greene', meta: 'Polaris · Braids and protective styles', ph: ['tasha-1.jpg','tasha-2.jpg','tasha-3.jpg','tasha-5.jpg'] },
+];
+
+const photo = (file, alt = '', tint = '#6b5040', tag = '') =>
+  `<div class="photo" style="--tint:${tint}"><img src="${P + file}" alt="${alt}" loading="lazy" onerror="this.classList.add('missing')">${tag ? `<span class="tag">${tag}</span>` : ''}</div>`;
+
+// Lazy data-src images in static markup.
+document.querySelectorAll('img[data-src]').forEach(img => {
+  img.onerror = () => img.classList.add('missing');
+  img.src = P + img.dataset.src;
+});
+
+// Split headlines into masked words for "ink-rise".
+document.querySelectorAll('[data-rise]').forEach(el => {
+  let i = 0;
+  const walk = node => [...node.childNodes].forEach(n => {
+    if (n.nodeType === 3) {
+      const frag = document.createDocumentFragment();
+      n.textContent.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { frag.append(part); return; }
+        const w = document.createElement('span'); w.className = 'w';
+        const s = document.createElement('span'); s.textContent = part; s.style.setProperty('--i', i++);
+        w.append(s); frag.append(w);
+      });
+      n.replaceWith(frag);
+    } else if (n.nodeType === 1) walk(n);
+  });
+  el.setAttribute('aria-label', el.textContent.trim());
+  walk(el);
+});
+
+// Landing strip: three-plus hair types, never straight first.
+const stripFiles = ['tasha-1.jpg', 'maya-2.jpg', 'elena-2.jpg', 'nia-4.jpg', 'sam-4.jpg', 'priya-3.jpg', 'maya-3.jpg', 'jordan-3.jpg'];
+document.getElementById('strip').innerHTML = [...stripFiles, ...stripFiles].map(f => photo(f)).join('');
+
+// Hair-type cards.
+const typesEl = document.getElementById('types');
+typesEl.innerHTML = TYPES.map(t => `
+  <button class="type" role="radio" aria-checked="false" data-v="${t.v}">
+    <svg viewBox="0 0 54 54" aria-hidden="true"><path d="${t.d}"/></svg>
+    <span><span class="name">${t.name}</span><span class="hint" style="display:block">${t.hint}</span><span class="code" style="display:block">${t.code}</span></span>
+  </button>`).join('');
+typesEl.addEventListener('click', e => {
+  const b = e.target.closest('.type'); if (!b) return;
+  typesEl.querySelectorAll('.type').forEach(x => x.setAttribute('aria-checked', x === b));
+  setTimeout(() => go('quiz-photo'), 380); // selection is seen before the page turns
+});
+
+// Photo step.
+document.getElementById('pick').onclick = () => {
+  document.getElementById('drop').classList.add('has');
+  const f = document.getElementById('findBtn'); f.disabled = false; f.style.opacity = 1;
+};
+
+// Navigation with "page-lift".
+const reduced = () => document.documentElement.classList.contains('rm');
+let current = 'landing', history = [];
+function go(id) {
+  if (id === 'back') id = history.pop() || 'landing'; else history.push(current);
+  if (id === current) return;
+  const from = document.getElementById(current), to = document.getElementById(id);
+  to.scrollTop = 0;
+  // restart entrance animations
+  to.classList.remove('active', 'reveal-go'); void to.offsetWidth;
+  from.classList.remove('active'); from.classList.add('leaving');
+  to.classList.add('entering');
+  const done = () => { from.classList.remove('leaving'); to.classList.remove('entering'); to.classList.add('active'); };
+  setTimeout(done, reduced() ? 0 : 680);
+  current = id;
+  document.querySelectorAll('.devbar [data-go]').forEach(b => b.setAttribute('aria-pressed', b.dataset.go === id));
+  if (id === 'matching') runMatching();
+  if (id === 'reveal') setTimeout(() => to.classList.add('reveal-go'), reduced() ? 0 : 200);
+  if (id === 'quiz-type') typesEl.querySelectorAll('.type').forEach(x => x.setAttribute('aria-checked', 'false'));
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-go]'); if (!t || t.disabled) return;
+  go(t.dataset.go);
+});
+
+// Matching: the contact sheet. Frames print in, the editor's marker circles the picks, then the page becomes the covers.
+const contact = document.getElementById('contact');
+const markerPath = 'M30 6C12 4 2 16 4 34s14 30 30 28 28-14 26-32S44 2 24 8';
+let timers = [];
+function runMatching() {
+  timers.forEach(clearTimeout); timers = [];
+  contact.innerHTML = SHEET.map((f, i) => `<div class="photo" style="--i:${i};--tint:hsl(${20 + i * 7} 25% 35%)">
+      <img src="${P + f}" alt="" onerror="this.classList.add('missing')"><span class="frameno">${String(i + 12).padStart(2, '0')}A</span>
+      <svg class="marker" viewBox="0 0 64 70" preserveAspectRatio="none"><path d="${markerPath}"/></svg></div>`).join('');
+  const steps = [...document.querySelectorAll('#steps li')];
+  steps.forEach(s => s.className = '');
+  const r = reduced(), k = r ? 0.25 : 1;
+  const at = (ms, fn) => timers.push(setTimeout(fn, ms * k));
+  at(150, () => { steps[0].className = 'now'; contact.querySelectorAll('.photo').forEach(p => p.classList.add('in')); });
+  at(1100, () => { steps[0].className = 'done'; steps[1].className = 'now'; });
+  PICKS.forEach((p, n) => at(1900 + n * 380, () => contact.children[p].classList.add('picked')));
+  at(2900, () => { steps[1].className = 'done'; steps[2].className = 'now';
+    [...contact.children].forEach((c, i) => { if (!PICKS.includes(i)) c.classList.add('dim'); }); });
+  at(3700, () => { steps[2].className = 'done'; });
+  at(4100, () => { if (current === 'matching') go('reveal'); });
+}
+
+// Reveal covers.
+document.getElementById('covers').innerHTML = MATCHES.map((m, i) => `
+  <article class="cover" style="--i:${i}" aria-label="Pick ${i + 1}: ${m.name}">
+    <div class="photo" style="--tint:${m.tint}">
+      <img src="${P + m.hero}" alt="${m.name}'s work" onerror="this.classList.add('missing')">
+      <div class="scrim"></div>
+      <span class="no">No. ${i + 1}</span>
+      <span class="chip-sample sample-on">Sample stylist</span>
+      <h2 class="name">${m.name.replace(' ', '<br>')}</h2>
+    </div>
+    <div class="body">
+      <p class="reason">${m.reason}<small>${m.loc} · ${m.why}</small></p>
+      <div class="evidence">${m.ev.map((f, j) => photo(f, `${m.name}'s work: ${m.evTags[j]}`, m.tint, m.evTags[j])).join('')}</div>
+      <div class="actions">
+        <a class="btn accent" href="#" onclick="return false">Book on ${m.site} <span aria-hidden="true">↗</span></a>
+        <button class="btn ghost" data-go="portfolio" aria-label="See ${m.name}'s work">Work</button>
+      </div>
+    </div>
+  </article>`).join('');
+const covers = document.getElementById('covers'), dots = document.getElementById('dots');
+dots.innerHTML = MATCHES.map((_, i) => `<i class="${i ? '' : 'on'}"></i>`).join('');
+covers.addEventListener('scroll', () => {
+  const i = Math.round(covers.scrollLeft / (covers.firstElementChild.offsetWidth + 12));
+  [...dots.children].forEach((d, j) => d.classList.toggle('on', i === j));
+}, { passive: true });
+
+// Portfolio filter.
+document.getElementById('pfFilters').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#pfFilters button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  document.querySelectorAll('#pfGrid > [data-ht]').forEach(el => el.classList.toggle('hide', b.dataset.f !== 'all' && el.dataset.ht !== b.dataset.f));
+});
+
+// Directory.
+document.getElementById('index').innerHTML = DIRECTORY.map(d => `
+  <li><div class="row"><span class="nm">${d.name}</span><span class="chip-sample">Sample stylist</span></div>
+  <span class="meta">${d.meta}</span><div class="thumbs">${d.ph.map(f => photo(f, '', '#5b4436')).join('')}</div></li>`).join('');
+
+// Reduced motion: follow the OS, with a manual toggle for reviewers.
+const rmBtn = document.getElementById('rmToggle');
+const setRM = on => { document.documentElement.classList.toggle('rm', on); rmBtn.setAttribute('aria-pressed', on); };
+setRM(matchMedia('(prefers-reduced-motion: reduce)').matches);
+rmBtn.onclick = () => setRM(!reduced());
+document.querySelector('.devbar [data-go="landing"]').setAttribute('aria-pressed', 'true');
+</script>
+</body>
+</html>

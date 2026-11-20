@@ -4,6 +4,10 @@ Proposed 2026-11-20. The look and voice for Combpatible (named 2026-11-20; worki
 Prototype: <https://claude.ai/artifact/74ApqgXdGU52ULhyr6Cvfm> (source: [prototype.html](prototype.html)). Tokens:
 [tokens.css](tokens.css). Flows: [flows.md](flows.md). How to get there: [implementation-plan.md](implementation-plan.md).
 
+> **Redesign under review (2026-11-20):** four fuller directions with clickable prototypes, and a recommendation, are in
+> [redesign-options.md](redesign-options.md). If one is approved, it replaces the type, colour and motion sections
+> below; the principles, tone, accessibility and inclusivity sections still stand.
+
 The name comes from the consultation: the minute in the chair before anything is cut, when a good stylist looks at your
 photo, asks about your hair and repeats back what you want. The whole product is that minute, done before you book.
 

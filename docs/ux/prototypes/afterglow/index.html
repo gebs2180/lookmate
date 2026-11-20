@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Combpatible · Afterglow prototype</title>
+<!--
+  Direction B, "Afterglow": the salon after hours. A dark, warm room lit by vanity-mirror light. Prototype only
+  (docs/ux/redesign-options.md). Photos load from ../photos/ (git-ignored Pexels demo photos copied from
+  web/demo-photos); without them, tinted placeholders show. Fonts from Google Fonts here; production would self-host.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gloock&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --night: #120d10;
+  --night-2: #1c1519;
+  --glass: rgb(255 240 228 / .06);
+  --glass-line: rgb(255 236 220 / .14);
+  --text: #f6ece4;        /* 16.2:1 on night */
+  --muted: #bfaea5;       /* 8.6:1 on night */
+  --champagne: #ecc9a0;   /* 11.4:1 on night; the accent */
+  --rose: #e79a8a;
+  --bulb: #ffe7c2;
+  --on-accent: #241612;
+  --sample: #ffd9a8;
+  --serif: 'Gloock', 'Didot', serif;
+  --sans: 'Figtree', system-ui, sans-serif;
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --ease-io: cubic-bezier(.65, 0, .35, 1);
+  --t-dim: 900ms;
+  --t-surface: 1100ms;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: #050304; font-family: var(--sans); color: var(--text); display: grid; place-items: center; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+img { display: block; }
+:focus-visible { outline: 2px solid var(--champagne); outline-offset: 3px; }
+
+.phone {
+  position: relative; width: 390px; height: min(844px, calc(100dvh - 72px)); overflow: hidden; border-radius: 34px;
+  background: var(--night); box-shadow: 0 40px 100px -20px rgb(236 201 160 / .18), 0 0 0 10px #000, 0 0 0 11px #2a2024;
+}
+@media (max-width: 520px) {
+  body { display: block; background: var(--night); }
+  .phone { width: 100%; height: 100dvh; border-radius: 0; box-shadow: none; }
+  .devbar { display: none !important; }
+}
+.devbar { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; font: 12px var(--sans); max-width: 96vw; }
+.devbar button { background: #241b20; border: 0; border-radius: 99px; padding: 6px 11px; cursor: pointer; color: var(--muted); }
+.devbar button[aria-pressed="true"] { background: var(--champagne); color: var(--on-accent); }
+
+/* Ambient light: a warm glow that drifts slowly behind every screen. */
+.ambient { position: absolute; inset: -20%; pointer-events: none; z-index: 0;
+  background: radial-gradient(40% 30% at 30% 20%, rgb(236 201 160 / .16), transparent 70%),
+              radial-gradient(35% 30% at 80% 70%, rgb(231 154 138 / .12), transparent 70%);
+  animation: ambient 18s ease-in-out infinite alternate; }
+@keyframes ambient { to { transform: translate(6%, -4%) rotate(8deg); } }
+
+.screen { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; visibility: hidden; z-index: 1; scrollbar-width: none; }
+.screen::-webkit-scrollbar { display: none; }
+.screen.active { visibility: visible; z-index: 2; }
+/* "lights-down": the old screen dims and softens; the new one comes up out of the dark. */
+.screen.leaving { visibility: visible; animation: lights-down 520ms var(--ease-io) both; }
+.screen.entering { visibility: visible; z-index: 3; animation: lights-up 720ms var(--ease) 160ms both; }
+@keyframes lights-down { to { opacity: 0; filter: blur(6px) brightness(.4); transform: scale(.98); } }
+@keyframes lights-up { from { opacity: 0; filter: blur(8px); transform: scale(1.02); } }
+.stagger > * { opacity: 0; }
+.active .stagger > *, .entering .stagger > * { animation: rise 800ms var(--ease) both; animation-delay: calc(var(--i, 0) * 90ms + 250ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(18px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+
+.top { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; position: sticky; top: 0; z-index: 5; background: linear-gradient(var(--night) 60%, transparent); }
+.wordmark { font: 600 18px var(--sans); letter-spacing: .01em; display: flex; align-items: center; gap: 8px; }
+.wordmark i { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, var(--bulb), var(--champagne) 45%, #8a5a3c 100%); box-shadow: 0 0 14px rgb(255 214 170 / .6); }
+.pill { font: 500 12px var(--sans); color: var(--muted); border: 1px solid var(--glass-line); padding: 6px 10px; border-radius: 99px; display: inline-flex; gap: 6px; align-items: center; }
+.serif { font-family: var(--serif); font-weight: 400; }
+.display { font: 400 44px/1.02 var(--serif); margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.display em { font-style: normal; color: var(--champagne); text-shadow: 0 0 24px rgb(236 201 160 / .45); }
+.h2 { font: 400 32px/1.08 var(--serif); margin: 0; text-wrap: balance; }
+.lede { font: 400 16px/1.55 var(--sans); color: var(--muted); margin: 0; }
+.eyebrow { font: 600 11px var(--sans); letter-spacing: .16em; text-transform: uppercase; color: var(--champagne); }
+.btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 54px; padding: 0 24px; border-radius: 99px; border: 0; cursor: pointer; font: 600 16px var(--sans); text-decoration: none;
+  background: linear-gradient(180deg, #f6dcbb, var(--champagne)); color: var(--on-accent); box-shadow: 0 10px 30px -10px rgb(236 201 160 / .6), inset 0 1px 0 rgb(255 255 255 / .6); transition: transform 180ms var(--ease); }
+/* "sheen": a band of light crosses the button now and then. */
+.btn.shine::after { content: ""; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / .55) 50%, transparent 65%); transform: translateX(-120%); animation: sheen 4.5s var(--ease-io) 1.2s infinite; }
+@keyframes sheen { 0%, 70% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
+.btn:active { transform: scale(.97); }
+.btn.glass { background: var(--glass); color: var(--text); box-shadow: inset 0 0 0 1px var(--glass-line); backdrop-filter: blur(10px); }
+.btn.block { width: 100%; }
+.link { background: none; border: 0; color: var(--text); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; min-height: 44px; font: 500 15px var(--sans); }
+.sample { font: 600 11px var(--sans); color: var(--sample); border: 1px solid rgb(255 217 168 / .5); padding: 3px 8px; border-radius: 99px; letter-spacing: .02em; white-space: nowrap; background: rgb(18 13 16 / .6); backdrop-filter: blur(6px); }
+.privacy { display: flex; gap: 10px; font: 400 13px/1.45 var(--sans); color: var(--muted); padding: 12px 14px; border-radius: 16px; background: var(--glass); border: 1px solid var(--glass-line); }
+.privacy svg { flex: none; width: 18px; height: 18px; color: var(--champagne); }
+.photo { position: relative; overflow: hidden; background: linear-gradient(160deg, var(--tint, #6b4a3a), #1a1013); }
+.photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+.photo img.missing { visibility: hidden; }
+.tag { position: absolute; left: 8px; bottom: 8px; font: 600 11px var(--sans); color: #fff; background: rgb(12 8 10 / .72); padding: 4px 8px; border-radius: 99px; }
+/* The vanity arch: the house photo shape. Keeps the full length of the hair, unlike a circle. */
+.arch { border-radius: 999px 999px 18px 18px; }
+.pad { padding: 0 20px; }
+
+/* ---------- Landing ---------- */
+.mirror-wrap { position: relative; margin: 6px auto 0; width: 250px; }
+.bulbs { position: absolute; inset: -16px; pointer-events: none; }
+.bulbs i { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: var(--bulb); box-shadow: 0 0 10px 3px rgb(255 220 170 / .55); opacity: .25; animation: bulb 2.4s ease-in-out infinite; animation-delay: calc(var(--k) * 120ms); }
+@keyframes bulb { 50% { opacity: 1; } }
+.mirror { width: 250px; aspect-ratio: 4/5.4; box-shadow: 0 0 0 6px #2a1f22, 0 0 0 7px rgb(236 201 160 / .4), 0 30px 60px -20px #000; }
+.mirror .photo { position: absolute; inset: 0; opacity: 0; transition: opacity 1200ms var(--ease-io), transform 6s linear; transform: scale(1.08); }
+.mirror .photo.on { opacity: 1; transform: scale(1); }
+.mirror-cap { text-align: center; margin-top: 18px; font: 500 12px var(--sans); color: var(--muted); letter-spacing: .04em; min-height: 18px; }
+.land { padding: 22px 20px 0; display: grid; gap: 16px; text-align: center; justify-items: center; }
+.land .actions { display: grid; gap: 6px; width: 100%; }
+.steps3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 24px 20px 0; }
+.steps3 div { padding: 14px 10px; border-radius: 16px; background: var(--glass); border: 1px solid var(--glass-line); font: 500 13px/1.35 var(--sans); color: var(--muted); }
+.steps3 b { display: block; font: 400 26px var(--serif); color: var(--champagne); margin-bottom: 4px; }
+.foot { padding: 22px 20px 40px; text-align: center; font: 400 13px var(--sans); color: var(--muted); }
+
+/* ---------- Quiz ---------- */
+.qbar { display: flex; align-items: center; gap: 12px; padding: 16px 20px 0; }
+.iconbtn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--glass-line); background: var(--glass); display: grid; place-items: center; cursor: pointer; flex: none; }
+.segs { display: flex; gap: 4px; flex: 1; }
+.segs i { flex: 1; height: 3px; border-radius: 3px; background: rgb(255 255 255 / .12); overflow: hidden; position: relative; }
+.segs i.done::after { content: ""; position: absolute; inset: 0; background: var(--champagne); box-shadow: 0 0 8px var(--champagne); }
+.segs i.now::after { content: ""; position: absolute; inset: 0; background: var(--champagne); transform-origin: left; animation: fill 700ms var(--ease) both; }
+@keyframes fill { from { transform: scaleX(0); } }
+.q { padding: 28px 20px 0; display: grid; gap: 10px; }
+.tlist { display: grid; gap: 10px; padding: 22px 20px 0; }
+.trow { position: relative; display: grid; grid-template-columns: 64px 1fr 24px; gap: 14px; align-items: center; text-align: left; padding: 12px 16px 12px 12px; border-radius: 20px; background: var(--glass); border: 1px solid var(--glass-line); cursor: pointer; min-height: 88px; overflow: hidden; transition: border-color 300ms, background 300ms; }
+.trow svg.g { width: 64px; height: 64px; border-radius: 14px; background: rgb(255 255 255 / .04); stroke: var(--champagne); stroke-width: 2; fill: none; stroke-linecap: round; padding: 8px; }
+.trow .nm { font: 400 24px/1 var(--serif); display: block; }
+.trow .hn { font: 400 13px/1.4 var(--sans); color: var(--muted); display: block; margin-top: 4px; }
+.trow .radio { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--muted); transition: all 300ms var(--ease); }
+.trow[aria-checked="true"] { border-color: var(--champagne); background: rgb(236 201 160 / .1); }
+.trow[aria-checked="true"] .radio { border: 7px solid var(--champagne); box-shadow: 0 0 12px var(--champagne); }
+/* "glow-select": a soft light spreads from where you tapped. */
+.trow .halo { position: absolute; width: 20px; height: 20px; border-radius: 50%; background: radial-gradient(rgb(236 201 160 / .45), transparent 70%); transform: translate(-50%, -50%) scale(0); pointer-events: none; }
+.trow.lit .halo { animation: halo 700ms var(--ease) forwards; }
+@keyframes halo { to { transform: translate(-50%, -50%) scale(30); opacity: 0; } }
+
+/* ---------- Matching: the ring light ---------- */
+.ringstage { display: grid; place-items: center; padding: 34px 0 0; position: relative; }
+.ring { position: relative; width: 260px; height: 260px; }
+.ring svg.r { position: absolute; inset: 0; transform: rotate(-90deg); }
+.ring circle.track { fill: none; stroke: rgb(255 255 255 / .08); stroke-width: 3; }
+.ring circle.lit { fill: none; stroke: var(--bulb); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 785; stroke-dashoffset: 785; filter: drop-shadow(0 0 6px var(--bulb)) drop-shadow(0 0 16px var(--champagne)); transition: stroke-dashoffset 3600ms cubic-bezier(.45, .05, .3, 1); }
+.ring.go circle.lit { stroke-dashoffset: 0; }
+.ring .inner { position: absolute; inset: 22px; border-radius: 50%; overflow: hidden; }
+.ring .inner .photo { position: absolute; inset: 0; }
+.ring .inner .photo.mine img { filter: brightness(.9); }
+.ring .inner .photo.cand { opacity: 0; transition: opacity 260ms; }
+.ring .inner .photo.cand.on { opacity: 1; }
+.ring .private { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); }
+.mline { text-align: center; padding: 34px 28px 0; min-height: 120px; }
+.mline p { margin: 0; font: 400 24px/1.25 var(--serif); }
+.mline small { display: block; margin-top: 8px; font: 400 14px var(--sans); color: var(--muted); }
+.mline .swap { animation: swap 500ms var(--ease) both; }
+@keyframes swap { from { opacity: 0; transform: translateY(10px); filter: blur(4px); } }
+
+/* ---------- Reveal: three mirrors light up ---------- */
+.rhead { padding: 4px 20px 0; display: grid; gap: 12px; }
+.echo { font: 400 19px/1.35 var(--serif); margin: 4px 0 0; padding: 14px 16px; border-left: 2px solid var(--champagne); background: var(--glass); border-radius: 0 14px 14px 0; }
+.echo small { display: block; font: 500 12px var(--sans); color: var(--muted); margin-top: 6px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; margin: 18px 20px 0; padding: 4px; border-radius: 99px; background: var(--glass); border: 1px solid var(--glass-line); }
+.seg button { min-height: 40px; border: 0; background: none; border-radius: 99px; color: var(--muted); font: 600 14px var(--sans); cursor: pointer; }
+.seg button[aria-selected="true"] { background: var(--text); color: var(--night); }
+.picks { display: grid; gap: 18px; padding: 18px 20px 0; }
+.pick { border-radius: 26px; background: var(--night-2); border: 1px solid var(--glass-line); overflow: hidden; opacity: 0; transform: translateY(30px); }
+.reveal-go .pick { animation: pick-in 900ms var(--ease) forwards; animation-delay: calc(var(--i) * 220ms + 200ms); }
+@keyframes pick-in { to { opacity: 1; transform: none; } }
+.pick .hero { position: relative; margin: 10px 10px 0; aspect-ratio: 4/4.4; }
+.pick .hero .photo { position: absolute; inset: 0; }
+/* "surface": the work comes up through fogged glass. */
+.pick .hero img { filter: blur(18px) brightness(.5) saturate(.6); transform: scale(1.1); transition: filter var(--t-surface) var(--ease), transform var(--t-surface) var(--ease); transition-delay: calc(var(--i) * 220ms + 500ms); }
+.reveal-go .pick .hero img { filter: none; transform: none; }
+.pick .hero .sweep { position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgb(255 240 220 / .35) 48%, transparent 62%); transform: translateX(-130%); pointer-events: none; }
+.reveal-go .pick .hero .sweep { animation: sweep 1300ms var(--ease-io) forwards; animation-delay: calc(var(--i) * 220ms + 1000ms); }
+@keyframes sweep { to { transform: translateX(130%); } }
+.pick .hero .sample { position: absolute; top: 18px; right: 50%; transform: translateX(50%); }
+.pick .info { padding: 14px 16px 16px; display: grid; gap: 10px; }
+.pick .nm { font: 400 30px/1 var(--serif); margin: 0; display: flex; justify-content: space-between; align-items: baseline; }
+.pick .nm span { font: 500 12px var(--sans); color: var(--muted); }
+.pick .why { margin: 0; font: 600 16px/1.35 var(--sans); color: var(--champagne); }
+.pick .why small { display: block; margin-top: 3px; font: 400 13px var(--sans); color: var(--muted); }
+.ev { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ev .photo { aspect-ratio: 4/5; border-radius: 12px; }
+.pick .acts { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.anyone { margin: 22px 20px 34px; text-align: center; display: grid; gap: 8px; justify-items: center; }
+.anyone p { margin: 0; color: var(--muted); font: 400 14px/1.45 var(--sans); }
+
+/* ---------- Portfolio ---------- */
+.pf-hero { position: relative; height: 470px; }
+.pf-hero .photo { position: absolute; inset: 0; }
+.pf-hero::after { content: ""; position: absolute; inset: 50% 0 0; background: linear-gradient(transparent, var(--night)); }
+.pf-hero .iconbtn { position: absolute; top: 16px; left: 16px; z-index: 2; background: rgb(18 13 16 / .6); backdrop-filter: blur(8px); }
+.pf-name { position: relative; z-index: 2; margin-top: -110px; padding: 0 20px; display: grid; gap: 8px; }
+.stats { display: flex; gap: 8px; flex-wrap: wrap; }
+.stats span { font: 500 13px var(--sans); padding: 7px 12px; border-radius: 99px; background: var(--glass); border: 1px solid var(--glass-line); }
+.stats b { color: var(--champagne); font-weight: 600; }
+.ba { margin: 20px 20px 0; position: relative; border-radius: 22px; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.ba .photo { aspect-ratio: 4/5; }
+.masonry { columns: 2; column-gap: 8px; padding: 10px 20px 0; }
+.masonry .photo { break-inside: avoid; margin-bottom: 8px; border-radius: 16px; }
+.dock { position: sticky; bottom: 0; padding: 14px 20px 20px; background: linear-gradient(transparent, var(--night) 35%); display: grid; gap: 6px; text-align: center; margin-top: 10px; }
+.dock small { color: var(--muted); font: 400 12px var(--sans); }
+
+/* ---------- Directory ---------- */
+.dfilters { display: flex; gap: 8px; overflow-x: auto; padding: 16px 20px 0; scrollbar-width: none; }
+.dfilters button { flex: none; min-height: 40px; padding: 0 14px; border-radius: 99px; border: 1px solid var(--glass-line); background: var(--glass); color: var(--text); font: 500 14px var(--sans); cursor: pointer; }
+.dfilters button[aria-pressed="true"] { background: var(--champagne); color: var(--on-accent); border-color: transparent; }
+.dgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 20px 34px; }
+.dcard { display: grid; gap: 8px; }
+.dcard .photo { aspect-ratio: 4/5.2; }
+.dcard b { font: 400 20px/1.1 var(--serif); font-weight: 400; }
+.dcard span { font: 400 12px/1.35 var(--sans); color: var(--muted); }
+
+html.rm *, html.rm *::before, html.rm *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; transition-delay: 0ms !important; }
+html.rm .ambient, html.rm .bulbs i, html.rm .btn.shine::after { animation: none !important; }
+html.rm .bulbs i { opacity: .8; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="ambient" aria-hidden="true"></div>
+
+  <!-- ================= Landing ================= -->
+  <section class="screen active" id="landing" aria-label="Home">
+    <header class="top"><span class="wordmark"><i aria-hidden="true"></i>Combpatible</span><span class="pill">Columbus</span></header>
+    <div class="mirror-wrap stagger">
+      <div style="position:relative">
+        <div class="bulbs" id="bulbs" aria-hidden="true"></div>
+        <div class="mirror arch photo" id="mirror" aria-hidden="true"></div>
+      </div>
+      <p class="mirror-cap" id="mirrorCap" aria-live="off"></p>
+    </div>
+    <div class="land stagger">
+      <h1 class="display" style="--i:1">Find the stylist who's already done <em>your look</em>.</h1>
+      <p class="lede" style="--i:2">Show us the hair you want. We find Columbus stylists whose own work looks like it, on hair like yours.</p>
+      <div class="actions" style="--i:3">
+        <button class="btn shine block" data-go="quiz-type">Find my stylist</button>
+        <button class="link" data-go="directory">Browse every stylist</button>
+      </div>
+      <div class="privacy" style="--i:4; text-align:left"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>No account. Your photo stays private, seen only by you and the Combpatible team, and deleted after 30 days.</span></div>
+    </div>
+    <div class="steps3"><div><b>1</b>Two minutes about your hair</div><div><b>2</b>One photo of the look</div><div><b>3</b>Stylists who've done it</div></div>
+    <p class="foot">Stylists at Salon Lofts · <button class="link" style="min-height:auto;font-size:13px">Stylist sign in</button></p>
+  </section>
+
+  <!-- ================= Quiz: hair type ================= -->
+  <section class="screen" id="quiz-type" aria-label="Question 3 of 9">
+    <div class="qbar">
+      <button class="iconbtn" data-go="landing" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="segs" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div class="q stagger">
+      <span class="eyebrow" aria-live="polite">Question 3 of 9</span>
+      <h1 class="h2" id="qType" style="--i:1">How does your hair grow naturally?</h1>
+      <p class="lede" style="--i:2">Think wash day: no heat, no products. If it's a mix, pick what you see most.</p>
+    </div>
+    <div class="tlist stagger" role="radiogroup" aria-labelledby="qType" id="types"></div>
+    <p class="pad" style="color:var(--muted);font-size:13px;margin-top:14px">Not sure? <button class="link" style="min-height:auto;font-size:13px">See photo examples</button></p>
+  </section>
+
+  <!-- ================= Quiz: photo ================= -->
+  <section class="screen" id="quiz-photo" aria-label="Question 8 of 9">
+    <div class="qbar">
+      <button class="iconbtn" data-go="quiz-type" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="segs" aria-hidden="true"><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i></div>
+    </div>
+    <div class="q stagger">
+      <span class="eyebrow">Question 8 of 9</span>
+      <h1 class="h2" style="--i:1">Show us the look you want.</h1>
+      <p class="lede" style="--i:2">The hair matters, not the face. A screenshot or saved post is perfect.</p>
+    </div>
+    <div style="display:grid;place-items:center;padding:22px 0 0">
+      <button class="arch photo" id="pick" style="width:230px;aspect-ratio:4/5.2;border:1.5px dashed var(--glass-line);background:var(--glass);cursor:pointer;display:grid;place-items:center;color:var(--muted)" aria-label="Choose a photo">
+        <span id="pickLabel" style="display:grid;gap:8px;justify-items:center;font:500 14px var(--sans)"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 5v14M5 12h14"/></svg>Choose a photo</span>
+      </button>
+    </div>
+    <div class="pad" style="padding-top:18px"><div class="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Only you and the Combpatible team see it. Location data is removed, and it's deleted after 30 days.</span></div></div>
+    <div class="dock"><button class="btn shine block" id="findBtn" data-go="matching" disabled style="opacity:.35">Find my stylists</button></div>
+  </section>
+
+  <!-- ================= Matching ================= -->
+  <section class="screen" id="matching" aria-label="Finding your stylists">
+    <header class="top"><span class="wordmark"><i aria-hidden="true"></i>Combpatible</span></header>
+    <div class="ringstage">
+      <div class="ring" id="ring">
+        <svg class="r" viewBox="0 0 260 260" aria-hidden="true"><circle class="track" cx="130" cy="130" r="125"/><circle class="lit" cx="130" cy="130" r="125"/></svg>
+        <div class="inner" id="ringInner"></div>
+        <span class="pill private" style="background:var(--night)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Private to you</span>
+      </div>
+    </div>
+    <div class="mline" aria-live="polite" id="mline"></div>
+  </section>
+
+  <!-- ================= Reveal ================= -->
+  <section class="screen" id="reveal" aria-label="Your stylists">
+    <header class="top"><span class="wordmark"><i aria-hidden="true"></i>Combpatible</span><span class="pill"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Private link</span></header>
+    <div class="rhead stagger">
+      <span class="eyebrow">Found in 4 seconds</span>
+      <h1 class="display" style="--i:1;font-size:38px">Amara, these stylists have done <em>your look</em> on curly hair.</h1>
+      <div class="echo" style="--i:2">“Last time they straightened it to cut it, and it came out way shorter than I asked.”<small>What you told us. All three cut curls as they sit.</small></div>
+    </div>
+    <div class="seg" role="tablist"><button role="tab" aria-selected="true">Your picks</button><button role="tab" aria-selected="false" data-go="directory">All stylists</button></div>
+    <div class="picks" id="picks"></div>
+    <div class="anyone"><p>Recommendations are a starting point. You can book any stylist.</p><button class="btn glass" data-go="directory">See all 23 stylists</button></div>
+  </section>
+
+  <!-- ================= Portfolio ================= -->
+  <section class="screen" id="portfolio" aria-label="Maya Brooks">
+    <div class="pf-hero">
+      <button class="iconbtn" data-go="back" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="photo" style="--tint:#6b4a3a"><img data-src="maya-2.jpg" alt="Maya's work: after, dry-cut layers on curly hair"></div>
+    </div>
+    <div class="pf-name stagger">
+      <span class="sample" style="justify-self:start">Sample stylist</span>
+      <h1 class="display" style="--i:1;font-size:50px">Maya Brooks</h1>
+      <p class="lede" style="--i:2">Curl specialist. Dry cuts, shaped for the way your curls actually fall. Salon Lofts · Short North.</p>
+      <div class="stats" style="--i:3"><span><b>3</b> curly</span><span><b>2</b> coily</span><span><b>1</b> before/after</span></div>
+    </div>
+    <div class="ba" aria-label="Before and after">
+      <div class="photo" style="--tint:#5b4436"><img data-src="maya-1.jpg" alt="Before: grown-out curls"><span class="tag">Before</span></div>
+      <div class="photo" style="--tint:#6b4a3a"><img data-src="maya-2.jpg" alt="After: dry-cut layers, curly"><span class="tag">After · curly</span></div>
+    </div>
+    <div class="masonry">
+      <div class="photo" style="--tint:#7a5a44;aspect-ratio:4/5"><img data-src="maya-4.jpg" alt="Curly shag"><span class="tag">Curly shag</span></div>
+      <div class="photo" style="--tint:#3e2e26;aspect-ratio:4/6"><img data-src="maya-3.jpg" alt="Rounded coily shape"><span class="tag">Coily · shape</span></div>
+      <div class="photo" style="--tint:#4a3329;aspect-ratio:4/6"><img data-src="maya-5.jpg" alt="Treatment on coily hair"><span class="tag">Coily · treatment</span></div>
+      <div class="photo" style="--tint:#6b4a3a;aspect-ratio:4/5"><img data-src="maya-2.jpg" alt="Dry-cut layers"><span class="tag">Curly · layers</span></div>
+    </div>
+    <div class="dock"><a class="btn shine block" href="#" onclick="return false">Book on Vagaro <span aria-hidden="true">↗</span></a><small>Opens Vagaro. Combpatible doesn't take bookings or payments.</small></div>
+  </section>
+
+  <!-- ================= Directory ================= -->
+  <section class="screen" id="directory" aria-label="All stylists">
+    <header class="top"><button class="iconbtn" data-go="back" aria-label="Back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button><span class="pill">23 stylists</span></header>
+    <div class="pad stagger" style="display:grid;gap:8px"><h1 class="display" style="font-size:40px">Every <em>stylist</em></h1><p class="lede" style="--i:1">Filter by service and hair type. Book anyone.</p></div>
+    <div class="dfilters" role="group" aria-label="Hair type"><button aria-pressed="false">Straight</button><button aria-pressed="false">Wavy</button><button aria-pressed="true">Curly</button><button aria-pressed="false">Coily</button><button aria-pressed="false">Braids</button><button aria-pressed="false">Locs</button></div>
+    <div class="dgrid" id="dgrid"></div>
+  </section>
+</div>
+
+<nav class="devbar" aria-label="Prototype screens">
+  <button data-go="landing" aria-pressed="true">Landing</button><button data-go="quiz-type">Quiz</button><button data-go="quiz-photo">Photo</button><button data-go="matching">Matching</button><button data-go="reveal">Reveal</button><button data-go="portfolio">Portfolio</button><button data-go="directory">Directory</button>
+  <button id="rmToggle" aria-pressed="false">Reduced motion</button>
+</nav>
+
+<script>
+const P = '../photos/';
+const TYPES = [
+  { v: 'STRAIGHT', name: 'Straight', hint: 'Falls flat from root to tip', d: 'M18 8v32M24 8v32M30 8v32' },
+  { v: 'WAVY', name: 'Wavy', hint: 'Loose S-shaped bends · often 2A–2C', d: 'M17 8c-5 5 5 11 0 16s5 11 0 16M24 8c-5 5 5 11 0 16s5 11 0 16M31 8c-5 5 5 11 0 16s5 11 0 16' },
+  { v: 'CURLY', name: 'Curly', hint: 'Defined loops or spirals · often 3A–3C', d: 'M20 8c7 0 7 7 0 7s-7 7 0 7 7 7 0 7-7 7 0 7M30 8c7 0 7 7 0 7s-7 7 0 7 7 7 0 7-7 7 0 7' },
+  { v: 'COILY', name: 'Coily', hint: 'Tight coils or zig-zags · often 4A–4C', d: 'M18 8l5 3-5 3 5 3-5 3 5 3-5 3 5 3-5 3 5 3M28 8l5 3-5 3 5 3-5 3 5 3-5 3 5 3-5 3 5 3' },
+];
+const MATCHES = [
+  { name: 'Maya Brooks', loc: 'Short North', hero: 'maya-2.jpg', tint: '#6b4a3a', why: '9 curly cuts like your photo', sub: 'Cuts curls dry, as they sit. 3 before/afters.', ev: [['maya-1.jpg', 'Before'], ['maya-2.jpg', 'After'], ['maya-3.jpg', 'Coily']], site: 'Vagaro' },
+  { name: 'Nia Carter', loc: 'Grandview', hero: 'nia-4.jpg', tint: '#7a4a2e', why: '6 cuts and colour on curly hair', sub: 'Colour for curls and coils, without the damage.', ev: [['nia-1.jpg', 'Curly'], ['nia-3.jpg', 'Coily'], ['nia-2.jpg', 'Coily']], site: 'GlossGenius' },
+  { name: 'Priya Nair', loc: 'Easton', hero: 'priya-1.jpg', tint: '#8a6040', why: '4 layered cuts on wavy and curly hair', sub: 'Most of this work is on thick, wavy hair.', ev: [['priya-4.jpg', 'Wavy'], ['priya-3.jpg', 'Wavy'], ['priya-1.jpg', 'Curly']], site: 'Booksy' },
+];
+const MIRROR = [['tasha-1.jpg', 'Knotless braids · coily'], ['maya-2.jpg', 'Dry-cut layers · curly'], ['elena-2.jpg', 'Blunt bob · straight'], ['nia-4.jpg', 'Balayage · curly'], ['sam-4.jpg', 'Silk press · coily'], ['priya-3.jpg', 'Honey balayage · wavy']];
+const CANDS = ['tasha-3.jpg', 'elena-4.jpg', 'nia-1.jpg', 'sam-5.jpg', 'jordan-3.jpg', 'priya-1.jpg', 'claire-3.jpg', 'maya-3.jpg', 'nia-2.jpg', 'priya-4.jpg', 'maya-2.jpg'];
+
+const photo = (f, alt = '', tint = '#5b4436', tag = '', cls = '') => `<div class="photo ${cls}" style="--tint:${tint}"><img src="${P + f}" alt="${alt}" loading="lazy" onerror="this.classList.add('missing')">${tag ? `<span class="tag">${tag}</span>` : ''}</div>`;
+document.querySelectorAll('img[data-src]').forEach(i => { i.onerror = () => i.classList.add('missing'); i.src = P + i.dataset.src; });
+document.querySelectorAll('.stagger').forEach(g => [...g.children].forEach((c, n) => c.style.getPropertyValue('--i') || c.style.setProperty('--i', n)));
+const reduced = () => document.documentElement.classList.contains('rm');
+
+// Landing: a vanity mirror that cycles through every hair type, bulbs breathing around it.
+const bulbs = document.getElementById('bulbs');
+for (let k = 0; k < 14; k++) {
+  const t = k / 13, b = document.createElement('i'); b.style.setProperty('--k', k);
+  // bulbs up the left side, over the arch, down the right side
+  const ang = Math.PI * (1 - t);
+  if (t < .2) { b.style.left = '-4px'; b.style.top = `${100 - t * 5 * 55}%`; }
+  else if (t > .8) { b.style.right = '-4px'; b.style.top = `${45 + (t - .8) * 5 * 55}%`; }
+  else { const a = Math.PI * (1 - (t - .2) / .6); b.style.left = `calc(50% + ${Math.cos(a) * 52}% - 4px)`; b.style.top = `calc(${45 - Math.sin(a) * 45}% - 4px)`; }
+  bulbs.append(b);
+}
+const mirror = document.getElementById('mirror');
+mirror.innerHTML = MIRROR.map(([f]) => photo(f)).join('');
+let mi = 0;
+const cap = document.getElementById('mirrorCap');
+function cycleMirror() { [...mirror.children].forEach((c, n) => c.classList.toggle('on', n === mi)); cap.textContent = MIRROR[mi][1]; mi = (mi + 1) % MIRROR.length; }
+cycleMirror(); setInterval(() => { if (!reduced()) cycleMirror(); }, 3200);
+
+// Hair-type rows with "glow-select".
+const typesEl = document.getElementById('types');
+typesEl.innerHTML = TYPES.map(t => `<button class="trow" role="radio" aria-checked="false"><span class="halo"></span><svg class="g" viewBox="0 0 48 48" aria-hidden="true"><path d="${t.d}"/></svg><span><span class="nm">${t.name}</span><span class="hn">${t.hint}</span></span><span class="radio" aria-hidden="true"></span></button>`).join('');
+typesEl.addEventListener('click', e => {
+  const b = e.target.closest('.trow'); if (!b) return;
+  const r = b.getBoundingClientRect(), h = b.querySelector('.halo');
+  h.style.left = (e.clientX - r.left) + 'px'; h.style.top = (e.clientY - r.top) + 'px';
+  typesEl.querySelectorAll('.trow').forEach(x => { x.setAttribute('aria-checked', x === b); x.classList.remove('lit'); });
+  void b.offsetWidth; b.classList.add('lit');
+  setTimeout(() => go('quiz-photo'), 420);
+});
+
+document.getElementById('pick').onclick = function () {
+  this.style.border = '0'; this.innerHTML = photo('maya-4.jpg', 'Your inspiration photo: a curly shag', '#7a5a44').replace('class="photo ', 'style="position:absolute;inset:0" class="photo ');
+  const f = document.getElementById('findBtn'); f.disabled = false; f.style.opacity = 1;
+};
+
+let current = 'landing', hist = [];
+function go(id) {
+  if (id === 'back') id = hist.pop() || 'landing'; else hist.push(current);
+  if (id === current) return;
+  const from = document.getElementById(current), to = document.getElementById(id);
+  to.scrollTop = 0; to.classList.remove('active', 'reveal-go'); void to.offsetWidth;
+  from.classList.remove('active'); from.classList.add('leaving'); to.classList.add('entering');
+  setTimeout(() => { from.classList.remove('leaving'); to.classList.remove('entering'); to.classList.add('active'); }, reduced() ? 0 : 880);
+  current = id;
+  document.querySelectorAll('.devbar [data-go]').forEach(b => b.setAttribute('aria-pressed', b.dataset.go === id));
+  if (id === 'matching') runMatching();
+  if (id === 'reveal') requestAnimationFrame(() => to.classList.add('reveal-go'));
+  if (id === 'quiz-type') typesEl.querySelectorAll('.trow').forEach(x => x.setAttribute('aria-checked', 'false'));
+}
+document.addEventListener('click', e => { const t = e.target.closest('[data-go]'); if (t && !t.disabled) go(t.dataset.go); });
+
+// Matching: the ring light fills; inside it, stylists' work flickers past your photo; the line under it narrates.
+let timers = [];
+function runMatching() {
+  timers.forEach(clearTimeout); timers = [];
+  const inner = document.getElementById('ringInner'), ring = document.getElementById('ring'), line = document.getElementById('mline');
+  inner.innerHTML = photo('maya-4.jpg', '', '#7a5a44', '', 'mine') + CANDS.map(f => photo(f, '', '#3a2a2a', '', 'cand')).join('');
+  ring.classList.remove('go'); void ring.offsetWidth;
+  const k = reduced() ? .25 : 1, at = (ms, fn) => timers.push(setTimeout(fn, ms * k));
+  const say = (t, s) => { line.innerHTML = `<div class="swap"><p>${t}</p><small>${s}</small></div>`; };
+  say('Reading your photo', 'Curly, medium strands, shoulder length');
+  at(100, () => ring.classList.add('go'));
+  const cands = inner.querySelectorAll('.cand');
+  if (!reduced()) cands.forEach((c, n) => { at(1100 + n * 190, () => { cands.forEach(x => x.classList.remove('on')); c.classList.add('on'); }); });
+  at(1000, () => say('Looking through 214 photos of curly cuts', 'By 23 stylists at Salon Lofts'));
+  at(2900, () => say('Choosing your closest stylists', 'Similar cuts, on hair like yours'));
+  at(4000, () => { if (current === 'matching') go('reveal'); });
+}
+
+document.getElementById('picks').innerHTML = MATCHES.map((m, i) => `
+  <article class="pick" style="--i:${i}" aria-label="Pick ${i + 1}: ${m.name}">
+    <div class="hero"><div class="photo arch" style="--tint:${m.tint}"><img src="${P + m.hero}" alt="${m.name}'s work" onerror="this.classList.add('missing')"><span class="sweep"></span></div><span class="sample">Sample stylist</span></div>
+    <div class="info">
+      <h2 class="nm">${m.name}<span>${m.loc}</span></h2>
+      <p class="why">${m.why}<small>${m.sub}</small></p>
+      <div class="ev">${m.ev.map(([f, t]) => photo(f, `${m.name}'s work: ${t}`, m.tint, t)).join('')}</div>
+      <div class="acts"><a class="btn" href="#" onclick="return false">Book on ${m.site} <span aria-hidden="true">↗</span></a><button class="btn glass" data-go="portfolio" aria-label="See ${m.name}'s work">Work</button></div>
+    </div>
+  </article>`).join('');
+
+const DIR = [['Maya Brooks', 'Curly and coily cuts', 'maya-3.jpg'], ['Nia Carter', 'Colour for curls and coils', 'nia-1.jpg'], ['Sam Okafor', 'Locs and silk press', 'sam-4.jpg'], ['Tasha Greene', 'Braids, protective styles', 'tasha-1.jpg'], ['Priya Nair', 'Balayage on thick hair', 'priya-1.jpg'], ['Elena Ruiz', 'Precision cuts', 'elena-4.jpg']];
+document.getElementById('dgrid').innerHTML = DIR.map(([n, s, f]) => `<div class="dcard">${photo(f, `${n}'s work`, '#4a3329', '', 'arch')}<div><b>${n}</b></div><span>${s}</span><span class="sample" style="justify-self:start">Sample stylist</span></div>`).join('');
+
+const rmBtn = document.getElementById('rmToggle');
+const setRM = on => { document.documentElement.classList.toggle('rm', on); rmBtn.setAttribute('aria-pressed', on); };
+setRM(matchMedia('(prefers-reduced-motion: reduce)').matches);
+rmBtn.onclick = () => setRM(!reduced());
+</script>
+</body>
+</html>
