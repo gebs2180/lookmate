@@ -55,7 +55,7 @@ export function MatchStatusPage() {
       {view.stage === 'CLOSED' && <p className="alert alert-info">This request is closed.</p>}
       {view.stage !== 'PHOTO_NEEDED' && view.stage !== 'CLOSED' && <Progress stage={view.stage} />}
 
-      {view.stage === 'READY' && <Matches matches={view.matches} />}
+      {view.stage === 'READY' && <Matches token={token} matches={view.matches} />}
 
       <div className="panel">
         <h2>Your inspiration photo</h2>
@@ -83,7 +83,23 @@ function Progress({ stage }: { stage: ClientView['stage'] }) {
   )
 }
 
-function Matches({ matches }: { matches: ClientMatch[] }) {
+/**
+ * The tracked booking link: tracking records the click, then sends the client to the stylist's own booking page with
+ * UTM tags. Built here because only this page has the client's token (the server stores its hash).
+ */
+function bookPath(token: string, matchId: string) {
+  return apiPath`/api/public/book/${token}/${matchId}`
+}
+
+function Matches({ token, matches }: { token: string; matches: ClientMatch[] }) {
+  // Tell tracking the list was seen (the pilot's "viewed" metric); the server counts it once per request per day.
+  useEffect(() => {
+    if (matches.length === 0) return
+    publicApi('POST', apiPath`/api/public/match-requests/${token}/viewed`).catch(() => {
+      // A missed view is only a missing count; never bother the client with it.
+    })
+  }, [token, matches.length])
+
   if (matches.length === 0) {
     return <p>Your matches are being put together. Check back soon.</p>
   }
@@ -109,11 +125,9 @@ function Matches({ matches }: { matches: ClientMatch[] }) {
               </div>
             )}
             <div className="actions">
-              {m.bookUrl && (
-                <a className="button" href={m.bookUrl} target="_blank" rel="noreferrer noopener">
-                  Book with {m.stylistName}
-                </a>
-              )}
+              <a className="button" href={bookPath(token, m.matchId)} target="_blank" rel="noreferrer noopener">
+                Book with {m.stylistName}
+              </a>
               {m.instagram && (
                 <a className="button secondary" href={`https://instagram.com/${encodeURIComponent(m.instagram)}`} target="_blank" rel="noreferrer noopener">
                   Instagram

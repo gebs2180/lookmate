@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.lookmate.app.storage.PhotoMetadata;
 import com.lookmate.app.TestApi;
 import com.lookmate.app.TestcontainersConfiguration;
 import com.lookmate.app.identity.SecurityProperties;
@@ -156,7 +157,7 @@ class StylistFlowTest {
         // The stored original lost its location and device metadata.
         byte[] stored = store.read("photos", Photo.objectKey(UUID.fromString(orgId), UUID.fromString(curly)));
         assertThat(new String(stored, StandardCharsets.ISO_8859_1)).doesNotContain(TestImages.GPS_SECRET).doesNotContain("PhoneMaker");
-        assertThat(MetadataStripper.orientation(stored)).isEqualTo(6);
+        assertThat(PhotoMetadata.orientation(stored)).isEqualTo(6);
 
         api.get(home, as("auth0|ana")).andExpect(jsonPath("$.missing.length()").value(0))
                 .andExpect(jsonPath("$.readyPhotos").value(3)).andExpect(jsonPath("$.taggedPhotos").value(2));

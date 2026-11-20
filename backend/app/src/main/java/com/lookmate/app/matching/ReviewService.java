@@ -187,7 +187,7 @@ class ReviewService {
     /**
      * The client's list ({@code ClientMatchList}, served by intake through the client's link): ranked, unhidden matches
      * of stylists still LIVE, renumbered 1..n, with signed links to the evidence photos. No scores or reviewer notes.
-     * {@code bookUrl} is left to the client page, which has the token tracking's redirect needs.
+     * The booking link is built by the client page, which has the token tracking's redirect needs.
      */
     @Transactional(readOnly = true)
     List<ClientMatch> forClient(UUID requestId) {
@@ -203,7 +203,7 @@ class ReviewService {
             List<String> evidence = m.evidence().stream().map(photos::get)
                     .filter(p -> p != null && "READY".equals(p.status()))
                     .map(p -> url(p.objectKey()).toString()).toList();
-            out.add(new ClientMatch(m.id(), out.size() + 1, s.displayName(), s.locationName(), m.reason(), evidence, null, s.instagram()));
+            out.add(new ClientMatch(m.id(), out.size() + 1, s.displayName(), s.locationName(), m.reason(), evidence, s.instagram()));
         }
         return out;
     }

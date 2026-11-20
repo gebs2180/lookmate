@@ -67,12 +67,13 @@ public interface ClientMatchList {
 }
 
 public record ClientMatch(UUID matchId, int rank, String stylistName, String locationName, String reason,
-                          List<String> photoUrls, String bookUrl, String instagram) { }
+                          List<String> photoUrls, String instagram) { }
 ```
 
 The matching module provides the bean (matching -> intake is the only dependency direction). With no bean the list
-is empty. `photoUrls` must be short-lived presigned links; `bookUrl` should be the tracking module's redirect, so the
-click is recorded. The record's shape is a proposal: matching may add fields in its PR.
+is empty. `photoUrls` must be short-lived presigned links. The `/m/:token` page builds each "Book" link from its own token
+(`/api/public/book/{token}/{matchId}`, tracking's redirect, so the click is recorded) and posts
+`/api/public/match-requests/{token}/viewed` when the list shows.
 
 ## HTTP API (public, rate-limited per IP)
 
@@ -105,9 +106,7 @@ The rate limiter is in memory, so it is per instance: with more than one app con
 ## Photo metadata: one copy, in `storage`
 
 `com.lookmate.app.storage.PhotoMetadata.strip(bytes)` is the only metadata stripper in LookMate (and
-`PhotoMetadata.orientation(bytes)`). **Merge note for stylists:** `stylists/MetadataStripper` is the same code; on
-merge, delete it and its test and call `PhotoMetadata.strip` from `stylists/PhotoService` (same signature). Both
-branches add `com.drewnoakes:metadata-extractor:2.22.0` to `build.gradle.kts`: keep one line.
+`PhotoMetadata.orientation(bytes)`), used by both intake and stylists since the merge of 2026-11-20.
 
 ## Schema (V4)
 

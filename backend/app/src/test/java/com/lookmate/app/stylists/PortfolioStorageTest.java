@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.jayway.jsonpath.JsonPath;
+import com.lookmate.app.storage.PhotoMetadata;
 import com.lookmate.app.TestApi;
 import com.lookmate.app.TestcontainersConfiguration;
 import com.lookmate.app.identity.SecurityProperties;
@@ -67,7 +68,7 @@ class PortfolioStorageTest {
 
         byte[] served = api.download(JsonPath.read(confirmed, "$.url"));
         assertThat(new String(served, StandardCharsets.ISO_8859_1)).doesNotContain(TestImages.GPS_SECRET).doesNotContain("PhoneMaker");
-        assertThat(served).isEqualTo(MetadataStripper.strip(upload));
+        assertThat(served).isEqualTo(PhotoMetadata.strip(upload));
         assertThat(stylists.photoBytes(UUID.fromString(photoId))).hasValueSatisfying(b -> assertThat(b).isEqualTo(served));
 
         mvc.perform(delete("/api/orgs/" + orgId + "/photos/" + photoId).with(me)).andExpect(status().isNoContent());

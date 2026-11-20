@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import type { ClientView } from '../../api'
@@ -46,8 +46,8 @@ describe('MatchStatusPage', () => {
     expect(document.querySelector('meta[name="referrer"]')).toHaveAttribute('content', 'no-referrer')
   })
 
-  it('lists the matches once ready, as suggestions, with book links that send no referrer', async () => {
-    show(200, {
+  it('lists the matches once ready, as suggestions, with tracked book links that send no referrer', async () => {
+    const fetch = show(200, {
       ...BASE,
       stage: 'READY',
       matches: [
@@ -58,7 +58,6 @@ describe('MatchStatusPage', () => {
           locationName: 'Short North',
           reason: '12 similar cuts on curly hair',
           photoUrls: ['https://storage.test/p1'],
-          bookUrl: '/api/public/book/m1',
           instagram: 'curlstudio',
         },
       ],
@@ -66,8 +65,13 @@ describe('MatchStatusPage', () => {
     expect(await screen.findByText('12 similar cuts on curly hair')).toBeInTheDocument()
     expect(screen.getByText(/you can book any stylist you like/)).toBeInTheDocument()
     const book = screen.getByRole('link', { name: 'Book with Curl Studio' })
-    expect(book).toHaveAttribute('href', '/api/public/book/m1')
+    // The tracking redirect, built from the client's own token: it records the click, then goes to the stylist.
+    expect(book).toHaveAttribute('href', `/api/public/book/${TOKEN}/m1`)
     expect(book.getAttribute('rel')).toContain('noreferrer')
+    // Seeing the list counts as a view for the pilot metrics.
+    await waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith(`/api/public/match-requests/${TOKEN}/viewed`, expect.objectContaining({ method: 'POST' })),
+    )
   })
 
   it('asks for the photo when it never arrived', async () => {

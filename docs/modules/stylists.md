@@ -129,10 +129,8 @@ Photo cap: `lookmate.storage.max-photos-per-stylist` (READY + HIDDEN + recent pe
 
 ## Notes for the other modules
 
-- **Photo metadata.** `MetadataStripper` (package-private, ported from pokemans' `intake/ExactCopy`) copies a JPEG or
-  PNG byte for byte without EXIF/XMP/comments/text, keeping only the orientation. Intake needs the same for
-  inspiration photos; if it wants to share it, move it to `storage` as a public class in a follow-up rather than
-  calling into `stylists`. It uses `com.drewnoakes:metadata-extractor:2.22.0` (added to `backend/app/build.gradle.kts`).
+- **Photo metadata.** Stripped with `storage/PhotoMetadata`, shared with intake: a JPEG or PNG copied byte for byte
+  without EXIF/XMP/comments/text, keeping only the orientation.
 - **Width and height** are the stored pixel dimensions, before the EXIF orientation is applied (a portrait phone photo
   with orientation 6 reads as landscape here). Browsers apply the orientation when showing it.
 - **`sha256`** is of the upload as received (before stripping), so the same photo uploaded twice is caught as a
@@ -160,7 +158,4 @@ placeholders showing their tags, unless the admin picks real photos named as in 
 
 ## Follow-ups
 
-- **Share the metadata stripping (agreed 2026-11-20).** Once `stylists` and `intake` are merged, move
-  `MetadataStripper` (and its test) into `storage` as a public class, and have both modules use it instead of their
-  own copies.
 - **Abandoned upload slots (agreed to leave for now).** No cleanup job; see above.

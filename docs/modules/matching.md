@@ -12,8 +12,8 @@ Package `com.lookmate.app.matching`. Matching v1 and the admin review (brief, Mu
 - Publishing calls `MatchRequests.publish`, which sets PUBLISHED and emails the client a fresh link (MATCHES_READY).
   Matching sends no email itself.
 - Matching provides intake's `ClientMatchList` bean (`MatchListForClients`): the client's page,
-  `GET /api/public/match-requests/{token}` (intake's), shows the published matches. `bookUrl` is null: the web page
-  has the token tracking's redirect needs (`/api/public/book/{token}/{matchId}`).
+  `GET /api/public/match-requests/{token}` (intake's), shows the published matches. The web page builds each "Book"
+  link itself from its token (`/api/public/book/{token}/{matchId}`, tracking's redirect) and posts the view.
 - Still read with SQL (`CandidateQueries`): the inspiration photo's object key, for the admin's signed link (intake's
   service has no link for it), a `FOR UPDATE` lock on the request row while a reviewer edits, and the fairness report's
   counts by `client.hair_type`.

@@ -5,9 +5,9 @@ import java.util.UUID;
 
 /**
  * One stylist on a client's match list. {@code photoUrls} are short-lived presigned links to the portfolio photos that
- * earned the match; {@code bookUrl} is the tracking redirect to the stylist's own booking link. A proposal: the
- * matching module may add fields.
+ * earned the match. There is no booking URL here: the client page builds tracking's redirect
+ * ({@code /api/public/book/{token}/{matchId}}) from its own token, which the server only stores hashed.
  */
 public record ClientMatch(UUID matchId, int rank, String stylistName, String locationName, String reason, List<String> photoUrls,
-                          String bookUrl, String instagram) {
+                          String instagram) {
 }

@@ -1,5 +1,6 @@
 package com.lookmate.app.stylists;
 
+import com.lookmate.app.storage.PhotoMetadata;
 import com.lookmate.app.api.ApiException;
 import com.lookmate.app.identity.Consents;
 import com.lookmate.app.identity.CurrentUser;
@@ -181,7 +182,7 @@ class PhotoService {
         if (photos.existsByOrgIdAndSha256AndStatusInAndIdNot(orgId, sha256, KEPT, photo.getId())) {
             return refuse(photo, StylistError.DUPLICATE_PHOTO, "This photo is already in your portfolio.");
         }
-        byte[] clean = MetadataStripper.strip(bytes);
+        byte[] clean = PhotoMetadata.strip(bytes);
         if (clean == null) {
             return refuse(photo, StylistError.NOT_AN_IMAGE, "That file isn't a JPEG or PNG photo we can use.");
         }
