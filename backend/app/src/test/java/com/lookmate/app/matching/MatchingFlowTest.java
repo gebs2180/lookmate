@@ -9,13 +9,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.lookmate.app.TestApi;
 import com.lookmate.app.TestcontainersConfiguration;
 import com.lookmate.app.identity.SecurityProperties;
+import com.lookmate.app.storage.BlobStore;
+import java.security.MessageDigest;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
+import java.util.Base64;
+import java.util.HexFormat;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -37,32 +39,26 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * Matching end to end with the fake provider: the worker embeds, the ranker filters and ranks, the admin reviews and
  * publishes, and the client sees only what was published. The stylists' and intake's tables are seeded with SQL
- * (those modules are built in parallel); images come from an in-memory {@link ImageSource}.
+ * (stylists is built in parallel); requests go through intake's real {@code MatchRequests}. Photos are in memory.
  */
 @SpringBootTest(properties = {
         "lookmate.matching.worker.enabled=false",
         "lookmate.matching.worker.max-attempts=2",
-        "lookmate.matching.worker.retry-backoff=1h"})
+        "lookmate.matching.worker.retry-backoff=1h",
+        "lookmate.intake.rate-limit.reads-per-minute=1000"})
 @AutoConfigureMockMvc
 @Import({TestcontainersConfiguration.class, MatchingFlowTest.Images.class})
 @Testcontainers(disabledWithoutDocker = true)
 class MatchingFlowTest {
 
-    /** Object key to bytes; a key that isn't here can't be read. */
-    static final Map<String, byte[]> IMAGES = new ConcurrentHashMap<>();
+    static final MemoryBlobStore BLOBS = new MemoryBlobStore();
 
     @TestConfiguration(proxyBeanMethods = false)
     static class Images {
         @Bean
         @Primary
-        ImageSource testImages() {
-            return key -> {
-                byte[] b = IMAGES.get(key);
-                if (b == null) {
-                    throw new IllegalStateException("no such object");
-                }
-                return b;
-            };
+        BlobStore memoryBlobs() {
+            return BLOBS;
         }
     }
 
@@ -124,7 +120,7 @@ class MatchingFlowTest {
         UUID draft = stylist("Not Live Yet", market, "DRAFT");
         photo(draft, "CUT", "WAVY", LOOK);
 
-        String intakeToken = "intake-token-" + UUID.randomUUID();
+        String intakeToken = token();
         UUID request = request("WAVY", "CUT", LOOK, intakeToken, "client@example.com");
 
         job.runOnce();
@@ -132,7 +128,7 @@ class MatchingFlowTest {
         assertThat(statusOf(request)).isEqualTo("IN_REVIEW");
         var review = api.get("/api/admin/match-requests/" + request, api.admin()).andExpect(status().isOk())
                 .andExpect(jsonPath("$.request.hairType").value("WAVY"))
-                .andExpect(jsonPath("$.inspirationUrl").isNotEmpty())
+                .andExpect(jsonPath("$.inspirationUrl").value("https://storage.test/photos/inspiration/" + request + ".jpg?signed"))
                 .andExpect(jsonPath("$.matches.length()").value(3))
                 .andExpect(jsonPath("$.matches[0].orgId").value(wavyExpert.toString()))
                 .andExpect(jsonPath("$.matches[0].reason").value("3 similar cuts on wavy hair"))
@@ -148,9 +144,9 @@ class MatchingFlowTest {
         api.get("/api/admin/match-requests", api.admin())
                 .andExpect(jsonPath("$[?(@.id=='%s')].candidates".formatted(request)).value(3));
 
-        // Not yet published: the client's link works but shows nothing.
-        mvc.perform(get("/api/public/match-requests/" + intakeToken + "/matches")).andExpect(status().isOk())
-                .andExpect(jsonPath("$.published").value(false)).andExpect(jsonPath("$.matches.length()").value(0));
+        // Not yet published: the client's page (intake's) shows no matches.
+        mvc.perform(get("/api/public/match-requests/" + intakeToken)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.stage").value("MATCHING")).andExpect(jsonPath("$.matches.length()").value(0));
 
         // Review: hide one, reorder, add one by hand; refuse a stylist from another market and a duplicate.
         mvc.perform(put("/api/admin/match-requests/" + request + "/matches/" + luckyMatch).with(api.admin())
@@ -178,29 +174,26 @@ class MatchingFlowTest {
         api.postJson("/api/admin/match-requests/" + request + "/matches", "{\"orgId\":\"%s\"}".formatted(wavyExpert), api.admin())
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("ALREADY_MATCHED"));
 
-        // Publish: ranks 1..n over the visible ones; the email is queued (stored as skipped: sending is off in tests).
-        var published = api.postJson("/api/admin/match-requests/" + request + "/publish", "", api.admin()).andExpect(status().isOk())
-                .andExpect(jsonPath("$.review.request.status").value("PUBLISHED"))
-                .andExpect(jsonPath("$.emailQueued").value(true));
-        String clientPath = TestApi.read(published, "$.clientPath");
-        assertThat(jdbc.sql("select status from email_message where template = 'MATCHES_READY' and subject_id = ?").params(request)
-                .query(String.class).single()).isEqualTo("SKIPPED");
+        // Publish: ranks 1..n over the visible ones; intake emails the client (stored as skipped: sending is off in tests).
+        api.postJson("/api/admin/match-requests/" + request + "/publish", "", api.admin()).andExpect(status().isOk())
+                .andExpect(jsonPath("$.request.status").value("PUBLISHED"))
+                .andExpect(jsonPath("$.matches[?(@.hidden==false)].finalRank").value(org.hamcrest.Matchers.contains(1, 2, 3)));
+        assertThat(jdbc.sql("select count(*) from email_message where template = 'MATCHES_READY' and subject_id = ?").params(request)
+                .query(Integer.class).single()).isEqualTo(1);
         assertThat(jdbc.sql("select reviewed_by is not null and published_at is not null from match_request where id = ?").params(request)
                 .query(Boolean.class).single()).isTrue();
 
-        for (String token : List.of(intakeToken, clientPath.substring("/m/".length()))) {
-            mvc.perform(get("/api/public/match-requests/" + token + "/matches")).andExpect(status().isOk())
-                    .andExpect(jsonPath("$.published").value(true))
-                    .andExpect(jsonPath("$.matches.length()").value(3))
-                    .andExpect(jsonPath("$.matches[0].orgId").value(curly.toString()))
-                    .andExpect(jsonPath("$.matches[0].rank").value(1))
-                    .andExpect(jsonPath("$.matches[1].orgId").value(wavyExpert.toString()))
-                    .andExpect(jsonPath("$.matches[2].orgId").value(coily.toString()))
-                    .andExpect(jsonPath("$.matches[0].photos[0].url").isNotEmpty())
-                    .andExpect(jsonPath("$..adminNote").isEmpty())
-                    .andExpect(jsonPath("$..score").isEmpty());
-        }
-        mvc.perform(get("/api/public/match-requests/not-a-real-token-at-all-0000/matches")).andExpect(status().isNotFound());
+        mvc.perform(get("/api/public/match-requests/" + intakeToken)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.stage").value("READY"))
+                .andExpect(jsonPath("$.matches.length()").value(3))
+                .andExpect(jsonPath("$.matches[0].stylistName").value("Curl Neighbour"))
+                .andExpect(jsonPath("$.matches[0].rank").value(1))
+                .andExpect(jsonPath("$.matches[0].reason").value("3 similar cuts on curly hair"))
+                .andExpect(jsonPath("$.matches[0].photoUrls[0]").isNotEmpty())
+                .andExpect(jsonPath("$.matches[1].stylistName").value("Wavy Expert"))
+                .andExpect(jsonPath("$.matches[2].stylistName").value("Coily Only"))
+                .andExpect(jsonPath("$..adminNote").isEmpty())
+                .andExpect(jsonPath("$..score").isEmpty());
 
         // Published means done: further changes are refused.
         api.postJson("/api/admin/match-requests/" + request + "/publish", "", api.admin())
@@ -216,7 +209,7 @@ class MatchingFlowTest {
 
     @Test
     void onlyTheAdminReachesTheReviewEndpoints() throws Exception {
-        UUID request = request("CURLY", "CUT", LOOK, "token-" + UUID.randomUUID(), null);
+        UUID request = request("CURLY", "CUT", LOOK, token(), null);
         String stylistOrg = api.stylistOrg("A Stylist", "auth0|matching-stylist");
         var stylist = api.user("auth0|matching-stylist", List.of());
         api.get("/api/admin/match-requests", stylist).andExpect(status().isForbidden());
@@ -238,7 +231,7 @@ class MatchingFlowTest {
     void aRequestWithNoCandidatesGoesToReviewWithAReasonAndCantBePublishedEmpty() throws Exception {
         UUID straight = stylist("Straight Only", market, "LIVE");
         photo(straight, "CUT", "STRAIGHT", LOOK);
-        UUID request = request("COILY", "CUT", LOOK, "token-" + UUID.randomUUID(), null);
+        UUID request = request("COILY", "CUT", LOOK, token(), null);
         job.runOnce();
         assertThat(statusOf(request)).isEqualTo("IN_REVIEW");
         api.get("/api/admin/match-requests/" + request, api.admin())
@@ -251,18 +244,20 @@ class MatchingFlowTest {
     }
 
     @Test
-    void anInspirationPhotoThatCantBeReadFailsTheRequestAfterTheLastAttempt() {
-        UUID request = request("WAVY", "CUT", null, "token-" + UUID.randomUUID(), null);
+    void anInspirationPhotoThatCantBeReadIsRetriedWhenIntakeHandsItBackThenFails() {
+        UUID request = request("WAVY", "CUT", null, token(), null);
         job.runOnce();
         assertThat(statusOf(request)).isEqualTo("MATCHING");
-        job.runOnce(); // backing off: not tried again yet
-        assertThat(jdbc.sql("select attempts from embedding_attempt where subject_id = ?").params(request).query(Integer.class).single())
-                .isEqualTo(1);
-        jdbc.sql("update embedding_attempt set next_attempt_at = now() - interval '1 second' where subject_id = ?").params(request).update();
+        job.runOnce(); // still MATCHING and recently touched: intake doesn't hand it back yet
+        assertThat(attempts(request)).isEqualTo(1);
+        jdbc.sql("update match_request set updated_at = now() - interval '1 hour' where id = ?").params(request).update();
         job.runOnce();
+        assertThat(attempts(request)).isEqualTo(2);
         assertThat(statusOf(request)).isEqualTo("FAILED");
-        assertThat(jdbc.sql("select attempts from embedding_attempt where subject_id = ?").params(request).query(Integer.class).single())
-                .isEqualTo(2);
+    }
+
+    private int attempts(UUID request) {
+        return jdbc.sql("select attempts from embedding_attempt where subject_id = ?").params(request).query(Integer.class).single();
     }
 
     @Test
@@ -314,7 +309,7 @@ class MatchingFlowTest {
     private void photo(UUID org, String service, String hairType, byte[] image) {
         UUID id = UUID.randomUUID();
         String key = "portfolio/" + org + "/" + id + ".jpg";
-        IMAGES.put(key, image);
+        BLOBS.objects.put(key, image);
         jdbc.sql("""
                         insert into portfolio_photo (id, org_id, object_key, content_type, size_bytes, status, service, hair_type, position,
                           uploaded_by, created_at, updated_at)
@@ -324,7 +319,7 @@ class MatchingFlowTest {
                 .update();
     }
 
-    /** A request in MATCHING, as intake leaves it once the inspiration photo is uploaded. Null image: unreadable. */
+    /** A request as intake leaves it once the inspiration photo is confirmed: NEW. Null image: unreadable. */
     private UUID request(String hairType, String service, byte[] image, String token, String email) {
         UUID client = UUID.randomUUID();
         jdbc.sql("insert into client (id, email, first_name, hair_type, market, created_at) values (?, ?, 'Sam', ?, ?, now())")
@@ -332,15 +327,35 @@ class MatchingFlowTest {
         UUID id = UUID.randomUUID();
         String key = "inspiration/" + id + ".jpg";
         if (image != null) {
-            IMAGES.put(key, image);
+            BLOBS.objects.put(key, image);
         }
         jdbc.sql("""
                         insert into match_request (id, client_id, market, service, inspiration_object_key, inspiration_content_type,
-                          access_token_hash, status, created_at, updated_at)
-                        values (?, ?, ?, ?, ?, 'image/jpeg', ?, 'MATCHING', now(), now())
+                          inspiration_sha256, access_token_hash, status, created_at, updated_at)
+                        values (?, ?, ?, ?, ?, 'image/jpeg', 'confirmed', ?, 'NEW', now(), now())
                         """)
-                .params(id, client, market, service, key, MatchStore.hash(token)).update();
+                .params(id, client, market, service, key, sha256(token)).update();
+        jdbc.sql("""
+                        insert into match_request_link (token_hash, match_request_id, purpose, created_at, expires_at)
+                        values (?, ?, 'CREATED', now(), now() + interval '1 day')
+                        """)
+                .params(sha256(token), id).update();
         return id;
+    }
+
+    /** A client link token in intake's shape: 32 random bytes, base64url. */
+    private static String token() {
+        byte[] b = new byte[32];
+        new java.security.SecureRandom().nextBytes(b);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(b);
+    }
+
+    private static String sha256(String s) {
+        try {
+            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(s.getBytes(StandardCharsets.UTF_8)));
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private String statusOf(UUID request) {

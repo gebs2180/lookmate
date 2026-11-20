@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-/** One pass of the matching pipeline: embed what's missing, then rank what's ready. Safe to run on several instances. */
+/** One pass of the matching pipeline: embed new portfolio photos, then match waiting requests. Safe on several instances. */
 @Component
 class MatchingJob {
 
@@ -22,11 +22,10 @@ class MatchingJob {
     }
 
     void runOnce() {
-        // Inspiration photos first: a waiting client matters more than a new portfolio photo. Each stage runs even if
-        // an earlier one failed, so a provider outage on portfolio photos doesn't stop ranking what's already embedded.
-        stage("inspiration embedding", worker::inspirationBatch);
+        // Portfolio photos first, so a request is ranked against the newest work. Each stage runs even if the other
+        // failed, so a provider outage on portfolio photos doesn't stop ranking against what's already embedded.
         stage("portfolio embedding", worker::portfolioBatch);
-        stage("ranking", () -> ranker.rankBatch(10));
+        stage("matching requests", () -> ranker.rankBatch(10));
     }
 
     private static void stage(String name, java.util.function.IntSupplier batch) {

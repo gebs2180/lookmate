@@ -1,6 +1,7 @@
 package com.lookmate.app.matching;
 
 import com.lookmate.app.identity.CurrentUser;
+import com.lookmate.app.intake.MatchRequests;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -49,7 +50,7 @@ class AdminMatchController {
     @GetMapping("/api/admin/match-requests")
     List<ReviewService.QueueItem> queue(
             @RequestParam(defaultValue = "IN_REVIEW") @Pattern(regexp = "MATCHING|IN_REVIEW|PUBLISHED|FAILED") String status) {
-        return review.queue(status);
+        return review.queue(MatchRequests.Status.valueOf(status));
     }
 
     @GetMapping("/api/admin/match-requests/{id}")
@@ -79,7 +80,7 @@ class AdminMatchController {
     }
 
     @PostMapping("/api/admin/match-requests/{id}/publish")
-    ReviewService.Published publish(@PathVariable UUID id) {
+    ReviewService.Review publish(@PathVariable UUID id) {
         return review.publish(id, currentUser.id());
     }
 

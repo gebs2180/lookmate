@@ -219,7 +219,6 @@ export type MatchView = {
 
 export type MatchReview = { request: MatchRequestView; inspirationUrl: string | null; matches: MatchView[] }
 export type StylistOption = { orgId: string; displayName: string; locationName: string | null; alreadyMatched: boolean }
-export type PublishedMatches = { review: MatchReview; clientPath: string; emailQueued: boolean }
 
 export type FairnessRow = {
   hairType: HairType | 'UNKNOWN'

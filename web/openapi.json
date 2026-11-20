@@ -157,6 +157,40 @@
         },
         "required" : [ "bookedRequests", "clickedRequests", "failed", "hairType", "meanTopScore", "noSystemMatches", "published", "requests", "reviewed", "shownMatches", "withAdminChanges" ]
       },
+      "ClientMatch" : {
+        "properties" : {
+          "bookUrl" : {
+            "type" : "string"
+          },
+          "instagram" : {
+            "type" : "string"
+          },
+          "locationName" : {
+            "type" : "string"
+          },
+          "matchId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "photoUrls" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "rank" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "stylistName" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "bookUrl", "instagram", "locationName", "matchId", "photoUrls", "rank", "reason", "stylistName" ]
+      },
       "ConsentControllerAcceptRequest" : {
         "properties" : {
           "version" : {
@@ -180,6 +214,162 @@
           }
         },
         "required" : [ "acceptedAt", "text", "version" ]
+      },
+      "IntakeControllerCreateRequest" : {
+        "properties" : {
+          "budgetTier" : {
+            "format" : "int32",
+            "maximum" : 4,
+            "minimum" : 1,
+            "type" : "integer"
+          },
+          "email" : {
+            "format" : "email",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "firstName" : {
+            "maxLength" : 40,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "hairType" : {
+            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
+            "type" : "string"
+          },
+          "inspiration" : {
+            "$ref" : "#/components/schemas/IntakeControllerPhotoFile"
+          },
+          "length" : {
+            "enum" : [ "PIXIE", "SHORT", "MEDIUM", "LONG" ],
+            "type" : "string"
+          },
+          "neighborhood" : {
+            "maxLength" : 80,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "pastIssues" : {
+            "items" : {
+              "enum" : [ "DIDNT_LISTEN", "NOT_THE_LOOK_I_ASKED_FOR", "CUT_TOO_SHORT", "COLOR_CAME_OUT_WRONG", "DAMAGED_MY_HAIR", "NO_EXPERIENCE_WITH_MY_HAIR_TYPE", "RUSHED", "PRICE_SURPRISE", "HARD_TO_BOOK", "OTHER" ],
+              "type" : "string"
+            },
+            "maxItems" : 10,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "pastIssuesNote" : {
+            "maxLength" : 500,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "service" : {
+            "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
+            "type" : "string"
+          },
+          "texture" : {
+            "enum" : [ "FINE", "MEDIUM", "THICK" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "budgetTier", "email", "firstName", "hairType", "inspiration", "length", "neighborhood", "pastIssues", "pastIssuesNote", "service", "texture" ]
+      },
+      "IntakeControllerCreated" : {
+        "properties" : {
+          "statusPath" : {
+            "type" : "string"
+          },
+          "token" : {
+            "type" : "string"
+          },
+          "upload" : {
+            "$ref" : "#/components/schemas/IntakeControllerUploadSlot"
+          }
+        },
+        "required" : [ "statusPath", "token", "upload" ]
+      },
+      "IntakeControllerPhotoFile" : {
+        "properties" : {
+          "contentType" : {
+            "minLength" : 1,
+            "type" : "string"
+          },
+          "sizeBytes" : {
+            "format" : "int64",
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        },
+        "required" : [ "contentType", "sizeBytes" ]
+      },
+      "IntakeControllerUploadSlot" : {
+        "properties" : {
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "headers" : {
+            "additionalProperties" : {
+              "type" : "string"
+            },
+            "type" : "object"
+          },
+          "method" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "expiresAt", "headers", "method", "url" ]
+      },
+      "IntakeServiceClientView" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "firstName" : {
+            "type" : "string"
+          },
+          "hairType" : {
+            "type" : "string"
+          },
+          "length" : {
+            "type" : "string"
+          },
+          "matches" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ClientMatch"
+            },
+            "type" : "array"
+          },
+          "photoDeleted" : {
+            "type" : "boolean"
+          },
+          "photoDeletesAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "photoUploaded" : {
+            "type" : "boolean"
+          },
+          "photoUrl" : {
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          },
+          "stage" : {
+            "enum" : [ "PHOTO_NEEDED", "RECEIVED", "MATCHING", "READY", "CLOSED" ],
+            "type" : "string"
+          },
+          "texture" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "createdAt", "firstName", "hairType", "length", "matches", "photoDeleted", "photoDeletesAt", "photoUploaded", "photoUrl", "service", "stage", "texture" ]
       },
       "InviteControllerAccepted" : {
         "properties" : {
@@ -306,68 +496,6 @@
         },
         "required" : [ "orgId", "orgName", "orgType", "role" ]
       },
-      "ReviewServiceClientMatch" : {
-        "properties" : {
-          "instagram" : {
-            "type" : "string"
-          },
-          "locationName" : {
-            "type" : "string"
-          },
-          "matchId" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "orgId" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "photos" : {
-            "items" : {
-              "$ref" : "#/components/schemas/ReviewServiceClientPhoto"
-            },
-            "type" : "array"
-          },
-          "rank" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "reason" : {
-            "type" : "string"
-          },
-          "stylistName" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "instagram", "locationName", "matchId", "orgId", "photos", "rank", "reason", "stylistName" ]
-      },
-      "ReviewServiceClientMatches" : {
-        "properties" : {
-          "matches" : {
-            "items" : {
-              "$ref" : "#/components/schemas/ReviewServiceClientMatch"
-            },
-            "type" : "array"
-          },
-          "published" : {
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "matches", "published" ]
-      },
-      "ReviewServiceClientPhoto" : {
-        "properties" : {
-          "id" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "url" : {
-            "format" : "uri",
-            "type" : "string"
-          }
-        },
-        "required" : [ "id", "url" ]
-      },
       "ReviewServiceEvidencePhoto" : {
         "properties" : {
           "hairType" : {
@@ -462,20 +590,6 @@
           }
         },
         "required" : [ "adminNote", "adminOverride", "evidence", "finalRank", "hidden", "id", "instagram", "locationName", "orgId", "reason", "score", "source", "stylistLive", "stylistName", "systemRank" ]
-      },
-      "ReviewServicePublished" : {
-        "properties" : {
-          "clientPath" : {
-            "type" : "string"
-          },
-          "emailQueued" : {
-            "type" : "boolean"
-          },
-          "review" : {
-            "$ref" : "#/components/schemas/ReviewServiceReview"
-          }
-        },
-        "required" : [ "clientPath", "emailQueued", "review" ]
       },
       "ReviewServiceQueueItem" : {
         "properties" : {
@@ -857,7 +971,7 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ReviewServicePublished"
+                  "$ref" : "#/components/schemas/ReviewServiceReview"
                 }
               }
             },
@@ -918,7 +1032,7 @@
         "tags" : [ "admin-org-controller" ]
       },
       "post" : {
-        "operationId" : "create",
+        "operationId" : "create_1",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -1227,9 +1341,37 @@
         "tags" : [ "consent-controller" ]
       }
     },
-    "/api/public/match-requests/{token}/matches" : {
+    "/api/public/match-requests" : {
+      "post" : {
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/IntakeControllerCreateRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/IntakeControllerCreated"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "intake-controller" ]
+      }
+    },
+    "/api/public/match-requests/{token}" : {
       "get" : {
-        "operationId" : "matches",
+        "operationId" : "view",
         "parameters" : [ {
           "in" : "path",
           "name" : "token",
@@ -1243,14 +1385,76 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ReviewServiceClientMatches"
+                  "$ref" : "#/components/schemas/IntakeServiceClientView"
                 }
               }
             },
             "description" : "OK"
           }
         },
-        "tags" : [ "public-match-controller" ]
+        "tags" : [ "intake-controller" ]
+      }
+    },
+    "/api/public/match-requests/{token}/inspiration" : {
+      "post" : {
+        "operationId" : "uploadSlot",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/IntakeControllerPhotoFile"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/IntakeControllerUploadSlot"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "intake-controller" ]
+      }
+    },
+    "/api/public/match-requests/{token}/inspiration/confirm" : {
+      "post" : {
+        "operationId" : "confirm",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/IntakeServiceClientView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "intake-controller" ]
       }
     }
   },

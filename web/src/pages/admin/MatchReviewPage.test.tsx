@@ -89,21 +89,19 @@ describe('MatchReviewPage', () => {
     expect(within(items[0]).getByRole('heading', { name: 'Bo' })).toBeInTheDocument()
   })
 
-  it('publishes after confirming and shows the client link', async () => {
+  it('publishes after confirming', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true)
     const fetch = vi
       .fn()
       .mockResolvedValueOnce(respond(200, review([match('a', 'Ana', 1), match('b', 'Bo', 2, { hidden: true })])))
-      .mockResolvedValueOnce(
-        respond(200, { review: review([match('a', 'Ana', 1)], 'PUBLISHED'), clientPath: '/m/tok', emailQueued: true }),
-      )
+      .mockResolvedValueOnce(respond(200, review([match('a', 'Ana', 1)], 'PUBLISHED')))
     vi.stubGlobal('fetch', fetch)
     show()
     expect(await screen.findByRole('heading', { name: 'Stylists (1 shown)' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Publish to client' }))
     expect(window.confirm).toHaveBeenCalledWith("Publish 1 stylist to the client? They'll be emailed a link.")
     expect(fetch.mock.calls[1][0]).toBe('/api/admin/match-requests/req-1/publish')
-    expect(await screen.findByRole('status')).toHaveTextContent('/m/tok')
+    expect(await screen.findByRole('status')).toHaveTextContent('Published')
     expect(screen.queryByRole('button', { name: 'Publish to client' })).not.toBeInTheDocument()
   })
 

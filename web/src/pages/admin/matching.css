@@ -124,10 +124,6 @@
   margin: 0;
 }
 
-.client-link {
-  word-break: break-all;
-}
-
 .review-page .sr-only {
   position: absolute;
   width: 1px;

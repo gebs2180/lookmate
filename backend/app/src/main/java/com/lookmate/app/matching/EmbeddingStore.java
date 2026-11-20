@@ -27,6 +27,13 @@ class EmbeddingStore {
                 .params(subject.name(), id, model).update();
     }
 
+    boolean has(Subject subject, UUID id, String model) {
+        String sql = subject == Subject.PORTFOLIO_PHOTO
+                ? "select exists (select 1 from portfolio_photo_embedding where photo_id = ? and model = ?)"
+                : "select exists (select 1 from match_request_embedding where match_request_id = ? and model = ?)";
+        return Boolean.TRUE.equals(jdbc.sql(sql).params(id, model).query(Boolean.class).single());
+    }
+
     /** Records a failed try and when to try again (backoff times attempts). Returns the attempts so far. */
     int failed(Subject subject, UUID id, String model, String error, java.time.Duration backoff, Instant now) {
         return jdbc.sql("""

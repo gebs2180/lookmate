@@ -2,10 +2,10 @@ package com.lookmate.app.matching;
 
 import com.lookmate.app.api.ApiException;
 import com.lookmate.app.matching.CandidateQueries.Photo;
-import com.lookmate.app.matching.CandidateQueries.RequestFacts;
+import com.lookmate.app.intake.ClientMatch;
+import com.lookmate.app.intake.MatchRequests;
 import com.lookmate.app.matching.CandidateQueries.Stylist;
 import com.lookmate.app.matching.MatchStore.MatchRow;
-import com.lookmate.app.notify.ClientNotifier;
 import com.lookmate.app.storage.BlobStore;
 import com.lookmate.app.storage.StorageProperties;
 import java.net.URI;
@@ -60,52 +60,36 @@ class ReviewService {
     record StylistOption(UUID orgId, String displayName, String locationName, boolean alreadyMatched) {
     }
 
-    /** {@code clientPath} is the client's link ({@code /m/<token>}), shown once, for sharing by hand if email is off. */
-    record Published(Review review, String clientPath, boolean emailQueued) {
-    }
-
-    record ClientPhoto(UUID id, URI url) {
-    }
-
-    record ClientMatch(UUID matchId, int rank, UUID orgId, String stylistName, String locationName, String instagram, String reason,
-                       List<ClientPhoto> photos) {
-    }
-
-    /** {@code published} false: the list isn't ready yet, and {@code matches} is empty. */
-    record ClientMatches(boolean published, List<ClientMatch> matches) {
-    }
-
     record FairnessReport(String market, Instant since, List<CandidateQueries.FairnessRow> rows) {
     }
 
     private final CandidateQueries queries;
     private final MatchStore matches;
-    private final RequestTransitions transitions;
+    private final MatchRequests requests;
     private final EmbeddingProvider provider;
     private final MatchingProperties properties;
     private final BlobStore blobs;
     private final StorageProperties storage;
-    private final ClientNotifier notifier;
     private final Clock clock;
 
-    ReviewService(CandidateQueries queries, MatchStore matches, RequestTransitions transitions, EmbeddingProvider provider,
-                  MatchingProperties properties, BlobStore blobs, StorageProperties storage, ClientNotifier notifier, Optional<Clock> clock) {
+    ReviewService(CandidateQueries queries, MatchStore matches, MatchRequests requests, EmbeddingProvider provider,
+                  MatchingProperties properties, BlobStore blobs, StorageProperties storage, Optional<Clock> clock) {
         this.queries = queries;
         this.matches = matches;
-        this.transitions = transitions;
+        this.requests = requests;
         this.provider = provider;
         this.properties = properties;
         this.blobs = blobs;
         this.storage = storage;
-        this.notifier = notifier;
         this.clock = clock.orElse(Clock.systemUTC());
     }
 
     @Transactional(readOnly = true)
-    List<QueueItem> queue(String status) {
-        return queries.requestsInStatus(status, 200).stream()
-                .map(r -> new QueueItem(r.id(), r.status(), r.statusReason(), r.market(), r.service(), r.hairType(), r.texture(), r.length(),
-                        r.firstName(), r.createdAt(), matches.forRequest(r.id()).size()))
+    List<QueueItem> queue(MatchRequests.Status status) {
+        // Intake lists newest first; the review queue works oldest first.
+        return requests.list(status, 200).reversed().stream()
+                .map(r -> new QueueItem(r.id(), r.status().name(), r.statusReason(), r.market(), r.service(), HairType.parse(r.hairType()),
+                        r.texture(), r.length(), r.firstName(), r.createdAt(), matches.forRequest(r.id()).size()))
                 .toList();
     }
 
@@ -116,7 +100,7 @@ class ReviewService {
 
     @Transactional(readOnly = true)
     List<StylistOption> stylistsToAdd(UUID requestId) {
-        RequestFacts request = request(requestId);
+        MatchRequests.Request request = request(requestId);
         Set<UUID> matched = matches.forRequest(requestId).stream().map(MatchRow::orgId).collect(Collectors.toSet());
         return queries.liveStylists(request.market()).stream()
                 .map(s -> new StylistOption(s.orgId(), s.displayName(), s.locationName(), matched.contains(s.orgId())))
@@ -157,7 +141,7 @@ class ReviewService {
     @Transactional
     Review add(UUID requestId, UUID orgId, String note) {
         lockInReview(requestId);
-        RequestFacts request = request(requestId);
+        MatchRequests.Request request = request(requestId);
         Stylist stylist = queries.stylists(List.of(orgId)).stream().findFirst()
                 .filter(s -> "LIVE".equals(s.status()) && request.market().equals(s.market()))
                 .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, Code.STYLIST_NOT_AVAILABLE,
@@ -172,11 +156,11 @@ class ReviewService {
     }
 
     /**
-     * Publishes the visible matches in the reviewer's order (ranks 1..n), and queues the "your matches are ready" email
-     * with a new client link.
+     * Publishes the visible matches in the reviewer's order (ranks 1..n). Intake moves the request to PUBLISHED and
+     * emails the client a fresh link to them, in this transaction.
      */
     @Transactional
-    Published publish(UUID requestId, UUID reviewer) {
+    Review publish(UUID requestId, UUID reviewer) {
         lockInReview(requestId);
         Instant now = clock.instant();
         List<MatchRow> rows = matches.forRequest(requestId);
@@ -190,11 +174,8 @@ class ReviewService {
                 matches.setFinalRank(row.id(), finalRank, false, now);
             }
         }
-        transitions.published(requestId, reviewer, now);
-        String token = matches.newLink(requestId, now);
-        var contact = queries.contact(requestId).orElseThrow();
-        boolean queued = notifier.matchesReady(requestId, contact.email(), contact.firstName(), token, now);
-        return new Published(view(request(requestId)), "/m/" + token, queued);
+        requests.publish(requestId, reviewer);
+        return view(request(requestId));
     }
 
     @Transactional(readOnly = true)
@@ -203,15 +184,13 @@ class ReviewService {
         return new FairnessReport(market, since, queries.fairness(market, since));
     }
 
-    /** The client's view through their link token. 404 for an unknown token. */
+    /**
+     * The client's list ({@code ClientMatchList}, served by intake through the client's link): ranked, unhidden matches
+     * of stylists still LIVE, renumbered 1..n, with signed links to the evidence photos. No scores or reviewer notes.
+     * {@code bookUrl} is left to the client page, which has the token tracking's redirect needs.
+     */
     @Transactional(readOnly = true)
-    ClientMatches forClient(String token) {
-        UUID requestId = queries.requestByTokenHash(MatchStore.hash(token))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        RequestFacts request = request(requestId);
-        if (request.publishedAt() == null) {
-            return new ClientMatches(false, List.of());
-        }
+    List<ClientMatch> forClient(UUID requestId) {
         List<MatchRow> rows = matches.published(requestId);
         Map<UUID, Stylist> stylists = stylistsOf(rows);
         Map<UUID, Photo> photos = photosOf(rows);
@@ -221,30 +200,27 @@ class ReviewService {
             if (s == null || !"LIVE".equals(s.status())) {
                 continue; // a stylist who left or was hidden since
             }
-            List<ClientPhoto> evidence = m.evidence().stream().map(photos::get)
+            List<String> evidence = m.evidence().stream().map(photos::get)
                     .filter(p -> p != null && "READY".equals(p.status()))
-                    .map(p -> new ClientPhoto(p.id(), url(p.objectKey()))).toList();
-            out.add(new ClientMatch(m.id(), out.size() + 1, m.orgId(), s.displayName(), s.locationName(), s.instagram(), m.reason(), evidence));
+                    .map(p -> url(p.objectKey()).toString()).toList();
+            out.add(new ClientMatch(m.id(), out.size() + 1, s.displayName(), s.locationName(), m.reason(), evidence, null, s.instagram()));
         }
-        return new ClientMatches(true, out);
+        return out;
     }
 
-    private RequestFacts request(UUID id) {
-        return queries.request(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    private MatchRequests.Request request(UUID id) {
+        return requests.view(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     private void lockInReview(UUID requestId) {
-        String status = transitions.lock(requestId);
-        if (status == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
+        String status = queries.lockStatus(requestId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (!"IN_REVIEW".equals(status)) {
             throw new ApiException(HttpStatus.CONFLICT, Code.NOT_IN_REVIEW, "This request isn't in review any more (it's " + status.toLowerCase()
                     .replace('_', ' ') + "). Reload the page.");
         }
     }
 
-    private Review view(RequestFacts r) {
+    private Review view(MatchRequests.Request r) {
         List<MatchRow> rows = matches.forRequest(r.id());
         Map<UUID, Stylist> stylists = stylistsOf(rows);
         Map<UUID, Photo> photos = photosOf(rows);
@@ -257,10 +233,11 @@ class ReviewService {
                     s == null ? null : s.instagram(), s != null && "LIVE".equals(s.status()), m.score(), m.reason(), m.systemRank(),
                     m.finalRank(), m.hidden(), m.adminOverride(), m.adminNote(), m.source(), evidence);
         }).toList();
-        boolean deleted = r.inspirationDeletedAt() != null || r.inspirationObjectKey() == null;
-        RequestView request = new RequestView(r.id(), r.status(), r.statusReason(), r.market(), r.service(), r.hairType(), r.texture(),
-                r.length(), r.budgetTier(), r.neighborhood(), r.pastIssues(), r.notes(), r.firstName(), r.createdAt(), r.publishedAt(), deleted);
-        return new Review(request, deleted ? null : url(r.inspirationObjectKey()), views);
+        Optional<String> inspiration = queries.inspirationKey(r.id());
+        RequestView request = new RequestView(r.id(), r.status().name(), r.statusReason(), r.market(), r.service(), HairType.parse(r.hairType()),
+                r.texture(), r.length(), r.budgetTier(), r.neighborhood(), r.pastIssues(), r.pastIssuesNote(), r.firstName(), r.createdAt(),
+                r.publishedAt(), r.inspirationDeleted());
+        return new Review(request, inspiration.map(this::url).orElse(null), views);
     }
 
     private Map<UUID, Stylist> stylistsOf(List<MatchRow> rows) {

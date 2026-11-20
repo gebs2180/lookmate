@@ -5,7 +5,6 @@ import {
   useApi,
   type MatchReview,
   type MatchView,
-  type PublishedMatches,
   type StylistOption,
 } from '../../api'
 import { label, message, shortDate } from '../../format'
@@ -25,7 +24,7 @@ export function MatchReviewPage() {
   const [review, setReview] = useState<MatchReview | null>(null)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
-  const [published, setPublished] = useState<PublishedMatches | null>(null)
+  const [published, setPublished] = useState(false)
 
   const current = review?.request.id === id ? review : data
   if (error) return <PageError message={error} />
@@ -64,9 +63,8 @@ export function MatchReviewPage() {
     setActionError(null)
     setBusy(true)
     try {
-      const result = await api<PublishedMatches>('POST', apiPath`/api/admin/match-requests/${id}/publish`)
-      setPublished(result)
-      setReview(result.review)
+      setReview(await api<MatchReview>('POST', apiPath`/api/admin/match-requests/${id}/publish`))
+      setPublished(true)
     } catch (e) {
       setActionError(message(e))
     } finally {
@@ -94,15 +92,9 @@ export function MatchReviewPage() {
         </p>
       )}
       {published && (
-        <div className="alert alert-success" role="status">
-          <p>
-            Published. {published.emailQueued ? 'The client email is queued.' : 'The client email was already queued.'} If email
-            is off, send the client this link:
-          </p>
-          <p className="client-link">
-            <code>{window.location.origin + published.clientPath}</code>
-          </p>
-        </div>
+        <p className="alert alert-success" role="status">
+          Published. The client is emailed a link to their matches.
+        </p>
       )}
 
       <div className="review-layout">

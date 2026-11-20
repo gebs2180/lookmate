@@ -1,6 +1,5 @@
 package com.lookmate.app.matching;
 
-import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -14,10 +13,11 @@ import org.springframework.stereotype.Repository;
 
 /**
  * Read-only SQL over tables the stylists and intake modules own ({@code stylist_profile}, {@code salon_location},
- * {@code portfolio_photo}, {@code client}, {@code match_request}). The one sanctioned cross-module exception
- * (docs/architecture.md): built while those modules were written in parallel, and to move onto their public services
- * once they are merged. Nothing here writes; the claim queries only lock rows ({@code FOR UPDATE SKIP LOCKED}) so two
- * app instances never embed the same image.
+ * {@code portfolio_photo}, and {@code client} and {@code match_request} for the fairness report and the inspiration
+ * photo's key). The one sanctioned cross-module exception (docs/architecture.md): built while the stylists module was
+ * written in parallel; it moves onto {@code Stylists} (docs/modules/stylists.md) once that is merged. Requests
+ * otherwise go through intake's {@code MatchRequests}. Nothing here writes; the claim query only locks rows
+ * ({@code FOR UPDATE SKIP LOCKED}) so two app instances never embed the same photo.
  */
 @Repository
 class CandidateQueries {
@@ -26,13 +26,6 @@ class CandidateQueries {
 
     CandidateQueries(JdbcClient jdbc) {
         this.jdbc = jdbc;
-    }
-
-    /** A match request with the client's quiz answers. */
-    record RequestFacts(UUID id, UUID clientId, String market, String service, String status, String statusReason,
-                        HairType hairType, String texture, String length, Integer budgetTier, String neighborhood,
-                        List<String> pastIssues, String notes, String firstName, String inspirationObjectKey,
-                        Instant inspirationDeletedAt, Instant createdAt, Instant publishedAt) {
     }
 
     record PendingImage(UUID id, String objectKey, String contentType) {
@@ -44,41 +37,24 @@ class CandidateQueries {
     record Photo(UUID id, UUID orgId, String objectKey, String service, String hairType, String status) {
     }
 
-    record ClientContact(String email, String firstName) {
-    }
-
-    private static final String REQUEST = """
-            select r.id, r.client_id, r.market, r.service, r.status, r.status_reason, c.hair_type, c.texture, c.length,
-                   c.budget_tier, c.neighborhood, c.past_issues, c.notes, c.first_name, r.inspiration_object_key,
-                   r.inspiration_deleted_at, r.created_at, r.published_at
-            from match_request r join client c on c.id = r.client_id
-            """;
-
-    Optional<RequestFacts> request(UUID id) {
-        return jdbc.sql(REQUEST + " where r.id = :id").param("id", id).query(CandidateQueries::requestFacts).optional();
-    }
-
-    /** The requests in a status, oldest first. */
-    List<RequestFacts> requestsInStatus(String status, int limit) {
-        return jdbc.sql(REQUEST + " where r.status = :status order by r.created_at limit :limit")
-                .param("status", status).param("limit", limit)
-                .query(CandidateQueries::requestFacts).list();
-    }
-
-    /** The request a client link token's hash opens: the intake link, or the one emailed with the matches. */
-    Optional<UUID> requestByTokenHash(String tokenHash) {
+    /**
+     * The inspiration photo's object key, for the admin's signed link; empty once retention deleted it. Intake's
+     * {@code MatchRequests} has no link for it yet (docs/modules/matching.md, open questions).
+     */
+    Optional<String> inspirationKey(UUID requestId) {
         return jdbc.sql("""
-                        select id from match_request where access_token_hash = :h
-                        union
-                        select match_request_id from match_link where token_hash = :h
+                        select inspiration_object_key from match_request
+                        where id = :id and inspiration_sha256 is not null and inspiration_deleted_at is null
                         """)
-                .param("h", tokenHash).query(UUID.class).optional();
+                .param("id", requestId).query(String.class).optional();
     }
 
-    Optional<ClientContact> contact(UUID requestId) {
-        return jdbc.sql("select c.email, c.first_name from match_request r join client c on c.id = r.client_id where r.id = :id")
-                .param("id", requestId)
-                .query((rs, n) -> new ClientContact(rs.getString("email"), rs.getString("first_name"))).optional();
+    /**
+     * Locks the request row for a reviewer's change (so two reviewers can't interleave) and returns its status, or
+     * empty for no such request. A lock, not a write; intake's {@code MatchRequests.publish} takes the same lock.
+     */
+    Optional<String> lockStatus(UUID requestId) {
+        return jdbc.sql("select status from match_request where id = :id for update").param("id", requestId).query(String.class).optional();
     }
 
     /**
@@ -100,38 +76,6 @@ class CandidateQueries {
                 .param("model", model).param("now", Timestamp.from(now)).param("max", maxAttempts).param("limit", limit)
                 .query((rs, n) -> new PendingImage(rs.getObject("id", UUID.class), rs.getString("object_key"), rs.getString("content_type")))
                 .list();
-    }
-
-    /** The same for inspiration photos of requests waiting to be matched (status MATCHING). */
-    List<PendingImage> claimInspirationPhotosToEmbed(String model, Instant now, int maxAttempts, int limit) {
-        return jdbc.sql("""
-                        select r.id, r.inspiration_object_key, r.inspiration_content_type from match_request r
-                        where r.status = 'MATCHING' and r.inspiration_object_key is not null and r.inspiration_deleted_at is null
-                          and not exists (select 1 from match_request_embedding e where e.match_request_id = r.id and e.model = :model)
-                          and not exists (select 1 from embedding_attempt a
-                                          where a.subject_type = 'MATCH_REQUEST' and a.subject_id = r.id and a.model = :model
-                                            and (a.attempts >= :max or a.next_attempt_at > :now))
-                        order by r.created_at, r.id
-                        limit :limit
-                        for update of r skip locked
-                        """)
-                .param("model", model).param("now", Timestamp.from(now)).param("max", maxAttempts).param("limit", limit)
-                .query((rs, n) -> new PendingImage(rs.getObject("id", UUID.class), rs.getString("inspiration_object_key"),
-                        rs.getString("inspiration_content_type")))
-                .list();
-    }
-
-    /** Locks and returns requests waiting to be ranked whose inspiration photo is embedded with the model. */
-    List<UUID> claimRequestsToRank(String model, int limit) {
-        return jdbc.sql("""
-                        select r.id from match_request r
-                        where r.status = 'MATCHING'
-                          and exists (select 1 from match_request_embedding e where e.match_request_id = r.id and e.model = :model)
-                        order by r.created_at, r.id
-                        limit :limit
-                        for update of r skip locked
-                        """)
-                .param("model", model).param("limit", limit).query(UUID.class).list();
     }
 
     /**
@@ -237,25 +181,9 @@ class CandidateQueries {
                 .list();
     }
 
-    private static RequestFacts requestFacts(ResultSet rs, int n) throws SQLException {
-        return new RequestFacts(rs.getObject("id", UUID.class), rs.getObject("client_id", UUID.class), rs.getString("market"),
-                rs.getString("service"), rs.getString("status"), rs.getString("status_reason"), HairType.parse(rs.getString("hair_type")),
-                rs.getString("texture"), rs.getString("length"), (Integer) rs.getObject("budget_tier", Integer.class),
-                rs.getString("neighborhood"), strings(rs.getArray("past_issues")), rs.getString("notes"), rs.getString("first_name"),
-                rs.getString("inspiration_object_key"), instant(rs.getTimestamp("inspiration_deleted_at")),
-                instant(rs.getTimestamp("created_at")), instant(rs.getTimestamp("published_at")));
-    }
-
     private static Stylist stylist(ResultSet rs, int n) throws SQLException {
         return new Stylist(rs.getObject("org_id", UUID.class), rs.getString("display_name"), rs.getString("location_name"),
                 rs.getString("market"), rs.getString("status"), rs.getString("instagram"));
     }
 
-    private static List<String> strings(Array array) throws SQLException {
-        return array == null ? List.of() : List.of((String[]) array.getArray());
-    }
-
-    private static Instant instant(Timestamp t) {
-        return t == null ? null : t.toInstant();
-    }
 }

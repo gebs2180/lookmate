@@ -1,23 +1,17 @@
 package com.lookmate.app.matching;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.nio.charset.StandardCharsets;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
-/** The {@code match} rows of a request, and the client links emailed with them ({@code match_link}). */
+/** The {@code match} rows of a request. */
 @Repository
 class MatchStore {
 
@@ -28,8 +22,6 @@ class MatchStore {
             return !hidden;
         }
     }
-
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     private final JdbcClient jdbc;
 
@@ -56,6 +48,7 @@ class MatchStore {
                         insert into match (id, match_request_id, org_id, score, reason, evidence_photo_ids, system_rank, final_rank, hidden,
                           admin_override, admin_note, source, created_at, updated_at)
                         values (:id, :request, :org, :score, :reason, :evidence, :systemRank, :finalRank, false, :override, :note, :source, :now, :now)
+                        on conflict (match_request_id, org_id) do nothing
                         """)
                 .param("id", id).param("request", requestId).param("org", orgId).param("score", score).param("reason", reason)
                 .param("evidence", evidence.toArray(UUID[]::new)).param("systemRank", systemRank).param("finalRank", finalRank)
@@ -88,25 +81,6 @@ class MatchStore {
                         """)
                 .param("id", matchId).param("hidden", hidden).param("note", note).param("override", override)
                 .param("now", Timestamp.from(now)).update();
-    }
-
-    /** Makes a new client link for the request and returns the token; only its hash is kept. */
-    String newLink(UUID requestId, Instant now) {
-        byte[] bytes = new byte[32];
-        RANDOM.nextBytes(bytes);
-        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-        jdbc.sql("insert into match_link (id, match_request_id, token_hash, created_at) values (:id, :r, :h, :now)")
-                .param("id", UUID.randomUUID()).param("r", requestId).param("h", hash(token)).param("now", Timestamp.from(now)).update();
-        return token;
-    }
-
-    /** SHA-256, hex: the same as {@code match_request.access_token_hash} and invite tokens. */
-    static String hash(String token) {
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
     }
 
     Optional<MatchRow> find(UUID requestId, UUID matchId) {
