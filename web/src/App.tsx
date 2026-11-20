@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router'
 import { HomePage } from './pages/HomePage'
 import { InvitePage } from './pages/InvitePage'
+import { Landing } from './pages/public/Landing'
 import { PublicShell } from './pages/public/PublicShell'
 import { isPublicPath } from './pages/public/publicPaths'
 import { FairnessPage } from './pages/admin/FairnessPage'
@@ -11,6 +12,7 @@ import { MatchReviewPage } from './pages/admin/MatchReviewPage'
 import { AdminMetricsPage } from './pages/tracking/AdminMetricsPage'
 import { RecordBookingPage, StylistBookingsPage } from './pages/tracking/RecordBookingPage'
 import { StylistStatsPage } from './pages/tracking/StylistStatsCard'
+import { BrandMark } from './strand/Strand'
 import { Loading, NotFound, RouteErrorBoundary } from './ui'
 import { useRouteFocus } from './useRouteFocus'
 
@@ -31,13 +33,17 @@ function App() {
   const location = useLocation()
   useRouteFocus()
   if (isPublicPath(location.pathname)) return <PublicShell />
+  const invite = location.pathname.startsWith('/invite/')
+  const login = () => loginWithRedirect({ appState: { returnTo: location.pathname + location.search } })
 
   return (
     <div className="shell">
       <header className="topbar">
         <Link to="/" className="brand">
+          <BrandMark />
           Combpatible
         </Link>
+        {!isAuthenticated && <span className="topbar-note">Columbus</span>}
         {isAuthenticated && (
           <span className="who">
             <span className="email">{user?.email ?? user?.name}</span>{' '}
@@ -51,30 +57,21 @@ function App() {
       {error && <p className="error" role="alert">Login error: {error.message}</p>}
       {isLoading && <Loading />}
 
-      {!isLoading && !isAuthenticated && (
-        <main className="welcome">
-          <p className="lead">Find the stylist whose work matches the look you want.</p>
-          {!location.pathname.startsWith('/invite/') && (
-            <>
-              <Link className="button block" to="/find">
-                Find my stylist
-              </Link>
-              <Link className="button secondary block" to="/stylists">
-                See all stylists
-              </Link>
-            </>
-          )}
-          {location.pathname.startsWith('/invite/') && (
-            <p>You've been invited to join Combpatible as a stylist. Log in, or sign up, to accept.</p>
-          )}
-          <button className="block" onClick={() => loginWithRedirect({ appState: { returnTo: location.pathname + location.search } })}>
-            {location.pathname.startsWith('/invite/') ? 'Log in or sign up' : 'Stylist log in'}
+      {!isLoading && !isAuthenticated && !invite && <Landing key="landing" onStylistLogin={login} />}
+
+      {!isLoading && !isAuthenticated && invite && (
+        <main className="welcome page-lift">
+          <p className="eyebrow">For stylists</p>
+          <p className="lead">You've been invited to join Combpatible as a stylist.</p>
+          <p>Log in, or sign up, to accept. Clients find you by your own work, so your portfolio does the talking.</p>
+          <button className="block" onClick={login}>
+            Log in or sign up
           </button>
         </main>
       )}
 
       {isAuthenticated && (
-        <main>
+        <main className="page-lift" key={location.pathname}>
           <RouteErrorBoundary key={location.pathname}>
             <Suspense fallback={<Loading />}>
               <Routes>
