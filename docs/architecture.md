@@ -36,6 +36,15 @@ migrations. Each module reads another's data only through that module's public s
 4. **Review:** the request goes to IN_REVIEW; the admin reorders, hides or adds stylists, then publishes. The client is
    emailed a link (`/m/<token>`) to the ranked list.
 
+Module details, endpoints and open questions: [modules/matching.md](modules/matching.md). Provider choice:
+[embedding-providers.md](embedding-providers.md).
+
+**The one sanctioned cross-module exception (Phase 1 build):** `matching/CandidateQueries` reads the stylists' and
+intake's V2 tables (`stylist_profile`, `salon_location`, `portfolio_photo`, `client`, `match_request`) with read-only SQL,
+because those modules were built in parallel with it. It moves onto their public services once they are merged.
+Matching also writes the status columns of `match_request` (`RequestTransitions`), since it owns the MATCHING →
+IN_REVIEW → PUBLISHED part of the lifecycle.
+
 Quality across hair types (CLAUDE.md, Privacy) is measured, not assumed: an admin report of match acceptance by hair
 type, and a small labelled set of textured-hair looks checked before each model change.
 

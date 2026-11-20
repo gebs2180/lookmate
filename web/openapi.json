@@ -1,6 +1,47 @@
 {
   "components" : {
     "schemas" : {
+      "AdminMatchControllerAddStylist" : {
+        "properties" : {
+          "note" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "note", "orgId" ]
+      },
+      "AdminMatchControllerMatchChange" : {
+        "properties" : {
+          "hidden" : {
+            "type" : "boolean"
+          },
+          "note" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "hidden", "note" ]
+      },
+      "AdminMatchControllerOrder" : {
+        "properties" : {
+          "matchIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "maxItems" : 100,
+            "minItems" : 0,
+            "type" : "array"
+          }
+        },
+        "required" : [ "matchIds" ]
+      },
       "AdminOrgControllerCreateOrg" : {
         "properties" : {
           "name" : {
@@ -67,6 +108,54 @@
           }
         },
         "required" : [ "createdAt", "id", "members", "name", "type" ]
+      },
+      "CandidateQueriesFairnessRow" : {
+        "properties" : {
+          "bookedRequests" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clickedRequests" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "failed" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "hairType" : {
+            "type" : "string"
+          },
+          "meanTopScore" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "noSystemMatches" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "published" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "requests" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "reviewed" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "shownMatches" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "withAdminChanges" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "bookedRequests", "clickedRequests", "failed", "hairType", "meanTopScore", "noSystemMatches", "published", "requests", "reviewed", "shownMatches", "withAdminChanges" ]
       },
       "ConsentControllerAcceptRequest" : {
         "properties" : {
@@ -216,6 +305,316 @@
           }
         },
         "required" : [ "orgId", "orgName", "orgType", "role" ]
+      },
+      "ReviewServiceClientMatch" : {
+        "properties" : {
+          "instagram" : {
+            "type" : "string"
+          },
+          "locationName" : {
+            "type" : "string"
+          },
+          "matchId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "photos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReviewServiceClientPhoto"
+            },
+            "type" : "array"
+          },
+          "rank" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "stylistName" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "instagram", "locationName", "matchId", "orgId", "photos", "rank", "reason", "stylistName" ]
+      },
+      "ReviewServiceClientMatches" : {
+        "properties" : {
+          "matches" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReviewServiceClientMatch"
+            },
+            "type" : "array"
+          },
+          "published" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "matches", "published" ]
+      },
+      "ReviewServiceClientPhoto" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "url" : {
+            "format" : "uri",
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "url" ]
+      },
+      "ReviewServiceEvidencePhoto" : {
+        "properties" : {
+          "hairType" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          },
+          "url" : {
+            "format" : "uri",
+            "type" : "string"
+          }
+        },
+        "required" : [ "hairType", "id", "service", "url" ]
+      },
+      "ReviewServiceFairnessReport" : {
+        "properties" : {
+          "market" : {
+            "type" : "string"
+          },
+          "rows" : {
+            "items" : {
+              "$ref" : "#/components/schemas/CandidateQueriesFairnessRow"
+            },
+            "type" : "array"
+          },
+          "since" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [ "market", "rows", "since" ]
+      },
+      "ReviewServiceMatchView" : {
+        "properties" : {
+          "adminNote" : {
+            "type" : "string"
+          },
+          "adminOverride" : {
+            "type" : "boolean"
+          },
+          "evidence" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReviewServiceEvidencePhoto"
+            },
+            "type" : "array"
+          },
+          "finalRank" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "hidden" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "instagram" : {
+            "type" : "string"
+          },
+          "locationName" : {
+            "type" : "string"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "score" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "source" : {
+            "type" : "string"
+          },
+          "stylistLive" : {
+            "type" : "boolean"
+          },
+          "stylistName" : {
+            "type" : "string"
+          },
+          "systemRank" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "adminNote", "adminOverride", "evidence", "finalRank", "hidden", "id", "instagram", "locationName", "orgId", "reason", "score", "source", "stylistLive", "stylistName", "systemRank" ]
+      },
+      "ReviewServicePublished" : {
+        "properties" : {
+          "clientPath" : {
+            "type" : "string"
+          },
+          "emailQueued" : {
+            "type" : "boolean"
+          },
+          "review" : {
+            "$ref" : "#/components/schemas/ReviewServiceReview"
+          }
+        },
+        "required" : [ "clientPath", "emailQueued", "review" ]
+      },
+      "ReviewServiceQueueItem" : {
+        "properties" : {
+          "candidates" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "firstName" : {
+            "type" : "string"
+          },
+          "hairType" : {
+            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "length" : {
+            "type" : "string"
+          },
+          "market" : {
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "statusReason" : {
+            "type" : "string"
+          },
+          "texture" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "candidates", "createdAt", "firstName", "hairType", "id", "length", "market", "service", "status", "statusReason", "texture" ]
+      },
+      "ReviewServiceRequestView" : {
+        "properties" : {
+          "budgetTier" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "firstName" : {
+            "type" : "string"
+          },
+          "hairType" : {
+            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "inspirationDeleted" : {
+            "type" : "boolean"
+          },
+          "length" : {
+            "type" : "string"
+          },
+          "market" : {
+            "type" : "string"
+          },
+          "neighborhood" : {
+            "type" : "string"
+          },
+          "notes" : {
+            "type" : "string"
+          },
+          "pastIssues" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "publishedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "statusReason" : {
+            "type" : "string"
+          },
+          "texture" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "budgetTier", "createdAt", "firstName", "hairType", "id", "inspirationDeleted", "length", "market", "neighborhood", "notes", "pastIssues", "publishedAt", "service", "status", "statusReason", "texture" ]
+      },
+      "ReviewServiceReview" : {
+        "properties" : {
+          "inspirationUrl" : {
+            "format" : "uri",
+            "type" : "string"
+          },
+          "matches" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReviewServiceMatchView"
+            },
+            "type" : "array"
+          },
+          "request" : {
+            "$ref" : "#/components/schemas/ReviewServiceRequestView"
+          }
+        },
+        "required" : [ "inspirationUrl", "matches", "request" ]
+      },
+      "ReviewServiceStylistOption" : {
+        "properties" : {
+          "alreadyMatched" : {
+            "type" : "boolean"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "locationName" : {
+            "type" : "string"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "alreadyMatched", "displayName", "locationName", "orgId" ]
       }
     }
   },
@@ -225,6 +624,279 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/admin/match-reports/fairness" : {
+      "get" : {
+        "operationId" : "fairness",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "market",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 64,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "days",
+          "required" : false,
+          "schema" : {
+            "default" : 90,
+            "format" : "int32",
+            "maximum" : 3650,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReviewServiceFairnessReport"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-match-controller" ]
+      }
+    },
+    "/api/admin/match-requests" : {
+      "get" : {
+        "operationId" : "queue",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "status",
+          "required" : false,
+          "schema" : {
+            "default" : "IN_REVIEW",
+            "pattern" : "MATCHING|IN_REVIEW|PUBLISHED|FAILED",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ReviewServiceQueueItem"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-match-controller" ]
+      }
+    },
+    "/api/admin/match-requests/{id}" : {
+      "get" : {
+        "operationId" : "get",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReviewServiceReview"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-match-controller" ]
+      }
+    },
+    "/api/admin/match-requests/{id}/matches" : {
+      "post" : {
+        "operationId" : "add",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminMatchControllerAddStylist"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReviewServiceReview"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "admin-match-controller" ]
+      }
+    },
+    "/api/admin/match-requests/{id}/matches/{matchId}" : {
+      "put" : {
+        "operationId" : "change",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "matchId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminMatchControllerMatchChange"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReviewServiceReview"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-match-controller" ]
+      }
+    },
+    "/api/admin/match-requests/{id}/order" : {
+      "put" : {
+        "operationId" : "reorder",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminMatchControllerOrder"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReviewServiceReview"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-match-controller" ]
+      }
+    },
+    "/api/admin/match-requests/{id}/publish" : {
+      "post" : {
+        "operationId" : "publish",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReviewServicePublished"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-match-controller" ]
+      }
+    },
+    "/api/admin/match-requests/{id}/stylists" : {
+      "get" : {
+        "operationId" : "stylists",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ReviewServiceStylistOption"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-match-controller" ]
+      }
+    },
     "/api/admin/orgs" : {
       "get" : {
         "operationId" : "list",
@@ -553,6 +1225,32 @@
           }
         },
         "tags" : [ "consent-controller" ]
+      }
+    },
+    "/api/public/match-requests/{token}/matches" : {
+      "get" : {
+        "operationId" : "matches",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReviewServiceClientMatches"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "public-match-controller" ]
       }
     }
   },

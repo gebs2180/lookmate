@@ -3,6 +3,9 @@ import { Suspense } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router'
 import { HomePage } from './pages/HomePage'
 import { InvitePage } from './pages/InvitePage'
+import { FairnessPage } from './pages/admin/FairnessPage'
+import { MatchQueuePage } from './pages/admin/MatchQueuePage'
+import { MatchReviewPage } from './pages/admin/MatchReviewPage'
 import { Loading, NotFound, RouteErrorBoundary } from './ui'
 import { useRouteFocus } from './useRouteFocus'
 
@@ -53,6 +56,9 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/invite/:token" element={<InvitePage />} />
+                <Route path="/admin/matches" element={<MatchQueuePage />} />
+                <Route path="/admin/matches/fairness" element={<FairnessPage />} />
+                <Route path="/admin/matches/:id" element={<MatchReviewPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

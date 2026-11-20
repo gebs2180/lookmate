@@ -71,6 +71,19 @@ lookmate:
     # A client's inspiration photo is deleted from storage this many days after the request was made
     # (CLAUDE.md, Privacy). The embedding and the match rows stay. Default to confirm.
     inspiration-photo-days: 30
+  matching:
+    # The image-embedding model (docs/embedding-providers.md). Only "fake" exists until the team chooses one: a
+    # deterministic stand-in that matches identical images only.
+    provider: ${MATCHING_PROVIDER:fake}
+    worker:
+      # Embeds photos and ranks waiting requests. Safe on several instances (FOR UPDATE SKIP LOCKED).
+      enabled: ${MATCHING_WORKER_ENABLED:true}
+      poll-interval: 30s
+    ranking:
+      # Scoring.java. The threshold depends on the model: set it from the labelled set when the model is chosen.
+      similar-threshold: 0.8
+      adjacent-hair-type-weight: 0.5
+      keep: 5
 
 management:
   endpoints:

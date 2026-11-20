@@ -1,0 +1,141 @@
+/* The admin's match review screens. Desktop first (an experienced stylist reviews at a desk or on a tablet), so the
+   shell widens on these pages only. */
+
+.shell:has(.review-page) {
+  max-width: 76rem;
+}
+
+.review-page .table {
+  width: 100%;
+}
+
+.review-layout {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (min-width: 52rem) {
+  .review-layout {
+    grid-template-columns: minmax(16rem, 22rem) 1fr;
+    align-items: start;
+  }
+  .review-layout > aside {
+    position: sticky;
+    top: var(--space-4);
+  }
+}
+
+.inspiration {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-3) 0 0;
+}
+
+.facts dt {
+  color: var(--color-muted);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.candidates {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.candidate {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  background: var(--color-surface-raised);
+}
+
+.candidate.is-hidden {
+  background: var(--color-surface-sunken);
+  border-style: dashed;
+}
+
+.candidate-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.candidate-head h3 {
+  margin: 0;
+}
+
+.candidate-rank {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  min-width: 2ch;
+}
+
+.evidence {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.evidence img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+}
+
+.candidate-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: end;
+}
+
+.candidate-tools .field {
+  flex: 1 1 14rem;
+  margin: 0;
+}
+
+.add-stylist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: end;
+}
+
+.add-stylist .field {
+  flex: 1 1 16rem;
+  margin: 0;
+}
+
+.client-link {
+  word-break: break-all;
+}
+
+.review-page .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
