@@ -4,6 +4,54 @@
  */
 
 export interface paths {
+    "/api/admin/events/{eventId}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["voidEvent_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["all"];
+        put?: never;
+        post: operations["create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/locations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/match-reports/fairness": {
         parameters: {
             query?: never;
@@ -92,7 +140,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["reorder"];
+        put: operations["reorder_1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -109,7 +157,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["publish"];
+        post: operations["publish_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -124,6 +172,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["stylists"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/matches/{matchId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["events_1"];
+        put?: never;
+        post: operations["record_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["metrics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -212,6 +292,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/stylists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["adminList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/stylists/demo/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["hideDemos"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/stylists/{orgId}/demo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["markDemo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/tracking/matches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["matches_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/invites/{token}": {
         parameters: {
             query?: never;
@@ -244,6 +388,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["active"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me": {
         parameters: {
             query?: never;
@@ -270,6 +430,262 @@ export interface paths {
         get: operations["status"];
         put?: never;
         post: operations["accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/events/{eventId}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["voidEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/matches/{matchId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["events"];
+        put?: never;
+        post: operations["record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["photos"];
+        put?: never;
+        post: operations["requestUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["reorder"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos/{photoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deletePhoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos/{photoId}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirm_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos/{photoId}/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["hidePhoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos/{photoId}/show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["showPhoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/photos/{photoId}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["tag"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/stylist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["home"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/stylist/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["hide"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/stylist/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["saveProfile"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/stylist/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/tracking/matches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["matches"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/tracking/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/book/{token}/{matchId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["book"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -340,6 +756,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/match-requests/{token}/viewed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["viewed"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -382,6 +814,16 @@ export interface components {
             name: string;
             /** @enum {string} */
             type: "STYLIST";
+        };
+        AdminTrackingControllerRecordBooking: {
+            note: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** @enum {string} */
+            type: "VIEWED" | "CLICKED_BOOK" | "BOOKED" | "REBOOKED" | "VOIDED";
+        };
+        AdminTrackingControllerVoidEvent: {
+            reason: string;
         };
         CandidateQueriesFairnessRow: {
             /** Format: int64 */
@@ -515,6 +957,59 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
+        LocationControllerAdminLocationView: {
+            active: boolean;
+            address: string;
+            brand: string;
+            city: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            market: string;
+            name: string;
+            state: string;
+            zip: string;
+        };
+        LocationControllerLocationRequest: {
+            active: boolean;
+            address: string;
+            brand: string;
+            city: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            market: string;
+            name: string;
+            state: string;
+            zip: string;
+        };
+        MatchEventsEvent: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            matchId: string;
+            /** Format: uuid */
+            matchRequestId: string;
+            note: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            orgId: string;
+            /** @enum {string} */
+            source: "CLIENT" | "ADMIN" | "STYLIST";
+            /** @enum {string} */
+            type: "VIEWED" | "CLICKED_BOOK" | "BOOKED" | "REBOOKED" | "VOIDED";
+            voidReason: string;
+            voided: boolean;
+        };
         MeControllerMe: {
             claimedRoles: string[];
             issuer: string;
@@ -531,6 +1026,160 @@ export interface components {
             orgType: "STYLIST";
             /** @enum {string} */
             role: "ADMIN" | "STYLIST";
+        };
+        MetricsServiceMetrics: {
+            /** Format: date */
+            from: string;
+            hairTypes: components["schemas"]["TrackingQueriesHairTypeRow"][];
+            market: string;
+            markets: string[];
+            stylists: components["schemas"]["TrackingQueriesStylistRow"][];
+            timeZone: string;
+            /** Format: date */
+            to: string;
+            totals: components["schemas"]["MetricsServiceTotals"];
+            weeks: components["schemas"]["TrackingQueriesWeekRow"][];
+        };
+        MetricsServiceStylistStats: {
+            allTime: components["schemas"]["TrackingQueriesOrgCounts"];
+            last30Days: components["schemas"]["TrackingQueriesOrgCounts"];
+        };
+        MetricsServiceTotals: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            /** Format: int64 */
+            clientsBooked: number;
+            /** Format: int64 */
+            clientsClicked: number;
+            /** Format: int64 */
+            clientsMatched: number;
+            /** Format: int64 */
+            clientsRebooked: number;
+            /** Format: int64 */
+            rebookCohort: number;
+            /** Format: int64 */
+            rebookCohortRebooked: number;
+            /** Format: double */
+            rebookRate: number;
+            /** Format: int64 */
+            rebooks: number;
+            /** Format: int64 */
+            requestsPublished: number;
+            /** Format: int64 */
+            stylistsActive: number;
+            /** Format: int64 */
+            stylistsLive: number;
+        };
+        PhotoServiceOrderRequest: {
+            photoIds: string[];
+        };
+        PhotoServicePhotoView: {
+            before: boolean;
+            contentType: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** @enum {string} */
+            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+            /** Format: int32 */
+            height: number;
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            length: "PIXIE" | "SHORT" | "MEDIUM" | "LONG";
+            /** Format: uuid */
+            pairPhotoId: string;
+            /** Format: int32 */
+            position: number;
+            /** @enum {string} */
+            service: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
+            /** @enum {string} */
+            status: "PENDING_UPLOAD" | "READY" | "HIDDEN" | "DELETED";
+            /** @enum {string} */
+            texture: "FINE" | "MEDIUM" | "THICK";
+            /** Format: uri */
+            url: string;
+            /** Format: int32 */
+            width: number;
+        };
+        PhotoServiceTagRequest: {
+            before: boolean;
+            /** @enum {string} */
+            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+            /** @enum {string} */
+            length: "PIXIE" | "SHORT" | "MEDIUM" | "LONG";
+            /** Format: uuid */
+            pairPhotoId: string;
+            /** @enum {string} */
+            service: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
+            /** @enum {string} */
+            texture: "FINE" | "MEDIUM" | "THICK";
+        };
+        PhotoServiceUploadRequest: {
+            contentType: string;
+            /** Format: int64 */
+            sizeBytes: number;
+        };
+        PhotoServiceUploadSlot: {
+            /** Format: date-time */
+            expiresAt: string;
+            headers: {
+                [key: string]: string;
+            };
+            method: string;
+            /** Format: uuid */
+            photoId: string;
+            /** Format: uri */
+            url: string;
+        };
+        ProfileServiceProfileRequest: {
+            bio: string;
+            bookingUrl: string;
+            displayName: string;
+            instagram: string;
+            /** Format: uuid */
+            locationId: string;
+            /** Format: int32 */
+            priceTier: number;
+            specialties: ("CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER")[];
+        };
+        ProfileServiceProfileView: {
+            bio: string;
+            /** @enum {string} */
+            bookingPlatform: "BOOKSY" | "VAGARO" | "STYLESEAT" | "GLOSSGENIUS" | "SQUARE" | "OTHER";
+            bookingUrl: string;
+            demo: boolean;
+            displayName: string;
+            instagram: string;
+            /** Format: uuid */
+            locationId: string;
+            market: string;
+            /** Format: int32 */
+            priceTier: number;
+            /** Format: date-time */
+            publishedAt: string;
+            specialties: ("CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER")[];
+            /** @enum {string} */
+            status: "DRAFT" | "LIVE" | "HIDDEN";
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        ProfileServiceStylistHome: {
+            /** Format: int32 */
+            maxPhotos: number;
+            /** Format: int32 */
+            minTaggedPhotos: number;
+            missing: ("TERMS" | "PROFILE" | "LOCATION" | "BOOKING_URL" | "TAGGED_PHOTOS")[];
+            /** Format: uuid */
+            orgId: string;
+            orgName: string;
+            profile: components["schemas"]["ProfileServiceProfileView"];
+            /** Format: int32 */
+            readyPhotos: number;
+            /** Format: int32 */
+            taggedPhotos: number;
+            termsAccepted: boolean;
         };
         ReviewServiceEvidencePhoto: {
             hairType: string;
@@ -621,6 +1270,148 @@ export interface components {
             /** Format: uuid */
             orgId: string;
         };
+        StylistControllerAdminStylistView: {
+            /** @enum {string} */
+            bookingPlatform: "BOOKSY" | "VAGARO" | "STYLESEAT" | "GLOSSGENIUS" | "SQUARE" | "OTHER";
+            demo: boolean;
+            displayName: string;
+            market: string;
+            /** Format: uuid */
+            orgId: string;
+            orgName: string;
+            /** Format: date-time */
+            publishedAt: string;
+            /** Format: int32 */
+            readyPhotos: number;
+            /** @enum {string} */
+            status: "DRAFT" | "LIVE" | "HIDDEN";
+            /** Format: int32 */
+            taggedPhotos: number;
+        };
+        StylistControllerDemosHidden: {
+            /** Format: int32 */
+            hidden: number;
+        };
+        StylistTrackingControllerStylistMatch: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            clientFirstName: string;
+            /** Format: int32 */
+            finalRank: number;
+            /** Format: uuid */
+            matchId: string;
+            /** Format: date-time */
+            publishedAt: string;
+            /** Format: int64 */
+            rebooks: number;
+            service: string;
+        };
+        StylistsLocation: {
+            address: string;
+            brand: string;
+            city: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+            market: string;
+            name: string;
+            state: string;
+            zip: string;
+        };
+        TrackingQueriesHairTypeRow: {
+            /** Format: int64 */
+            clientsBooked: number;
+            /** Format: int64 */
+            clientsClicked: number;
+            /** Format: int64 */
+            clientsMatched: number;
+            hairType: string;
+        };
+        TrackingQueriesOrgCounts: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            /** Format: int64 */
+            matchesShown: number;
+            /** Format: int64 */
+            rebooks: number;
+        };
+        TrackingQueriesRecentMatch: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            clientEmail: string;
+            clientFirstName: string;
+            /** Format: int32 */
+            finalRank: number;
+            market: string;
+            /** Format: uuid */
+            matchId: string;
+            /** Format: uuid */
+            orgId: string;
+            /** Format: date-time */
+            publishedAt: string;
+            /** Format: int64 */
+            rebooks: number;
+            /** Format: uuid */
+            requestId: string;
+            service: string;
+            stylistName: string;
+        };
+        TrackingQueriesStylistRow: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            /** Format: int64 */
+            clientsBooked: number;
+            /** Format: int64 */
+            clientsRebooked: number;
+            displayName: string;
+            /** Format: int64 */
+            matchesShown: number;
+            /** Format: uuid */
+            orgId: string;
+            /** Format: int64 */
+            readyPhotos: number;
+            /** Format: int64 */
+            rebooks: number;
+            status: string;
+        };
+        TrackingQueriesWeekRow: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            /** Format: int64 */
+            clientsMatched: number;
+            /** Format: int64 */
+            rebooks: number;
+            /** Format: int64 */
+            requestsPublished: number;
+            /** Format: date */
+            weekStart: string;
+        };
+        TrackingServiceRecorded: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            matchId: string;
+            note: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** @enum {string} */
+            source: "CLIENT" | "ADMIN" | "STYLIST";
+            /** @enum {string} */
+            type: "VIEWED" | "CLICKED_BOOK" | "BOOKED" | "REBOOKED" | "VOIDED";
+        };
     };
     responses: never;
     parameters: never;
@@ -630,6 +1421,104 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    voidEvent_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminTrackingControllerVoidEvent"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchEventsEvent"];
+                };
+            };
+        };
+    };
+    all: {
+        parameters: {
+            query?: {
+                market?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LocationControllerAdminLocationView"][];
+                };
+            };
+        };
+    };
+    create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocationControllerLocationRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LocationControllerAdminLocationView"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocationControllerLocationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["LocationControllerAdminLocationView"];
+                };
+            };
+        };
+    };
     fairness: {
         parameters: {
             query?: {
@@ -750,7 +1639,7 @@ export interface operations {
             };
         };
     };
-    reorder: {
+    reorder_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -776,7 +1665,7 @@ export interface operations {
             };
         };
     };
-    publish: {
+    publish_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -816,6 +1705,78 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ReviewServiceStylistOption"][];
+                };
+            };
+        };
+    };
+    events_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                matchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchEventsEvent"][];
+                };
+            };
+        };
+    };
+    record_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                matchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminTrackingControllerRecordBooking"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrackingServiceRecorded"];
+                };
+            };
+        };
+    };
+    metrics: {
+        parameters: {
+            query?: {
+                market?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MetricsServiceMetrics"];
                 };
             };
         };
@@ -976,6 +1937,91 @@ export interface operations {
             };
         };
     };
+    adminList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylistControllerAdminStylistView"][];
+                };
+            };
+        };
+    };
+    hideDemos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylistControllerDemosHidden"];
+                };
+            };
+        };
+    };
+    markDemo: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileServiceProfileView"];
+                };
+            };
+        };
+    };
+    matches_1: {
+        parameters: {
+            query?: {
+                market?: string;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrackingQueriesRecentMatch"][];
+                };
+            };
+        };
+    };
     preview: {
         parameters: {
             query?: never;
@@ -1016,6 +2062,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["InviteControllerAccepted"];
+                };
+            };
+        };
+    };
+    active: {
+        parameters: {
+            query?: {
+                market?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylistsLocation"][];
                 };
             };
         };
@@ -1085,6 +2153,431 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["ConsentControllerConsentStatus"];
                 };
+            };
+        };
+    };
+    voidEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminTrackingControllerVoidEvent"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchEventsEvent"];
+                };
+            };
+        };
+    };
+    events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                matchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchEventsEvent"][];
+                };
+            };
+        };
+    };
+    record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                matchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminTrackingControllerRecordBooking"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrackingServiceRecorded"];
+                };
+            };
+        };
+    };
+    photos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServicePhotoView"][];
+                };
+            };
+        };
+    };
+    requestUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoServiceUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServiceUploadSlot"];
+                };
+            };
+        };
+    };
+    reorder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoServiceOrderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServicePhotoView"][];
+                };
+            };
+        };
+    };
+    deletePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                photoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    confirm_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                photoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServicePhotoView"];
+                };
+            };
+        };
+    };
+    hidePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                photoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServicePhotoView"];
+                };
+            };
+        };
+    };
+    showPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                photoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServicePhotoView"];
+                };
+            };
+        };
+    };
+    tag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                photoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoServiceTagRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PhotoServicePhotoView"];
+                };
+            };
+        };
+    };
+    home: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileServiceStylistHome"];
+                };
+            };
+        };
+    };
+    hide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileServiceProfileView"];
+                };
+            };
+        };
+    };
+    saveProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileServiceProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileServiceProfileView"];
+                };
+            };
+        };
+    };
+    publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileServiceProfileView"];
+                };
+            };
+        };
+    };
+    matches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylistTrackingControllerStylistMatch"][];
+                };
+            };
+        };
+    };
+    stats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MetricsServiceStylistStats"];
+                };
+            };
+        };
+    };
+    book: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+                matchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1179,6 +2672,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["IntakeServiceClientView"];
                 };
+            };
+        };
+    };
+    viewed: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
