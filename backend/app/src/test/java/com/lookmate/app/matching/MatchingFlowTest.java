@@ -44,8 +44,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest(properties = {
         "lookmate.matching.worker.enabled=false",
         "lookmate.matching.worker.max-attempts=2",
-        "lookmate.matching.worker.retry-backoff=1h",
-        "lookmate.intake.rate-limit.reads-per-minute=1000"})
+        "lookmate.matching.worker.retry-backoff=1h"})
 @AutoConfigureMockMvc
 @Import({TestcontainersConfiguration.class, MatchingFlowTest.Images.class})
 @Testcontainers(disabledWithoutDocker = true)

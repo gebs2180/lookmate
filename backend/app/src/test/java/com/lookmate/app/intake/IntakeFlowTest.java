@@ -36,10 +36,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * Client intake end to end against Postgres, with object storage in memory (the real-storage path is
  * {@link InspirationStorageTest}): the quiz, the link, the upload check, the matching queue and retention.
  */
-@SpringBootTest(properties = {
-        "lookmate.intake.rate-limit.creates-per-hour=1000",
-        "lookmate.intake.rate-limit.reads-per-minute=1000",
-        "lookmate.retention.enabled=false"})
+@SpringBootTest(properties = "lookmate.retention.enabled=false")
 @AutoConfigureMockMvc
 @Import({TestcontainersConfiguration.class, IntakeFlowTest.Fakes.class})
 @Testcontainers(disabledWithoutDocker = true)

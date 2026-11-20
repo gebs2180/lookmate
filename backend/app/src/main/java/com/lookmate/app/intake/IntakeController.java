@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Client intake, without an account (CLAUDE.md): the quiz, the inspiration upload, and the client's own view through
- * their link. Rate-limited per IP ({@link PublicRateLimit}); a wrong or expired token is always the same 404.
+ * their link. Rate-limited per IP and per email (api/PublicRateLimitFilter); a wrong or expired token is always the same 404.
  */
 @RestController
 @RequestMapping("/api/public/match-requests")

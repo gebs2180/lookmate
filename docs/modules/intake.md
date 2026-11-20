@@ -87,11 +87,12 @@ A wrong or expired token is 404, the same for every case. 429 `RATE_LIMITED` car
 
 ## Settings (`lookmate.intake` in application.yml)
 
-`link-ttl` (120d), `max-open-requests-per-email-per-day` (3), `matching-stuck-after` (15m),
-`rate-limit.creates-per-hour` (10 per IP), `rate-limit.reads-per-minute` (60 per IP).
+`link-ttl` (120d), `max-open-requests-per-email-per-day` (3), `matching-stuck-after` (15m).
 
-The rate limiter is in memory, so it is per instance: with more than one app container, move it to Caddy or Postgres
-(docs/architecture.md, "How it scales").
+Rate limits are shared with the other public routes (`api/PublicRateLimitFilter`, `lookmate.rate-limit`): creating a
+request is 5 an hour per IP and 20 a day per email address (successful requests only; the address is lower-cased,
+loses any `+tag` and is kept hashed); every other intake route is in the shared 60 a minute per IP. The limiter is in
+memory, so per instance (docs/architecture.md, "How it scales").
 
 ## Schema (V4)
 

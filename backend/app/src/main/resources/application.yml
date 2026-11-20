@@ -68,10 +68,6 @@ lookmate:
     max-open-requests-per-email-per-day: 3
     # A request claimed for matching but untouched this long is offered to the matching worker again.
     matching-stuck-after: 15m
-    # Per IP, in memory: per instance. More than one app container needs a shared limit (Caddy or Postgres).
-    rate-limit:
-      creates-per-hour: 10
-      reads-per-minute: 60
   retention:
     # Personal data is kept only as long as it's needed (docs/data-retention.md). A daily job at 04:15 UTC.
     # The periods are defaults to confirm.
@@ -95,6 +91,23 @@ lookmate:
       similar-threshold: 0.8
       adjacent-hair-type-weight: 0.5
       keep: 5
+  # Limits on the routes clients use without signing in (/api/public/**): token buckets per client IP (IPv6 per /64),
+  # up to `requests` at once, refilled evenly over `per`. Over the limit is a 429 with Retry-After. In memory, so per
+  # app instance (docs/architecture.md). api/PublicRateLimitFilter.
+  rate-limit:
+    enabled: true
+    # The "Book" redirect, GET /api/public/book/**.
+    book: {requests: 60, per: 1m}
+    # POST /api/public/match-requests/{token}/viewed.
+    viewed: {requests: 30, per: 1m}
+    # Intake's quiz, POST /api/public/match-requests: it stores rows, hands out an upload slot and sends an email.
+    create-request: {requests: 5, per: 1h}
+    # The same route per email address in the body (lower-cased, +tag dropped, kept hashed). Only successes count.
+    create-request-per-email: {requests: 20, per: 1d}
+    # Every other public route (a client's status page, upload slots), one budget per IP.
+    other: {requests: 60, per: 1m}
+    # Buckets kept at most (about 200 bytes each). Full buckets are dropped every minute.
+    max-tracked-keys: 100000
   stylists:
     # A profile can go LIVE once it has this many READY portfolio photos tagged with a service and hair type
     # (the brief asks for 10-20 photos; 3 lets a pilot stylist start while they add the rest).
@@ -140,8 +153,14 @@ spring:
           audiences: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES}
 
 server:
-  # Behind Caddy, which terminates HTTPS and sets X-Forwarded-*.
-  forward-headers-strategy: framework
+  # Behind Caddy, which terminates HTTPS and sets X-Forwarded-For to the client's address (it drops one the client
+  # sent). Tomcat's RemoteIpValve takes the client address and scheme from X-Forwarded-* only when the connection
+  # comes from one of `internal-proxies`: Docker's private ranges, where Caddy is. The backend publishes no port, so
+  # nothing else can reach it there. ("framework" would trust the header from anyone, defeating the rate limit.)
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      internal-proxies: ${TRUSTED_PROXIES:10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2[0-9]|3[0-1])\.\d+\.\d+}
   shutdown: graceful
 
 lookmate:

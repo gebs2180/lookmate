@@ -44,8 +44,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info", "/error").permitAll()
-                        // Client-facing endpoints that work without an account (intake, a match link). Each one
-                        // rate-limits and checks its own token; nothing under here may read another person's data.
+                        // Client-facing endpoints that work without an account (intake, a match link). All are
+                        // rate-limited per client IP before this chain runs (api/PublicRateLimitFilter, budgets in
+                        // lookmate.rate-limit); each checks its own token; nothing here may read another person's data.
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole(Role.ADMIN.name())
                         // Org-scoped endpoints (/api/orgs/{orgId}/...) check membership in OrgAccess.

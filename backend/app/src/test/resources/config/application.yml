@@ -1,0 +1,11 @@
+# Test-only overrides, on top of src/main/resources/application.yml (Spring Boot reads config/ after the root).
+# Tests share Spring contexts and all call from 127.0.0.1, so the public-route budgets are raised out of the way here.
+# The filter still runs everywhere (intake's quiz body is read and replayed through it). The rate-limit tests set
+# their own small budgets (api/PublicRateLimitTest, intake/IntakeRateLimitTest).
+lookmate:
+  rate-limit:
+    book: {requests: 100000, per: 1m}
+    viewed: {requests: 100000, per: 1m}
+    create-request: {requests: 100000, per: 1m}
+    create-request-per-email: {requests: 100000, per: 1m}
+    other: {requests: 100000, per: 1m}

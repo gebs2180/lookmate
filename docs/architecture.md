@@ -67,6 +67,13 @@ type, and a small labelled set of textured-hair looks checked before each model 
 | New cities, salon brands | `columbus-oh`, Salon Lofts | More markets and brands | `market` on every place-bound row; `brand` is data |
 | Booking | Link-out with UTM tags | Platform webhooks or APIs for confirmed bookings | `match_event` already has BOOKED/REBOOKED with a source |
 | Metrics | Queries over `match_event` | A warehouse fed from the same append-only table | Events are append-only, so they can be copied safely |
+| Rate limits on `/api/public/**` | In memory, per IP (and per email for intake's create), one instance | Postgres-backed counters: a fixed-window table (`key`, `window_start`, `count`) with `insert ... on conflict do update set count = count + 1 returning count`, old windows deleted by the retention job | Every check goes through `api/PublicRateLimitFilter`, so only its bucket store changes. Until then a second instance multiplies every budget by the instance count |
+
+**Client addresses.** Rate limits key on the client IP. In production Tomcat takes it from `X-Forwarded-For` only
+when the connection comes from Caddy (`server.forward-headers-strategy: native`, `server.tomcat.remoteip.internal-proxies`,
+Docker's private ranges; override with `TRUSTED_PROXIES`). Caddy replaces any `X-Forwarded-For` a client sends, and
+the backend publishes no port. If a CDN or load balancer is ever put in front of Caddy, set Caddy's `trusted_proxies`
+to it, or every client will share the CDN's few addresses and one budget.
 
 Not built for the pilot, on purpose: multi-region, a queue service (Postgres is the queue until it hurts), caching,
 read replicas. Each slots in behind the points above.

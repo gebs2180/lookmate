@@ -107,7 +107,7 @@ every query is a small scan. What supports them:
 
 ## Not done here
 
-- No rate limit on the public routes yet (SecurityConfig says each public route rate-limits). The click dedupe and the
-  daily cap keep repeated clicks from skewing the metrics. Plan (agreed 2026-11-20): after the Phase 1 branches merge,
-  one in-memory per-IP limiter on `/api/public/**` (429 with Retry-After): "Book" 60/min, viewed 30/min, intake create
-  5/hour plus 20/day per email; Postgres-backed counters when there is a second app instance.
+- Rate limiting isn't tracking's: one per-IP limiter covers all of `/api/public/**` (`api/PublicRateLimitFilter`,
+  `lookmate.rate-limit`), with "Book" at 60/min and viewed at 30/min per IP; over that is `429 RATE_LIMITED` with
+  `Retry-After`. It protects against load and abuse; the click dedupe and the daily cap above are what keep repeated
+  clicks out of the metrics. It is in memory, so per app instance (docs/architecture.md, "How it scales").
