@@ -147,9 +147,9 @@ export function FindPage() {
           </div>
         )}
         <p>
-          Thanks{answers.firstName.trim() ? `, ${answers.firstName.trim()}` : ''}. A Combpatible stylist is matching you with stylists whose
-          own work looks like your photo, on hair like yours. We'll email <strong>{answers.email.trim()}</strong> when your matches are
-          ready, usually within a day or two.
+          Thanks{answers.firstName.trim() ? `, ${answers.firstName.trim()}` : ''}. We're finding the stylists whose own work looks like your
+          photo, on hair like yours. Your matches are usually ready in a few minutes, and we'll email{' '}
+          <strong>{answers.email.trim()}</strong> when they are.
         </p>
         <p>We've also emailed you a link to this request. Keep it to yourself: anyone with it can see your request.</p>
         <div className="actions">
