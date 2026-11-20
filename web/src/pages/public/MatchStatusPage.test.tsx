@@ -79,6 +79,21 @@ describe('MatchStatusPage', () => {
     )
   })
 
+  it('says plainly when no stylist was a close match, points at every stylist, and stops checking back', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const fetch = show(200, { ...BASE, stage: 'READY', matches: [] })
+    expect(await screen.findByRole('heading', { name: 'No close matches yet' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Browse all stylists' })).toHaveAttribute('href', `/m/${TOKEN}/stylists`)
+    expect(screen.getByText(/Our team may add picks/)).toBeInTheDocument()
+    // Not "your matches are ready", and nothing still pretending to match.
+    expect(screen.queryByText('Your matches are ready')).not.toBeInTheDocument()
+    expect(screen.queryByText(/This page updates by itself/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'See all stylists' })).not.toBeInTheDocument()
+    await act(() => vi.advanceTimersByTimeAsync(120_000))
+    expect(fetch).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
+  })
+
   it('asks for the photo when it never arrived', async () => {
     show(200, { ...BASE, stage: 'PHOTO_NEEDED', photoUploaded: false, photoUrl: null, photoDeletesAt: null })
     expect(await screen.findByRole('heading', { name: 'Add your inspiration photo' })).toBeInTheDocument()

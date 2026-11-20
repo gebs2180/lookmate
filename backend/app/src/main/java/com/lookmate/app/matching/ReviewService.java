@@ -30,8 +30,8 @@ import org.springframework.web.server.ResponseStatusException;
  * The admin's view of matching: the monitor of recent requests (what each client was shown and did), the review of
  * one request's matches, and the client's read of them once published. Lists publish on their own unless
  * {@code lookmate.matching.review-before-publish} is on (then they wait IN_REVIEW, brief Must have 5). Every change
- * takes the request's row lock; reorder, add and publish need the request IN_REVIEW, while hiding or showing a match
- * also works after publishing (the client's list changes at once).
+ * takes the request's row lock; reorder and publish need the request IN_REVIEW, while adding, hiding or showing a
+ * match also works after publishing (the client's list changes at once).
  */
 @Service
 class ReviewService {
@@ -200,10 +200,14 @@ class ReviewService {
         return view(request(requestId));
     }
 
-    /** Adds a LIVE stylist in the request's market that the ranker didn't pick. */
+    /**
+     * Adds a LIVE stylist in the request's market that the ranker didn't pick. Also after publishing (a list published
+     * empty, or one the admin wants to extend): the stylist goes last on the client's list at once, and the reason the
+     * list was empty is cleared.
+     */
     @Transactional
     Review add(UUID requestId, UUID orgId, String note) {
-        lockInReview(requestId);
+        String status = lock(requestId, "IN_REVIEW", "PUBLISHED");
         MatchRequests.Request request = request(requestId);
         Stylist stylist = queries.stylists(List.of(orgId)).stream().findFirst()
                 .filter(s -> "LIVE".equals(s.status()) && request.market().equals(s.market()))
@@ -215,6 +219,10 @@ class ReviewService {
         List<UUID> evidence = queries.bestPhotosOf(stylist.orgId(), requestId, provider.model(), request.service(),
                 properties.ranking().evidencePhotos());
         matches.insertByAdmin(requestId, orgId, evidence, blankToNull(note), clock.instant());
+        if ("PUBLISHED".equals(status) && request.statusReason() != null) {
+            requests.markStatus(requestId, MatchRequests.Status.PUBLISHED, null);
+            return view(request(requestId));
+        }
         return view(request);
     }
 
@@ -234,9 +242,9 @@ class ReviewService {
 
     /**
      * With review switched off, publishes up to {@code limit} requests still waiting IN_REVIEW (from while the switch was
-     * on), each with its current list: the reviewer's order, hides and additions kept. A request with no visible match
-     * (nothing found, or everything hidden) stays for the admin. Each request in its own transaction; returns how many
-     * were published.
+     * on), each with its current list: the reviewer's order, hides and additions kept. A request with no match at all
+     * (the ranker found nobody and nobody was added) is published empty, as the ranker does now; one whose matches are
+     * all hidden stays for the admin. Each request in its own transaction; returns how many were published.
      */
     int publishWaitingReviews(int limit) {
         if (properties.reviewBeforePublish()) {
@@ -246,8 +254,15 @@ class ReviewService {
         for (MatchRequests.Request r : requests.list(MatchRequests.Status.IN_REVIEW, limit).reversed()) {
             Boolean done = tx.execute(s -> {
                 // The admin may be publishing it right now: take the lock and look again.
-                if (!"IN_REVIEW".equals(queries.lockStatus(r.id()).orElse(null))
-                        || matches.forRequest(r.id()).stream().noneMatch(MatchRow::visible)) {
+                if (!"IN_REVIEW".equals(queries.lockStatus(r.id()).orElse(null))) {
+                    return false;
+                }
+                List<MatchRow> rows = matches.forRequest(r.id());
+                if (rows.isEmpty()) {
+                    requests.publishWithoutMatches(r.id(), Ranker.NO_CANDIDATES);
+                    return true;
+                }
+                if (rows.stream().noneMatch(MatchRow::visible)) {
                     return false;
                 }
                 finalizeAndPublish(r.id(), null);

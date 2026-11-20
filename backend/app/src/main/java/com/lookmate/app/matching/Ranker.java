@@ -17,8 +17,9 @@ import org.springframework.transaction.support.TransactionTemplate;
  * ({@link CandidateQueries#similarities}), scores them in Java ({@link Scoring}), writes the top stylists as
  * {@code match} rows, then publishes them to the client through intake's {@link MatchRequests#publish} (the system
  * ranking is the final ranking). With {@code lookmate.matching.review-before-publish} on, the request goes to
- * IN_REVIEW for the admin instead. A request with no candidates always goes to IN_REVIEW, with a reason, so the admin
- * can add stylists by hand; the client can browse the directory meanwhile.
+ * IN_REVIEW for the admin instead. A request with no candidates is published empty
+ * ({@link MatchRequests#publishWithoutMatches}, keeping the reason for the monitor): the client is pointed at the
+ * directory, and the admin can add stylists afterwards. With review on, it goes to IN_REVIEW with the reason.
  *
  * <p>If the photo can't be embedded, the request stays MATCHING with a reason, and intake hands it back after
  * {@code lookmate.intake.matching-stuck-after}; after {@code max-attempts} it becomes FAILED.
@@ -97,13 +98,15 @@ class Ranker {
         for (Scoring.Ranked r : ranked) {
             matches.insertSystem(request.id(), r.orgId(), r.score(), Reasons.forRanked(r, request.service(), hair), r.evidence(), ++rank, now);
         }
-        boolean publish = !reviewBeforePublish && !ranked.isEmpty();
-        if (publish) {
-            requests.publish(request.id(), null); // nobody reviewed it: reviewed_by stays null
-        } else {
+        if (reviewBeforePublish) {
             requests.markStatus(request.id(), Status.IN_REVIEW, ranked.isEmpty() ? NO_CANDIDATES : null);
+        } else if (ranked.isEmpty()) {
+            // Published empty at once (decided 2026-11-20): the client is pointed at the directory; the reason stays for the monitor.
+            requests.publishWithoutMatches(request.id(), NO_CANDIDATES);
+        } else {
+            requests.publish(request.id(), null); // nobody reviewed it: reviewed_by stays null
         }
         log.info("Ranked match request {}: {} candidate photos, {} stylists, {}", request.id(), photos.size(), ranked.size(),
-                publish ? "published" : "in review");
+                reviewBeforePublish ? "in review" : ranked.isEmpty() ? "published empty" : "published");
     }
 }

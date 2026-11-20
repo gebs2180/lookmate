@@ -30,7 +30,9 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
 - **Matching publishes automatically; admin monitors** (2026-11-20, Zach). Clients choose; we recommend: a ranked list
   goes to the client as soon as it's ready, clients can browse every live stylist (`/api/public/stylists`), and the
   admin watches `/admin/matches` and steps in after the fact. Review switch `lookmate.matching.review-before-publish`,
-  off. This reverses the brief's Must-have 5 (admin review before the client sees matches).
+  off. This reverses the brief's Must-have 5 (admin review before the client sees matches). A request with no
+  candidates is published empty at once: the client sees "No close matches yet" with a link to every stylist and gets
+  a "no close match" email; the monitor keeps the reason and the admin can add picks afterwards.
 - **Clients don't sign in.** Intake and the match list work through `/api/public/**` and an emailed link token.
   Stylists and the admin use Auth0; ADMIN needs MFA.
 

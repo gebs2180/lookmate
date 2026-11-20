@@ -47,7 +47,8 @@ the owners' services too; the metrics stay reporting SQL. See [tracking.md](trac
    intake's `MatchRequests.publish`; the system ranking is the final ranking. The client's page (`/m/<token>`) checks
    back by itself while matching and shows the list in place; the "matches ready" email is held for
    `lookmate.intake.matches-ready-email-delay` (5 min) and cancelled if the client opens the list first. A request with
-   no candidates waits IN_REVIEW for the admin to add stylists by hand.
+   no candidates is published empty at once (decided 2026-11-20): the page says so and points at the directory, the
+   email is a "no close match yet" variant, and the admin can add stylists by hand afterwards.
 5. **Browse:** every client can see every LIVE stylist in the market (`/api/public/stylists`, the stylists module) and
    book any of them; a directory Book goes through tracking with the client's link token, so it is attributed.
 6. **Monitor:** the admin's `/admin/matches` shows recent requests in every status, what each client was shown and did

@@ -179,12 +179,13 @@ class MatchRequestRows {
                 .update();
     }
 
-    void setPublished(UUID id, UUID reviewedBy, Instant now) {
+    void setPublished(UUID id, UUID reviewedBy, String reason, Instant now) {
         jdbc.sql("""
-                        update match_request set status = 'PUBLISHED', status_reason = null, reviewed_by = :by, published_at = :now,
+                        update match_request set status = 'PUBLISHED', status_reason = :reason, reviewed_by = :by, published_at = :now,
                           updated_at = :now where id = :id""")
                 .param("id", id)
                 .param("by", reviewedBy)
+                .param("reason", reason)
                 .param("now", ts(now))
                 .update();
     }

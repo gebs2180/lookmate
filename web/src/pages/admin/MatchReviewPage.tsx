@@ -131,7 +131,12 @@ export function MatchReviewPage() {
 
         <section aria-labelledby="candidates-title">
           <h2 id="candidates-title">Stylists ({visible} shown)</h2>
-          {matches.length === 0 && <p>The ranker found no one. Add stylists by hand below.</p>}
+          {matches.length === 0 && (
+            <p>
+              The ranker found no one. Add stylists by hand below
+              {r.status === 'PUBLISHED' ? ': the client sees them at once.' : '.'}
+            </p>
+          )}
           <ol className="candidates">
             {matches.map((m, i) => (
               <Candidate
@@ -147,7 +152,8 @@ export function MatchReviewPage() {
               />
             ))}
           </ol>
-          {editable && <AddStylist requestId={id} busy={busy} onAdd={(orgId, note) =>
+          {/* Also after publishing, e.g. a list published empty: the stylist goes on the client's list at once. */}
+          {hideable && <AddStylist requestId={id} busy={busy} onAdd={(orgId, note) =>
             act(() => api<MatchReview>('POST', apiPath`/api/admin/match-requests/${id}/matches`, { orgId, note }))} />}
           {editable && (
             <div className="actions">

@@ -7,25 +7,30 @@ and 5). Design: [architecture.md](../architecture.md), "Matching v1".
 
 - **Switch off (the default):** once a request is ranked, `Ranker` publishes it in the same transaction through intake's
   `MatchRequests.publish(id, null)` (MATCHING → PUBLISHED; `reviewed_by` stays null). The final ranking is the system
-  ranking (`insertSystem` sets `final_rank = system_rank`). A request with no candidates goes to IN_REVIEW with
-  `NO_CANDIDATES`, so the admin can add stylists by hand and publish; the client can use the directory meanwhile.
+  ranking (`insertSystem` sets `final_rank = system_rank`). A request with no candidates is published empty
+  at once (decided 2026-11-20, open question 6) through `MatchRequests.publishWithoutMatches(id, NO_CANDIDATES)`: the
+  reason stays on the request for the monitor, the client's page shows "No close matches yet" with a button to the
+  directory (no polling), and the email is the "no close match yet" variant (`ClientEmails.noCloseMatch`, linking to
+  `/m/<token>/stylists`). The admin can add stylists afterwards (below).
 - **Switch on** (`lookmate.matching.review-before-publish: true`, env `MATCHING_REVIEW_BEFORE_PUBLISH`): every ranked
   request goes to IN_REVIEW and waits for the admin to publish, exactly as in Phase 1. The web app's `/admin/matches`
   shows the review queue again.
 - **Switching review off while lists wait (decided 2026-11-20):** each worker pass (`MatchingJob`, after ranking)
   publishes requests still IN_REVIEW as they stand: the reviewer's order, hides and additions kept, final ranks 1..n
   over the visible matches, `reviewed_by` null (`ReviewService.publishWaitingReviews`, under the request's row lock, so
-  an admin publishing at the same moment wins cleanly). A request with nothing visible (no candidates, or all hidden)
-  stays IN_REVIEW for the admin. With the switch on, this step does nothing. Tested in `AutoPublishFlowTest`.
+  an admin publishing at the same moment wins cleanly). A request with no match rows at all is published empty, as
+  the ranker does now; one whose matches are all hidden stays IN_REVIEW for the admin. With the switch on, this step does nothing. Tested in `AutoPublishFlowTest`.
 - **After the fact, either way:** on a PUBLISHED request the admin can hide a match (`PUT .../matches/{matchId}`, it
   leaves the client's list and its Book link at once) or show it again (it goes last if it was hidden at publishing),
-  and edit notes. Reordering, adding and publishing stay IN_REVIEW only. To take a stylist out of every result, the
+  and edit notes, and add a stylist (`POST .../matches`: it goes last on the client's list at once, and a "no
+  candidates" reason is cleared). This is how picks reach a list published empty; the client isn't emailed again (one
+  email per request), the page shows them next time it's opened. Reordering and publishing stay IN_REVIEW only. To take a stylist out of every result, the
   admin hides their profile (`POST /api/admin/stylists/{orgId}/hide`, the stylists module's existing hide).
 
 ## Contract with intake (built against `claude/lookmate-intake`, merged into this branch)
 
 - Matching takes requests with `MatchRequests.claimNew` (NEW with a confirmed photo → MATCHING, `SKIP LOCKED`), reads the
-  photo with `inspirationBytes`, and moves them on with `publish` (switch off, at least one stylist) or `markStatus`
+  photo with `inspirationBytes`, and moves them on with `publish` (switch off, at least one stylist), `publishWithoutMatches` (switch off, none) or `markStatus`
   (IN_REVIEW, or FAILED after `max-attempts`).
   If embedding fails, the request stays MATCHING with a reason; intake hands it back after
   `lookmate.intake.matching-stuck-after` (15m).
@@ -63,8 +68,8 @@ Admin (ADMIN with MFA, by path):
 | `POST /api/admin/match-requests/{id}/publish` | Final ranks 1..n over the visible matches, then intake's `publish` (PUBLISHED + client email) |
 | `GET /api/admin/match-reports/fairness?market=&days=90` | Requests, no-match rate, reviewer changes, published, shown, clicked, booked, mean top score, by client hair type |
 
-Changes need the request IN_REVIEW (409 `NOT_IN_REVIEW` otherwise), except hiding, showing and notes, which also work
-on a PUBLISHED request. The monitor's activity comes from tracking's public `TrackingService.activity` (no table
+Changes need the request IN_REVIEW (409 `NOT_IN_REVIEW` otherwise), except adding, hiding, showing and notes, which also
+work on a PUBLISHED request. The monitor's activity comes from tracking's public `TrackingService.activity` (no table
 reads). Other codes: `NO_VISIBLE_MATCHES`,
 `ALREADY_MATCHED`, `STYLIST_NOT_AVAILABLE`, `BAD_ORDER`.
 
@@ -93,7 +98,8 @@ with their 4 best photos as evidence.
 3. Should a request rank only after all of the market's portfolio photos are embedded? Today it ranks with what's there.
 4. Re-rank after a stylist adds photos (intake allows IN_REVIEW → MATCHING)? No button yet; re-ranking keeps existing
    match rows (`on conflict do nothing`).
-6. **No candidates with auto-publish:** such a request waits IN_REVIEW for the admin (the monitor shows the reason).
-   Should it publish an empty list instead, pointing the client at the directory, with a different email?
+6. ~~**No candidates with auto-publish**~~ **Decided 2026-11-20 (Zach): publish an empty result right away**, pointing
+   the client at the directory with a "no close match yet" email; the monitor keeps the reason and the admin can add
+   picks afterwards (see Publishing). With the review switch on, such a request still goes to IN_REVIEW.
 5. The fairness report counts `match_event` directly (tracking's table, read only). Move to a tracking service when
    one exists.
