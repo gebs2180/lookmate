@@ -1,0 +1,134 @@
+# Defaults point at the local docker-compose services; production overrides everything via environment variables.
+spring:
+  application:
+    name: lookmate
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/lookmate}
+    username: ${DB_USERNAME:lookmate}
+    password: ${DB_PASSWORD:lookmate}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate # Flyway owns the schema (src/main/resources/db/migration)
+    properties:
+      hibernate.jdbc.batch_size: 50
+      hibernate.order_inserts: true
+  mvc:
+    problemdetails:
+      enabled: true
+  # OIDC: set SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI (e.g. https://<tenant>.us.auth0.com/)
+  # and SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES (the API identifier) in the environment.
+  # Without an issuer the API rejects every bearer token.
+
+# The OpenAPI description the web app's types are generated from (docs/api-types.md). Off here: the running app
+# serves no spec. OpenApiSpecTest turns it on to write web/openapi.json.
+springdoc:
+  api-docs:
+    enabled: false
+  writer-with-order-by-keys: true
+  override-with-generic-response: false
+
+lookmate:
+  # The market new stylists and clients belong to unless they say otherwise (CLAUDE.md: Columbus first).
+  default-market: columbus-oh
+  security:
+    # Custom claim the provider adds to access tokens with the user's roles. Only ADMIN is read from it;
+    # STYLIST comes from org membership in the database.
+    roles-claim: https://lookmate.app/roles
+    # Custom claim set to true by the provider's post-login Action when the login used MFA.
+    mfa-claim: https://lookmate.app/mfa
+    # ADMIN requires an MFA login (amr contains "mfa", or the MFA claim is true).
+    require-admin-mfa: true
+  invites:
+    ttl: 7d
+  storage:
+    endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+    public-endpoint: ${STORAGE_PUBLIC_ENDPOINT:}
+    region: ${STORAGE_REGION:us-east-1}
+    access-key: ${STORAGE_ACCESS_KEY:lookmate}
+    secret-key: ${STORAGE_SECRET_KEY:lookmate-local}
+    path-style: true
+    photo-bucket: ${STORAGE_PHOTO_BUCKET:photos}
+    upload-url-ttl: 10m
+    max-upload-bytes: 26214400
+    # Local dev: create the versioned photo bucket on startup. Turn off in production.
+    auto-create-buckets: ${STORAGE_AUTO_CREATE_BUCKETS:true}
+  notify:
+    # Emails (matches ready, stylist invites) through Resend. Off until a key is set: with sending off, every
+    # email is still stored in email_message, as skipped.
+    email:
+      enabled: ${NOTIFY_EMAIL_ENABLED:false}
+      api-key: ${RESEND_API_KEY:}
+      from: ${NOTIFY_EMAIL_FROM:LookMate <notify@example.com>}
+      app-url: ${NOTIFY_APP_URL:http://localhost:5173}
+  retention:
+    # Personal data is kept only as long as it's needed (docs/data-retention.md). A daily job at 04:15 UTC.
+    # The periods are defaults to confirm.
+    enabled: ${RETENTION_ENABLED:true}
+    cron: ${RETENTION_CRON:0 15 4 * * *}
+    # A sent (or failed, skipped, cancelled) email loses its address, subject and bodies after this many days.
+    email-content-days: 90
+    # A client's inspiration photo is deleted from storage this many days after the request was made
+    # (CLAUDE.md, Privacy). The embedding and the match rows stay. Default to confirm.
+    inspiration-photo-days: 30
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# Error reports. Off unless SENTRY_DSN is set (docs/hosting.md). ERROR log lines and unhandled exceptions are sent;
+# request bodies, headers, cookies and user IPs are not.
+sentry:
+  dsn: ${SENTRY_DSN:}
+  environment: ${SENTRY_ENVIRONMENT:local}
+  send-default-pii: false
+  max-request-body-size: none
+  logging:
+    minimum-event-level: error
+    minimum-breadcrumb-level: info
+
+---
+# Production (docs/hosting.md): SPRING_PROFILES_ACTIVE=prod. Nothing here has a local default, so the app
+# refuses to start with a variable missing instead of quietly using the docker-compose credentials.
+# Required: DB_URL, DB_USERNAME, DB_PASSWORD, SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI,
+# SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES, STORAGE_ENDPOINT, STORAGE_ACCESS_KEY, STORAGE_SECRET_KEY,
+# STORAGE_PHOTO_BUCKET. Optional: STORAGE_PUBLIC_ENDPOINT, STORAGE_REGION (default auto), SENTRY_DSN,
+# SENTRY_ENVIRONMENT, and the feature switches above.
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI}
+          audiences: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES}
+
+server:
+  # Behind Caddy, which terminates HTTPS and sets X-Forwarded-*.
+  forward-headers-strategy: framework
+  shutdown: graceful
+
+lookmate:
+  storage:
+    # Cloudflare R2: region "auto", path-style, and no aws-chunked uploads (R2 answers them with 403).
+    # R2 has no bucket versioning; the nightly backup copy (deploy/backup) stands in for it.
+    endpoint: ${STORAGE_ENDPOINT}
+    region: ${STORAGE_REGION:auto}
+    access-key: ${STORAGE_ACCESS_KEY}
+    secret-key: ${STORAGE_SECRET_KEY}
+    photo-bucket: ${STORAGE_PHOTO_BUCKET}
+    auto-create-buckets: false
+    chunked-encoding: false
+
+management:
+  endpoint:
+    health:
+      show-details: never

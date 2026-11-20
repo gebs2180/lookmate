@@ -1,0 +1,562 @@
+{
+  "components" : {
+    "schemas" : {
+      "AdminOrgControllerCreateOrg" : {
+        "properties" : {
+          "name" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "STYLIST" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "name", "type" ]
+      },
+      "AdminOrgControllerEndMembership" : {
+        "properties" : {
+          "reason" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "reason" ]
+      },
+      "AdminOrgControllerInviteView" : {
+        "properties" : {
+          "acceptPath" : {
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "token" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "acceptPath", "expiresAt", "id", "token" ]
+      },
+      "AdminOrgControllerOrgView" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "members" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "STYLIST" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "createdAt", "id", "members", "name", "type" ]
+      },
+      "ConsentControllerAcceptRequest" : {
+        "properties" : {
+          "version" : {
+            "minLength" : 1,
+            "type" : "string"
+          }
+        },
+        "required" : [ "version" ]
+      },
+      "ConsentControllerConsentStatus" : {
+        "properties" : {
+          "acceptedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "text" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "acceptedAt", "text", "version" ]
+      },
+      "InviteControllerAccepted" : {
+        "properties" : {
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "ADMIN", "STYLIST" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "orgId", "role" ]
+      },
+      "InviteServiceInvitePreview" : {
+        "properties" : {
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "orgName" : {
+            "type" : "string"
+          },
+          "orgType" : {
+            "enum" : [ "STYLIST" ],
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "ADMIN", "STYLIST" ],
+            "type" : "string"
+          },
+          "usable" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "expiresAt", "orgName", "orgType", "role", "usable" ]
+      },
+      "InviteServiceMember" : {
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "joinedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "ADMIN", "STYLIST" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "email", "id", "joinedAt", "role" ]
+      },
+      "InviteServiceOpenInvite" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "createdAt", "expiresAt", "id" ]
+      },
+      "MeControllerMe" : {
+        "properties" : {
+          "claimedRoles" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "issuer" : {
+            "type" : "string"
+          },
+          "memberships" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MeControllerMembershipView"
+            },
+            "type" : "array"
+          },
+          "mfa" : {
+            "type" : "boolean"
+          },
+          "roles" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "subject" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "claimedRoles", "issuer", "memberships", "mfa", "roles", "subject" ]
+      },
+      "MeControllerMembershipView" : {
+        "properties" : {
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "orgName" : {
+            "type" : "string"
+          },
+          "orgType" : {
+            "enum" : [ "STYLIST" ],
+            "type" : "string"
+          },
+          "role" : {
+            "enum" : [ "ADMIN", "STYLIST" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "orgId", "orgName", "orgType", "role" ]
+      }
+    }
+  },
+  "info" : {
+    "title" : "Rawmark API",
+    "version" : "1"
+  },
+  "openapi" : "3.1.0",
+  "paths" : {
+    "/api/admin/orgs" : {
+      "get" : {
+        "operationId" : "list",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminOrgControllerOrgView"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-org-controller" ]
+      },
+      "post" : {
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminOrgControllerCreateOrg"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminOrgControllerOrgView"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "admin-org-controller" ]
+      }
+    },
+    "/api/admin/orgs/{orgId}/invites" : {
+      "get" : {
+        "operationId" : "openInvites",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/InviteServiceOpenInvite"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-org-controller" ]
+      },
+      "post" : {
+        "operationId" : "invite",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminOrgControllerInviteView"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "admin-org-controller" ]
+      }
+    },
+    "/api/admin/orgs/{orgId}/invites/{inviteId}/revoke" : {
+      "post" : {
+        "operationId" : "revoke",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "inviteId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-org-controller" ]
+      }
+    },
+    "/api/admin/orgs/{orgId}/members" : {
+      "get" : {
+        "operationId" : "members",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/InviteServiceMember"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-org-controller" ]
+      }
+    },
+    "/api/admin/orgs/{orgId}/members/{membershipId}/end" : {
+      "post" : {
+        "operationId" : "endMembership",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "membershipId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminOrgControllerEndMembership"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-org-controller" ]
+      }
+    },
+    "/api/invites/{token}" : {
+      "get" : {
+        "operationId" : "preview",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InviteServiceInvitePreview"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "invite-controller" ]
+      }
+    },
+    "/api/invites/{token}/accept" : {
+      "post" : {
+        "operationId" : "accept_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/InviteControllerAccepted"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "invite-controller" ]
+      }
+    },
+    "/api/me" : {
+      "get" : {
+        "operationId" : "me",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MeControllerMe"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "me-controller" ]
+      }
+    },
+    "/api/orgs/{orgId}/consent" : {
+      "get" : {
+        "operationId" : "status",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConsentControllerConsentStatus"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "consent-controller" ]
+      },
+      "post" : {
+        "operationId" : "accept",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConsentControllerAcceptRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConsentControllerConsentStatus"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "consent-controller" ]
+      }
+    }
+  },
+  "servers" : [ {
+    "url" : "/"
+  } ]
+}

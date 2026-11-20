@@ -1,0 +1,6 @@
+* text=auto eol=lf
+# gradlew.bat is committed with CRLF. "text" would make git expect LF blobs and
+# show it modified in every checkout, so leave it untouched: CRLF everywhere.
+*.bat -text
+*.cmd text eol=crlf
+*.jar binary

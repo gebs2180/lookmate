@@ -1,0 +1,1569 @@
+/*
+ * Design tokens. Every colour, size and shadow below comes from these, so a brand direction is a swap of this block
+ * (docs/brand-directions.md). The direction is Ledger (Zach, 2026-11-13): white, navy ink, one deep green, Manrope with
+ * tabular figures on money and percentages. Text pairs meet WCAG AA (4.5:1) on --color-surface and --color-surface-raised;
+ * *-soft backgrounds keep AA with their own *-text colour. --color-border is 3:1 or better against white, for controls.
+ * The ledger greens: #0f5b4a (accent), #3f8f78 (mid), #9cc9b9 (light), #e3f2ed (tint). Mid and light are for fills such as
+ * the grade-chance bar, never for text on white.
+ */
+:root {
+  color-scheme: light dark;
+
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: #f4f7fa;
+  --color-text: #0f1b2d;
+  --color-muted: #566376;
+  --color-border: #8593a6;
+  --color-border-strong: #0f1b2d;
+  --color-line: #e3e7ee;
+
+  --color-accent: #0f5b4a;
+  --color-accent-hover: #0b4538;
+  --color-accent-contrast: #ffffff;
+  --color-accent-soft: #e3f2ed;
+  --color-accent-text: #0f5b4a;
+  --color-green-mid: #3f8f78;
+  --color-green-light: #9cc9b9;
+
+  --color-success: #1e7a3c;
+  --color-success-soft: #dff5e6;
+  --color-success-text: #17602f;
+  --color-warning: #b26a00;
+  --color-warning-soft: #fdf1dc;
+  --color-warning-text: #7a4800;
+  --color-danger: #b42318;
+  --color-danger-hover: #931c13;
+  --color-danger-soft: #fdeceb;
+  --color-danger-text: #9a1d14;
+  --color-info-soft: var(--color-accent-soft);
+  --color-info-text: var(--color-accent-text);
+  --color-focus: #0f5b4a;
+
+  --font-sans: 'Manrope Variable', system-ui, sans-serif;
+  --font-display: 'Manrope Variable', system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-weight-display: 800;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.125rem;
+  --radius-pill: 999px;
+
+  --shadow-1: 0 1px 2px rgb(15 27 45 / 0.08), 0 6px 16px -8px rgb(15 27 45 / 0.25);
+  --shadow-2: 0 4px 12px rgb(16 24 40 / 0.12), 0 2px 4px rgb(16 24 40 / 0.06);
+
+  --tap: 44px;
+  --measure: 42rem;
+
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0b1524;
+    --color-surface: #101d31;
+    --color-surface-raised: #15243b;
+    --color-surface-sunken: #0d192b;
+    --color-text: #eef2f7;
+    --color-muted: #a9b6c7;
+    --color-border: #6c7d94;
+    --color-border-strong: #eef2f7;
+    --color-line: #243650;
+
+    --color-accent: #6fcfb2;
+    --color-accent-hover: #8fdcc5;
+    --color-accent-contrast: #062219;
+    --color-accent-soft: #123a30;
+    --color-accent-text: #8fdcc5;
+    --color-green-mid: #3f8f78;
+    /* Darker than the mid green, so the three steps differ in lightness against a dark page. */
+    --color-green-light: #2b5f50;
+
+    --color-success: #6fcf8f;
+    --color-success-soft: #14301f;
+    --color-success-text: #8fe3aa;
+    --color-warning: #f0b45a;
+    --color-warning-soft: #2d2212;
+    --color-warning-text: #f5c77f;
+    --color-danger: #ff8a80;
+    --color-danger-hover: #ffaba3;
+    --color-danger-soft: #331816;
+    --color-danger-text: #ffaaa2;
+    --color-focus: #8fdcc5;
+
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 6px 16px -8px rgb(0 0 0 / 0.6);
+    --shadow-2: 0 6px 18px rgb(0 0 0 / 0.5);
+  }
+}
+
+/* Money and percentages line up in columns. */
+.offer-price,
+.table td,
+.table th,
+.slip,
+.stackbar {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Base ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-display);
+  line-height: var(--leading-tight);
+  overflow-wrap: break-word;
+}
+
+h1 {
+  font-size: var(--text-2xl);
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+h2 {
+  font-size: var(--text-lg);
+  margin: var(--space-5) 0 var(--space-2);
+}
+
+h3 {
+  font-size: var(--text-base);
+  margin: 0 0 var(--space-1);
+}
+
+p {
+  margin: var(--space-2) 0;
+}
+
+a {
+  color: var(--color-accent-text);
+  text-underline-offset: 0.15em;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+img {
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------- Shell ---------- */
+
+.shell {
+  max-width: var(--measure);
+  margin: 0 auto;
+  padding: 0 var(--space-4) var(--space-7);
+}
+
+.shell.wide {
+  max-width: 64rem;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 3.5rem;
+  margin: 0 calc(-1 * var(--space-4)) var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-surface);
+  /* Full width on a wide screen without a 100vw box (which would scroll sideways under a scrollbar). */
+  box-shadow:
+    0 0 0 100vmax var(--color-surface),
+    0 1px 0 100vmax var(--color-border);
+  clip-path: inset(0 -100vmax -1px);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--text-lg);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  color: var(--color-text);
+}
+
+/* The placeholder mark: a card outline in the accent. A brand direction replaces it. */
+.brand::before {
+  content: '';
+  width: 0.85rem;
+  height: 1.15rem;
+  border: 2.5px solid var(--color-accent);
+  border-radius: 3px;
+  transform: rotate(-8deg);
+}
+
+.who {
+  font-size: var(--text-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--color-muted);
+}
+
+/* A long email shortens on a phone instead of pushing Log out off the bar. */
+.who .email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.who button.link {
+  flex-shrink: 0;
+}
+
+/* Signed out: what LookMate is, and the way in. */
+.welcome {
+  padding: var(--space-6) 0;
+}
+
+.welcome .lead {
+  font-size: var(--text-xl);
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-display);
+  line-height: var(--leading-tight);
+  margin-bottom: var(--space-5);
+}
+
+/* "← Back" and the like: small, but a full tap target. */
+.back {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-sm);
+}
+
+.back a,
+.back button.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+}
+
+/* ---------- Buttons ---------- */
+
+button,
+.button,
+.capture {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  padding: 0.55rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:hover:not(:disabled),
+.button:hover,
+.capture:hover {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+button.secondary,
+.button.secondary,
+.capture.secondary {
+  background: var(--color-surface);
+  color: var(--color-accent-text);
+  border-color: var(--color-border-strong);
+}
+
+button.secondary:hover:not(:disabled),
+.button.secondary:hover,
+.capture.secondary:hover {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+
+button.danger {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-surface);
+}
+
+button.danger:hover:not(:disabled) {
+  background: var(--color-danger-hover);
+  border-color: var(--color-danger-hover);
+}
+
+button:disabled,
+.capture:has(input:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Busy: the button keeps its name, and a spinner says it's working. */
+button[aria-busy='true'] {
+  cursor: progress;
+}
+
+button[aria-busy='true']::before,
+.loading::before {
+  content: '';
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* A button that reads as a link inside a sentence. The padding, cancelled by the margin, grows its tap area without
+   moving the text around it. */
+button.link {
+  display: inline-block;
+  min-height: 0;
+  padding: 0.6rem 0.2rem;
+  margin: -0.6rem -0.2rem;
+  background: none;
+  border: none;
+  color: var(--color-accent-text);
+  font-weight: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+button.link:hover:not(:disabled) {
+  background: none;
+  color: var(--color-text);
+}
+
+/* A link-style button standing on its own (not inside a sentence) still gets a full tap target. */
+.actions button.link,
+.who button.link,
+.back button.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-2);
+  margin: 0;
+}
+
+.back button.link {
+  padding: 0;
+}
+
+.welcome button {
+  max-width: 22rem;
+}
+
+.block {
+  width: 100%;
+}
+
+/* A row of buttons: on a phone each gets an equal share; a lone primary is full width. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin: var(--space-3) 0 0;
+}
+
+.actions > button:not(.link),
+.actions > .button,
+.actions > .capture {
+  flex: 1 1 9rem;
+}
+
+/* Two capture buttons share a phone's width: keep each label on one line. */
+.actions > .capture {
+  padding-inline: var(--space-3);
+  white-space: nowrap;
+}
+
+@media (min-width: 40rem) {
+  .actions > button:not(.link),
+  .actions > .button,
+  .actions > .capture {
+    flex: 0 0 auto;
+  }
+}
+
+/* The page's one primary action stays in reach at the bottom of a phone screen while its panel is on screen. */
+.action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  margin: var(--space-3) calc(-1 * var(--space-4)) calc(-1 * var(--space-4));
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: var(--color-surface-raised);
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.action-bar .actions {
+  margin: 0;
+}
+
+@media (min-width: 40rem) {
+  .action-bar {
+    position: static;
+    margin: var(--space-3) 0 0;
+    padding: 0;
+    border: none;
+    background: none;
+  }
+}
+
+/* ---------- Form controls ---------- */
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  min-height: var(--tap);
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-strong);
+  min-width: 0;
+  max-width: 100%;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--color-muted);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-offset: 0;
+  border-color: var(--color-focus);
+}
+
+input[aria-invalid='true'],
+select[aria-invalid='true'],
+textarea[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  width: 1.25rem;
+  height: 1.25rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+/* A checkbox or radio with its label: the whole line is the tap target. */
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  cursor: pointer;
+}
+
+/* Radio choices drawn as tappable options. */
+.choices {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+}
+
+.choice:has(input:checked) {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.field-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.field-hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.field-error {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--color-danger-text);
+  font-weight: 600;
+}
+
+.field-row {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+}
+
+.form {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.row input:not([type='checkbox']):not([type='radio']) {
+  flex: 1 1 12rem;
+}
+
+.stack {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.narrow {
+  width: 6.5rem;
+}
+
+.row input.narrow {
+  flex: 0 0 6.5rem;
+}
+
+/* ---------- Surfaces ---------- */
+
+.panel,
+.side {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-4);
+  margin: var(--space-4) 0;
+}
+
+.panel > h2:first-child,
+.side > h2:first-child,
+.panel-head h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-lg);
+}
+
+.panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.panel-head h2,
+.panel-head h3 {
+  margin: 0;
+}
+
+/* A list of things to open: each row is one big tap target (the link stretches over it). */
+.tile-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-3) 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.tile {
+  position: relative;
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  min-height: 3.5rem;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+
+.tile:has(a:hover) {
+  border-color: var(--color-border-strong);
+}
+
+.tile:has(a:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.tile a {
+  font-weight: 600;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.tile a:focus-visible {
+  outline: none;
+}
+
+.tile a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.tile-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+}
+
+.tile .muted {
+  font-size: var(--text-sm);
+}
+
+.list {
+  padding-left: 1.2rem;
+}
+
+.list li {
+  margin: var(--space-2) 0;
+}
+
+details summary {
+  cursor: pointer;
+  margin: var(--space-2) 0;
+}
+
+/* A disclosure that reads as a control: "How we priced it". */
+details.disclosure {
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  margin: var(--space-3) 0;
+}
+
+details.disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-accent-text);
+  list-style: none;
+}
+
+details.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.disclosure > summary::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 120ms ease;
+}
+
+details.disclosure[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+details.disclosure > :last-child {
+  margin-bottom: var(--space-3);
+}
+
+/* ---------- Text roles ---------- */
+
+.muted {
+  color: var(--color-muted);
+}
+
+.small {
+  font-size: var(--text-sm);
+}
+
+.ok {
+  color: var(--color-success-text);
+}
+
+.warn {
+  color: var(--color-warning-text);
+}
+
+.error {
+  color: var(--color-danger-text);
+}
+
+/* ---------- Alerts ---------- */
+
+/* Inline alerts. A page's error message (p.error with role alert) is drawn as one too. */
+.alert,
+p.error[role='alert'],
+p.error[role='status'] {
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  border-left-width: 4px;
+}
+
+.alert > :first-child {
+  margin-top: 0;
+}
+
+.alert > :last-child {
+  margin-bottom: 0;
+}
+
+.alert ul {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.2rem;
+}
+
+.alert-title {
+  font-weight: 700;
+}
+
+.alert-info {
+  background: var(--color-info-soft);
+  color: var(--color-info-text);
+  border-color: var(--color-accent);
+}
+
+.alert-success {
+  background: var(--color-success-soft);
+  color: var(--color-success-text);
+  border-color: var(--color-success);
+}
+
+.alert-warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+  border-color: var(--color-warning);
+}
+
+.alert-danger,
+p.error[role='alert'],
+p.error[role='status'] {
+  background: var(--color-danger-soft);
+  color: var(--color-danger-text);
+  border-color: var(--color-danger);
+}
+
+.alert a:not(.button),
+.alert button.link {
+  color: inherit;
+  font-weight: 600;
+}
+
+/* ---------- Chips ---------- */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.chip::before {
+  content: '';
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.chip-neutral {
+  background: var(--color-surface-sunken);
+  color: var(--color-muted);
+  border-color: var(--color-border);
+}
+
+.chip-info {
+  background: var(--color-info-soft);
+  color: var(--color-info-text);
+}
+
+.chip-success {
+  background: var(--color-success-soft);
+  color: var(--color-success-text);
+}
+
+.chip-warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+}
+
+.chip-danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger-text);
+}
+
+/* ---------- Loading and empty ---------- */
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+  padding: var(--space-4) 0;
+}
+
+.empty {
+  margin: var(--space-3) 0;
+  padding: var(--space-5) var(--space-4);
+  text-align: center;
+  color: var(--color-muted);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.empty-title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ---------- Tables ---------- */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.table th {
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+/* The offer's per-grade table: four columns on a phone, so words wrap whole instead of breaking mid-word. */
+.table.ladder th,
+.table.ladder td {
+  padding: var(--space-2) var(--space-1);
+  overflow-wrap: normal;
+}
+
+/* Wide tables scroll inside their own box instead of the page. */
+.scroll {
+  overflow-x: auto;
+}
+
+/* ---------- Card page: photos ---------- */
+
+.capture-summary {
+  margin: var(--space-3) 0;
+}
+
+.shot {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.shot-body > :first-child {
+  margin-top: 0;
+}
+
+.shot .thumb,
+.shot-empty {
+  width: 100%;
+}
+
+/* Where a photo goes before there is one: a card's shape, dashed. */
+.shot-empty {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 63 / 88;
+  border: 2px dashed var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  text-align: center;
+  padding: var(--space-1);
+}
+
+/* The file input is visually hidden but still focusable; the label is the big tap target and shows the focus. */
+.capture {
+  position: relative;
+}
+
+.capture input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  min-height: 0;
+}
+
+.capture:has(input:focus-visible) {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.photo {
+  display: grid;
+  gap: var(--space-1);
+  width: 10rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.photo img,
+.identity img {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+/* Labelled photos on listings and deals: three fit across a phone. */
+.photo.compact {
+  width: 6rem;
+}
+
+/* Card photos on instant-offer listings. */
+.thumb {
+  display: block;
+  width: 6rem;
+  height: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-sunken);
+}
+
+/* A thumbnail that opens the photos full screen. */
+button.photo-button {
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: zoom-in;
+}
+
+button.photo-button:hover {
+  background: none;
+}
+
+/* The likely grade and "close-up included" on a listing. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+}
+
+/* Full-screen photos: swipe between them, tap for actual size. Dark whatever the theme, so the photo's colours read true. */
+.viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: #0d0a16;
+  color: #ffffff;
+}
+
+.viewer-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+}
+
+.viewer-bar > span {
+  flex: 1;
+}
+
+.viewer-nav > button {
+  flex: 1;
+}
+
+.viewer-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+
+/* At actual size the photo pans instead of swiping to the next. */
+.viewer-track.locked {
+  overflow-x: hidden;
+}
+
+.viewer-slide {
+  flex: 0 0 100%;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  scroll-snap-align: center;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.viewer-slide img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  touch-action: pinch-zoom;
+  cursor: zoom-in;
+}
+
+.viewer-slide.actual {
+  overflow: auto;
+  place-items: start;
+}
+
+.viewer-slide.actual img {
+  max-width: none;
+  max-height: none;
+  cursor: zoom-out;
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+.status-line {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-3);
+}
+
+.status-line p {
+  margin: 0;
+}
+
+/* ---------- Offers ---------- */
+
+/* The firm offer on a card: the one number that matters. */
+.offer-price {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  margin: var(--space-1) 0;
+}
+
+.offer-panel {
+  border-color: var(--color-accent);
+  border-width: 2px;
+}
+
+.confirm {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-md);
+}
+
+.confirm > p:first-child {
+  margin-top: 0;
+}
+
+.meta {
+  margin: var(--space-1) 0;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+/* Listings and deals: the card, its photos and its price. */
+.listing-top {
+  display: grid;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.listing-top .offer-price {
+  margin: 0;
+}
+
+@media (min-width: 40rem) {
+  .listing-top {
+    grid-template-columns: 1fr auto;
+    align-items: start;
+  }
+
+  .listing-top .offer-price {
+    text-align: right;
+  }
+}
+
+/* Buyers: Cards for sale and Your deals, as two tabs. */
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 var(--space-3);
+  padding: var(--space-1);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-md);
+}
+
+.tabs a {
+  flex: 1 1 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.tabs a[aria-current='page'] {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  box-shadow: var(--shadow-1);
+}
+
+/* ---------- Org page ---------- */
+
+/* The terms to accept: scrolls in its own box, so "I agree" stays close. */
+.terms {
+  white-space: pre-wrap;
+  font: inherit;
+  font-size: var(--text-sm);
+  max-height: 55vh;
+  overflow: auto;
+  margin: var(--space-3) 0 0;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+
+.gate-bar {
+  position: sticky;
+  bottom: 0;
+  margin: 0 calc(-1 * var(--space-4));
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
+  background: var(--color-bg);
+}
+
+.gate-bar button {
+  width: 100%;
+}
+
+@media (min-width: 40rem) {
+  .gate-bar button {
+    width: auto;
+  }
+}
+
+.invite {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.invite input {
+  flex: 1 1 16rem;
+}
+
+/* ---------- Admin and review ---------- */
+
+.identity {
+  display: grid;
+  grid-template-columns: 6rem 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.hits {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.hit {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  color: inherit;
+  border: 1px solid var(--color-border);
+  text-align: left;
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
+.hit:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+
+.hit img {
+  width: 100%;
+}
+
+.noimg {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 63 / 88;
+  color: var(--color-muted);
+}
+
+.grades {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
+  gap: var(--space-2);
+}
+
+.grades label {
+  display: grid;
+  gap: 0.15rem;
+  font-size: var(--text-sm);
+}
+
+.grades input {
+  width: 100%;
+}
+
+.bars {
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  gap: 0.3rem;
+  height: 9rem;
+  align-items: end;
+  margin: var(--space-2) 0 var(--space-4);
+}
+
+.bar {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 0;
+  text-align: center;
+}
+
+/* Stretched to its track, whatever the viewBox's shape. */
+.bar .fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  fill: var(--color-accent);
+}
+
+.bar .value {
+  font-size: 0.7rem;
+  color: var(--color-muted);
+}
+
+.bar .label {
+  font-size: var(--text-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.suggestions {
+  margin-bottom: var(--space-3);
+}
+
+.suggestion {
+  display: grid;
+  grid-template-columns: 4rem 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.suggestion img,
+.suggestion .noimg {
+  width: 100%;
+}
+
+/* Valuation run summary: a row of figures that wraps on narrow screens. */
+.tiles {
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+.tiles > .panel {
+  flex: 1 1 10rem;
+  margin: 0;
+}
+
+.tiles strong {
+  font-size: var(--text-xl);
+}
+
+/* ---------- Date input ---------- */
+
+.date-input {
+  position: relative;
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.date-input input {
+  width: 8.5rem;
+}
+
+.date-toggle {
+  padding: 0 0.7rem;
+  line-height: 0;
+}
+
+.calendar {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  z-index: 30;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  box-shadow: var(--shadow-2);
+}
+
+.calendar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+  font-weight: 600;
+}
+
+.calendar-head button {
+  min-height: 2.25rem;
+  padding: 0 0.7rem;
+}
+
+.calendar table {
+  border-collapse: collapse;
+}
+
+.calendar th {
+  font-weight: normal;
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  padding: 0.15rem;
+}
+
+.calendar td {
+  padding: 1px;
+}
+
+.calendar .day {
+  width: 2.4rem;
+  min-height: 2.4rem;
+  padding: 0;
+  border: 1px solid transparent;
+  background: none;
+  color: inherit;
+  font-weight: 400;
+}
+
+.calendar .day:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+  border-color: var(--color-border);
+}
+
+.calendar .day.selected {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.calendar .day:disabled {
+  color: var(--color-muted);
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Focus moves to a page's heading on navigation, for screen readers: nobody can act on it, so it shows no ring. */
+h1[tabindex='-1']:focus {
+  outline: none;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: var(--tap);
+  margin-right: auto;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+/* The bar can't hold the email too on a phone. */
+@media (max-width: 30rem) {
+  .who .email {
+    display: none;
+  }
+}
+
+/* A photo that didn't pass: there to compare with its reasons, and marked so it can't pass for the one in use. */
+.thumb.rejected {
+  border: 2px solid var(--color-warning, currentColor);
+  opacity: 0.85;
+}
+
+.guide h2 {
+  margin-top: var(--space-5);
+}
+
+.guide ul {
+  padding-left: 1.2rem;
+}
+
+.guide li {
+  margin: var(--space-2) 0;
+}
+
+/* The whole text on its own page, with no box of its own to scroll. */
+.terms.terms-full {
+  max-height: none;
+  overflow: visible;
+}
+

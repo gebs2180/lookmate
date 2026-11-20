@@ -1,0 +1,119 @@
+import { Component, useId, type ErrorInfo, type ReactNode } from 'react'
+import { Link } from 'react-router'
+
+/** The colour a chip, alert or message takes. Each maps to a token pair in index.css. */
+export type Tone = 'neutral' | 'info' | 'success' | 'warning' | 'danger'
+
+export function Chip({ tone = 'neutral', children }: { tone?: Tone; children: ReactNode }) {
+  return <span className={`chip chip-${tone}`}>{children}</span>
+}
+
+/** A page or panel still loading. Not a live region: pages already announce what they load. */
+export function Loading({ children = 'Loading…' }: { children?: ReactNode }) {
+  return <p className="loading">{children}</p>
+}
+
+/** A page that couldn't be shown: why, and the way back. */
+export function PageError({ message }: { message: string }) {
+  return (
+    <>
+      <h1>Something went wrong</h1>
+      <p className="error" role="alert">{message}</p>
+      <p>
+        <Link to="/">Go to your home page</Link>
+      </p>
+    </>
+  )
+}
+
+export function NotFound() {
+  return (
+    <>
+      <h1>Page not found</h1>
+      <p>
+        <Link to="/">Go to your home page</Link>
+      </p>
+    </>
+  )
+}
+
+/** Nothing to show yet, and what to do about it. */
+export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
+  return (
+    <div className="empty">
+      <p className="empty-title">{title}</p>
+      {children}
+    </div>
+  )
+}
+
+/**
+ * A labelled form control with optional hint and error text, both linked to the control with aria-describedby.
+ * The control is a render prop, so it keeps its own props (and accessible name: give it the same aria-label as the
+ * visible label, or none).
+ */
+export function Field({
+  label,
+  hint,
+  error,
+  className,
+  children,
+}: {
+  label: ReactNode
+  hint?: ReactNode
+  error?: string | null
+  className?: string
+  children: (control: { id: string; 'aria-describedby'?: string; 'aria-invalid'?: true }) => ReactNode
+}) {
+  const id = useId()
+  const hintId = `${id}-hint`
+  const errorId = `${id}-error`
+  const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(' ') || undefined
+  return (
+    <div className={className ? `field ${className}` : 'field'}>
+      <label htmlFor={id} className="field-label">
+        {label}
+      </label>
+      {children({ id, 'aria-describedby': describedBy, ...(error ? { 'aria-invalid': true as const } : {}) })}
+      {hint && (
+        <p id={hintId} className="field-hint">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p id={errorId} className="field-error">
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Catches a render error or a failed lazy chunk (a deploy renames chunks under open tabs) so one page can't
+ * blank the whole app. Key it by route so moving to another page tries again.
+ */
+export class RouteErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('Page failed to render', error, info.componentStack)
+  }
+
+  render() {
+    if (!this.state.failed) return this.props.children
+    return (
+      <>
+        <h1>Something went wrong</h1>
+        <p className="error" role="alert">This page couldn't be shown. Reloading usually fixes it.</p>
+        <p>
+          <button onClick={() => window.location.reload()}>Reload</button>
+        </p>
+      </>
+    )
+  }
+}
