@@ -75,7 +75,7 @@ class TrackingFlowTest {
     void bookRedirectsToTheTaggedLinkAndRecordsOneClick() throws Exception {
         Seeded s = seed(null, "https://booksy.com/en-us/123?staff=7#top");
 
-        String expected = "https://booksy.com/en-us/123?staff=7&utm_source=lookmate&utm_medium=referral"
+        String expected = "https://booksy.com/en-us/123?staff=7&utm_source=combpatible&utm_medium=referral"
                 + "&utm_campaign=columbus-oh&utm_content=" + s.matchId() + "#top";
         mvc.perform(get("/api/public/book/" + s.token() + "/" + s.matchId()))
                 .andExpect(status().isFound())
@@ -329,7 +329,7 @@ class TrackingFlowTest {
         UUID picked = fx.org("Picked");
         fx.profile(picked, "Picked From Directory", MARKET, "LIVE", "https://vagaro.com/picked?ref=ig&utm_content=old");
 
-        String expected = "https://vagaro.com/picked?ref=ig&utm_source=lookmate&utm_medium=referral&utm_campaign=columbus-oh"
+        String expected = "https://vagaro.com/picked?ref=ig&utm_source=combpatible&utm_medium=referral&utm_campaign=columbus-oh"
                 + "&utm_content=directory";
         mvc.perform(get("/api/public/book-stylist/" + s.token() + "/" + picked))
                 .andExpect(status().isFound())

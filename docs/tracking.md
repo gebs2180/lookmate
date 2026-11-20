@@ -18,7 +18,7 @@ a correction is a new row (a `VOIDED` event, below).
 
 | Who | Method and path | What it does |
 |---|---|---|
-| Client (link token) | `GET /api/public/book/{token}/{matchId}` | Records `CLICKED_BOOK` and answers `302` to the stylist's `booking_url` with `utm_source=lookmate&utm_medium=referral&utm_campaign=<market>&utm_content=<matchId>` |
+| Client (link token) | `GET /api/public/book/{token}/{matchId}` | Records `CLICKED_BOOK` and answers `302` to the stylist's `booking_url` with `utm_source=combpatible&utm_medium=referral&utm_campaign=<market>&utm_content=<matchId>` |
 | Client (link token) | `GET /api/public/book-stylist/{token}/{orgId}` | Book on a stylist picked from the directory: records `CLICKED_BOOK` with `match_id` null and the stylist's `org_id`, attributed to the client's request (any status but CLOSED), and answers the same `302` with `utm_content=directory` |
 | Client (link token) | `POST /api/public/match-requests/{token}/viewed` | Records `VIEWED` (whole list, `match_id` null), at most once per request per day, and tells intake (`clientViewedMatches`), which cancels a held "matches ready" email. `204` |
 | Admin | `GET /api/admin/metrics?market=&from=&to=` | The pilot table, weekly series, per-stylist and per-hair-type breakdowns |

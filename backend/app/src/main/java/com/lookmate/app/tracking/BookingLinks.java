@@ -19,7 +19,7 @@ import java.util.UUID;
  */
 final class BookingLinks {
 
-    static final String SOURCE = "lookmate";
+    static final String SOURCE = "combpatible";
     static final String MEDIUM = "referral";
     /** {@code utm_content} of a Book click from the stylist directory, which has no match. */
     static final String DIRECTORY = "directory";
