@@ -112,5 +112,14 @@ the matching module should not email clients itself.
 - The client sees their own photo through a presigned link only (`photoUrl`, short-lived).
 - Inspiration photos are deleted after `lookmate.retention.inspiration-photo-days` (`InspirationRetention`) and are
   left out of the photo backups, which can't delete.
-- Tokens are in URLs: Caddy's access log and any Referer header can carry them. Book links on `/m/:token` should be
+- Tokens are in URLs. Caddy's access log redacts `/m/<token>` and `/api/public/match-requests/<token>` (its error log,
+  written only when the backend fails, still has the raw URI). Book links on `/m/:token` should be
   `rel="noreferrer"` (the web page sets `<meta name="referrer" content="no-referrer">`).
+
+## Web
+
+`/find` (the quiz, one question per screen, then the photo and an email) and `/m/:token` (the client's request: stage,
+photo, matches once published; it can also take the photo if the first upload failed). Both render in
+`web/src/pages/public/PublicShell.tsx`, outside the signed-in shell. The browser re-encodes the photo as a JPEG of at
+most 2048 px before upload (which also drops its metadata and turns HEIC into JPEG where the browser can decode it);
+the server strips metadata again regardless.

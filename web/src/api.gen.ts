@@ -13,7 +13,7 @@ export interface paths {
         };
         get: operations["list"];
         put?: never;
-        post: operations["create"];
+        post: operations["create_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -148,6 +148,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/match-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/match-requests/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["view"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/match-requests/{token}/inspiration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["uploadSlot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/match-requests/{token}/inspiration/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -179,6 +243,18 @@ export interface components {
             /** @enum {string} */
             type: "STYLIST";
         };
+        ClientMatch: {
+            bookUrl: string;
+            instagram: string;
+            locationName: string;
+            /** Format: uuid */
+            matchId: string;
+            photoUrls: string[];
+            /** Format: int32 */
+            rank: number;
+            reason: string;
+            stylistName: string;
+        };
         ConsentControllerAcceptRequest: {
             version: string;
         };
@@ -187,6 +263,61 @@ export interface components {
             acceptedAt: string;
             text: string;
             version: string;
+        };
+        IntakeControllerCreateRequest: {
+            /** Format: int32 */
+            budgetTier: number;
+            /** Format: email */
+            email: string;
+            firstName: string;
+            /** @enum {string} */
+            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+            inspiration: components["schemas"]["IntakeControllerPhotoFile"];
+            /** @enum {string} */
+            length: "PIXIE" | "SHORT" | "MEDIUM" | "LONG";
+            neighborhood: string;
+            pastIssues: ("DIDNT_LISTEN" | "NOT_THE_LOOK_I_ASKED_FOR" | "CUT_TOO_SHORT" | "COLOR_CAME_OUT_WRONG" | "DAMAGED_MY_HAIR" | "NO_EXPERIENCE_WITH_MY_HAIR_TYPE" | "RUSHED" | "PRICE_SURPRISE" | "HARD_TO_BOOK" | "OTHER")[];
+            pastIssuesNote: string;
+            /** @enum {string} */
+            service: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
+            /** @enum {string} */
+            texture: "FINE" | "MEDIUM" | "THICK";
+        };
+        IntakeControllerCreated: {
+            statusPath: string;
+            token: string;
+            upload: components["schemas"]["IntakeControllerUploadSlot"];
+        };
+        IntakeControllerPhotoFile: {
+            contentType: string;
+            /** Format: int64 */
+            sizeBytes: number;
+        };
+        IntakeControllerUploadSlot: {
+            /** Format: date-time */
+            expiresAt: string;
+            headers: {
+                [key: string]: string;
+            };
+            method: string;
+            url: string;
+        };
+        IntakeServiceClientView: {
+            /** Format: date-time */
+            createdAt: string;
+            firstName: string;
+            hairType: string;
+            length: string;
+            matches: components["schemas"]["ClientMatch"][];
+            photoDeleted: boolean;
+            /** Format: date-time */
+            photoDeletesAt: string;
+            photoUploaded: boolean;
+            photoUrl: string;
+            service: string;
+            /** @enum {string} */
+            stage: "PHOTO_NEEDED" | "RECEIVED" | "MATCHING" | "READY" | "CLOSED";
+            texture: string;
         };
         InviteControllerAccepted: {
             /** Format: uuid */
@@ -267,7 +398,7 @@ export interface operations {
             };
         };
     };
-    create: {
+    create_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -511,6 +642,100 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ConsentControllerConsentStatus"];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntakeControllerCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IntakeControllerCreated"];
+                };
+            };
+        };
+    };
+    view: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IntakeServiceClientView"];
+                };
+            };
+        };
+    };
+    uploadSlot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntakeControllerPhotoFile"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IntakeControllerUploadSlot"];
+                };
+            };
+        };
+    };
+    confirm: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IntakeServiceClientView"];
                 };
             };
         };

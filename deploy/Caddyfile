@@ -45,11 +45,12 @@
 
 	log {
 		output stdout
-		# An invite link is a key to an org for a week, and its token is in the path.
+		# An invite link is a key to an org for a week, and a client's link (/m/<token>, and the API behind it) is the
+		# key to their request: the tokens are in the path.
 		format filter {
 			wrap console
 			fields {
-				request>uri regexp "^/api/invites/[^/]+" "/api/invites/REDACTED"
+				request>uri regexp "^/(api/invites|api/public/match-requests|m)/[^/?]+" "/${1}/REDACTED"
 			}
 		}
 	}
