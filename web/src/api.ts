@@ -158,3 +158,11 @@ export async function uploadToStorage(slot: UploadSlot, file: Blob): Promise<voi
 
 // Review (admin): identification and condition
 
+
+// Tracking (booking clicks, manual bookings, pilot metrics): generated types, named for the pages.
+import type { components as TrackingSchemas } from './api.gen'
+export type Metrics = TrackingSchemas['schemas']['MetricsServiceMetrics']
+export type MetricsWeek = TrackingSchemas['schemas']['TrackingQueriesWeekRow']
+export type StylistStats = TrackingSchemas['schemas']['MetricsServiceStylistStats']
+export type RecentMatch = TrackingSchemas['schemas']['TrackingQueriesRecentMatch']
+export type RecordedEvent = TrackingSchemas['schemas']['TrackingServiceRecorded']

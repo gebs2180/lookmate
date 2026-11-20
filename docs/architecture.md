@@ -22,6 +22,12 @@ pgvector, one private photo bucket, one React PWA. Clients never sign in; stylis
 The whole Phase 1 schema is in `V2__matching_domain.sql`, so modules can be built in parallel without competing
 migrations. Each module reads another's data only through that module's public service, never its repositories.
 
+**Sanctioned exception (tracking):** `tracking/TrackingQueries` reads `stylist_profile`, `portfolio_photo`, `client`,
+`match_request` and `match` with read-only SQL, because tracking was built in parallel with the modules that own them
+and the metrics are aggregate SQL across the whole schema. Nothing in tracking writes those tables; its tests seed them
+with SQL fixtures. The redirect and manual-entry lookups can move behind the owners' services once they exist; the
+metrics stay reporting SQL. See [tracking.md](tracking.md).
+
 ## Matching v1
 
 1. **Embed** each READY portfolio photo and each inspiration photo through an `EmbeddingProvider` interface (a hosted
