@@ -4,55 +4,7 @@
  */
 
 export interface paths {
-    "/api/admin/match-reports/fairness": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["fairness"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/match-requests": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["queue"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/match-requests/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/match-requests/{id}/matches": {
+    "/api/admin/events/{eventId}/void": {
         parameters: {
             query?: never;
             header?: never;
@@ -61,69 +13,37 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["add"];
+        post: operations["voidEvent_1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/admin/match-requests/{id}/matches/{matchId}": {
+    "/api/admin/matches/{matchId}/events": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put: operations["change"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/match-requests/{id}/order": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put: operations["reorder"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/match-requests/{id}/publish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
+        get: operations["events_1"];
         put?: never;
-        post: operations["publish"];
+        post: operations["record_1"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/admin/match-requests/{id}/stylists": {
+    "/api/admin/metrics": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["stylists"];
+        get: operations["metrics"];
         put?: never;
         post?: never;
         delete?: never;
@@ -141,7 +61,7 @@ export interface paths {
         };
         get: operations["list"];
         put?: never;
-        post: operations["create_1"];
+        post: operations["create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -212,6 +132,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/tracking/matches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["matches_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/invites/{token}": {
         parameters: {
             query?: never;
@@ -276,7 +212,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/public/match-requests": {
+    "/api/orgs/{orgId}/events/{eventId}/void": {
         parameters: {
             query?: never;
             header?: never;
@@ -285,21 +221,37 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["create"];
+        post: operations["voidEvent"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/public/match-requests/{token}": {
+    "/api/orgs/{orgId}/matches/{matchId}/events": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["view"];
+        get: operations["events"];
+        put?: never;
+        post: operations["record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/tracking/matches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["matches"];
         put?: never;
         post?: never;
         delete?: never;
@@ -308,23 +260,39 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/public/match-requests/{token}/inspiration": {
+    "/api/orgs/{orgId}/tracking/stats": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["stats"];
         put?: never;
-        post: operations["uploadSlot"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/public/match-requests/{token}/inspiration/confirm": {
+    "/api/public/book/{token}/{matchId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["book"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/match-requests/{token}/viewed": {
         parameters: {
             query?: never;
             header?: never;
@@ -333,7 +301,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["confirm"];
+        post: operations["viewed"];
         delete?: never;
         options?: never;
         head?: never;
@@ -344,18 +312,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        AdminMatchControllerAddStylist: {
-            note: string;
-            /** Format: uuid */
-            orgId: string;
-        };
-        AdminMatchControllerMatchChange: {
-            hidden: boolean;
-            note: string;
-        };
-        AdminMatchControllerOrder: {
-            matchIds: string[];
-        };
         AdminOrgControllerCreateOrg: {
             name: string;
             /** @enum {string} */
@@ -383,40 +339,15 @@ export interface components {
             /** @enum {string} */
             type: "STYLIST";
         };
-        CandidateQueriesFairnessRow: {
-            /** Format: int64 */
-            bookedRequests: number;
-            /** Format: int64 */
-            clickedRequests: number;
-            /** Format: int64 */
-            failed: number;
-            hairType: string;
-            /** Format: double */
-            meanTopScore: number;
-            /** Format: int64 */
-            noSystemMatches: number;
-            /** Format: int64 */
-            published: number;
-            /** Format: int64 */
-            requests: number;
-            /** Format: int64 */
-            reviewed: number;
-            /** Format: int64 */
-            shownMatches: number;
-            /** Format: int64 */
-            withAdminChanges: number;
+        AdminTrackingControllerRecordBooking: {
+            note: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** @enum {string} */
+            type: "VIEWED" | "CLICKED_BOOK" | "BOOKED" | "REBOOKED" | "VOIDED";
         };
-        ClientMatch: {
-            bookUrl: string;
-            instagram: string;
-            locationName: string;
-            /** Format: uuid */
-            matchId: string;
-            photoUrls: string[];
-            /** Format: int32 */
-            rank: number;
+        AdminTrackingControllerVoidEvent: {
             reason: string;
-            stylistName: string;
         };
         ConsentControllerAcceptRequest: {
             version: string;
@@ -426,61 +357,6 @@ export interface components {
             acceptedAt: string;
             text: string;
             version: string;
-        };
-        IntakeControllerCreateRequest: {
-            /** Format: int32 */
-            budgetTier: number;
-            /** Format: email */
-            email: string;
-            firstName: string;
-            /** @enum {string} */
-            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
-            inspiration: components["schemas"]["IntakeControllerPhotoFile"];
-            /** @enum {string} */
-            length: "PIXIE" | "SHORT" | "MEDIUM" | "LONG";
-            neighborhood: string;
-            pastIssues: ("DIDNT_LISTEN" | "NOT_THE_LOOK_I_ASKED_FOR" | "CUT_TOO_SHORT" | "COLOR_CAME_OUT_WRONG" | "DAMAGED_MY_HAIR" | "NO_EXPERIENCE_WITH_MY_HAIR_TYPE" | "RUSHED" | "PRICE_SURPRISE" | "HARD_TO_BOOK" | "OTHER")[];
-            pastIssuesNote: string;
-            /** @enum {string} */
-            service: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
-            /** @enum {string} */
-            texture: "FINE" | "MEDIUM" | "THICK";
-        };
-        IntakeControllerCreated: {
-            statusPath: string;
-            token: string;
-            upload: components["schemas"]["IntakeControllerUploadSlot"];
-        };
-        IntakeControllerPhotoFile: {
-            contentType: string;
-            /** Format: int64 */
-            sizeBytes: number;
-        };
-        IntakeControllerUploadSlot: {
-            /** Format: date-time */
-            expiresAt: string;
-            headers: {
-                [key: string]: string;
-            };
-            method: string;
-            url: string;
-        };
-        IntakeServiceClientView: {
-            /** Format: date-time */
-            createdAt: string;
-            firstName: string;
-            hairType: string;
-            length: string;
-            matches: components["schemas"]["ClientMatch"][];
-            photoDeleted: boolean;
-            /** Format: date-time */
-            photoDeletesAt: string;
-            photoUploaded: boolean;
-            photoUrl: string;
-            service: string;
-            /** @enum {string} */
-            stage: "PHOTO_NEEDED" | "RECEIVED" | "MATCHING" | "READY" | "CLOSED";
-            texture: string;
         };
         InviteControllerAccepted: {
             /** Format: uuid */
@@ -515,6 +391,27 @@ export interface components {
             /** Format: uuid */
             id: string;
         };
+        MatchEventsEvent: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            matchId: string;
+            /** Format: uuid */
+            matchRequestId: string;
+            note: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            orgId: string;
+            /** @enum {string} */
+            source: "CLIENT" | "ADMIN" | "STYLIST";
+            /** @enum {string} */
+            type: "VIEWED" | "CLICKED_BOOK" | "BOOKED" | "REBOOKED" | "VOIDED";
+            voidReason: string;
+            voided: boolean;
+        };
         MeControllerMe: {
             claimedRoles: string[];
             issuer: string;
@@ -532,94 +429,155 @@ export interface components {
             /** @enum {string} */
             role: "ADMIN" | "STYLIST";
         };
-        ReviewServiceEvidencePhoto: {
-            hairType: string;
-            /** Format: uuid */
-            id: string;
-            service: string;
-            /** Format: uri */
-            url: string;
-        };
-        ReviewServiceFairnessReport: {
+        MetricsServiceMetrics: {
+            /** Format: date */
+            from: string;
+            hairTypes: components["schemas"]["TrackingQueriesHairTypeRow"][];
             market: string;
-            rows: components["schemas"]["CandidateQueriesFairnessRow"][];
-            /** Format: date-time */
-            since: string;
+            markets: string[];
+            stylists: components["schemas"]["TrackingQueriesStylistRow"][];
+            timeZone: string;
+            /** Format: date */
+            to: string;
+            totals: components["schemas"]["MetricsServiceTotals"];
+            weeks: components["schemas"]["TrackingQueriesWeekRow"][];
         };
-        ReviewServiceMatchView: {
-            adminNote: string;
-            adminOverride: boolean;
-            evidence: components["schemas"]["ReviewServiceEvidencePhoto"][];
+        MetricsServiceStylistStats: {
+            allTime: components["schemas"]["TrackingQueriesOrgCounts"];
+            last30Days: components["schemas"]["TrackingQueriesOrgCounts"];
+        };
+        MetricsServiceTotals: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            /** Format: int64 */
+            clientsBooked: number;
+            /** Format: int64 */
+            clientsClicked: number;
+            /** Format: int64 */
+            clientsMatched: number;
+            /** Format: int64 */
+            clientsRebooked: number;
+            /** Format: int64 */
+            rebookCohort: number;
+            /** Format: int64 */
+            rebookCohortRebooked: number;
+            /** Format: double */
+            rebookRate: number;
+            /** Format: int64 */
+            rebooks: number;
+            /** Format: int64 */
+            requestsPublished: number;
+            /** Format: int64 */
+            stylistsActive: number;
+            /** Format: int64 */
+            stylistsLive: number;
+        };
+        StylistTrackingControllerStylistMatch: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            clientFirstName: string;
             /** Format: int32 */
             finalRank: number;
-            hidden: boolean;
             /** Format: uuid */
-            id: string;
-            instagram: string;
-            locationName: string;
-            /** Format: uuid */
-            orgId: string;
-            reason: string;
-            /** Format: double */
-            score: number;
-            source: string;
-            stylistLive: boolean;
-            stylistName: string;
-            /** Format: int32 */
-            systemRank: number;
-        };
-        ReviewServiceQueueItem: {
-            /** Format: int32 */
-            candidates: number;
-            /** Format: date-time */
-            createdAt: string;
-            firstName: string;
-            /** @enum {string} */
-            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
-            /** Format: uuid */
-            id: string;
-            length: string;
-            market: string;
-            service: string;
-            status: string;
-            statusReason: string;
-            texture: string;
-        };
-        ReviewServiceRequestView: {
-            /** Format: int32 */
-            budgetTier: number;
-            /** Format: date-time */
-            createdAt: string;
-            firstName: string;
-            /** @enum {string} */
-            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
-            /** Format: uuid */
-            id: string;
-            inspirationDeleted: boolean;
-            length: string;
-            market: string;
-            neighborhood: string;
-            notes: string;
-            pastIssues: string[];
+            matchId: string;
             /** Format: date-time */
             publishedAt: string;
+            /** Format: int64 */
+            rebooks: number;
             service: string;
-            status: string;
-            statusReason: string;
-            texture: string;
         };
-        ReviewServiceReview: {
-            /** Format: uri */
-            inspirationUrl: string;
-            matches: components["schemas"]["ReviewServiceMatchView"][];
-            request: components["schemas"]["ReviewServiceRequestView"];
+        TrackingQueriesHairTypeRow: {
+            /** Format: int64 */
+            clientsBooked: number;
+            /** Format: int64 */
+            clientsClicked: number;
+            /** Format: int64 */
+            clientsMatched: number;
+            hairType: string;
         };
-        ReviewServiceStylistOption: {
-            alreadyMatched: boolean;
-            displayName: string;
-            locationName: string;
+        TrackingQueriesOrgCounts: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            /** Format: int64 */
+            matchesShown: number;
+            /** Format: int64 */
+            rebooks: number;
+        };
+        TrackingQueriesRecentMatch: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            clientEmail: string;
+            clientFirstName: string;
+            /** Format: int32 */
+            finalRank: number;
+            market: string;
+            /** Format: uuid */
+            matchId: string;
             /** Format: uuid */
             orgId: string;
+            /** Format: date-time */
+            publishedAt: string;
+            /** Format: int64 */
+            rebooks: number;
+            /** Format: uuid */
+            requestId: string;
+            service: string;
+            stylistName: string;
+        };
+        TrackingQueriesStylistRow: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            /** Format: int64 */
+            clientsBooked: number;
+            /** Format: int64 */
+            clientsRebooked: number;
+            displayName: string;
+            /** Format: int64 */
+            matchesShown: number;
+            /** Format: uuid */
+            orgId: string;
+            /** Format: int64 */
+            readyPhotos: number;
+            /** Format: int64 */
+            rebooks: number;
+            status: string;
+        };
+        TrackingQueriesWeekRow: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            /** Format: int64 */
+            clientsMatched: number;
+            /** Format: int64 */
+            rebooks: number;
+            /** Format: int64 */
+            requestsPublished: number;
+            /** Format: date */
+            weekStart: string;
+        };
+        TrackingServiceRecorded: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            matchId: string;
+            note: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** @enum {string} */
+            source: "CLIENT" | "ADMIN" | "STYLIST";
+            /** @enum {string} */
+            type: "VIEWED" | "CLICKED_BOOK" | "BOOKED" | "REBOOKED" | "VOIDED";
         };
     };
     responses: never;
@@ -630,85 +588,66 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    fairness: {
-        parameters: {
-            query?: {
-                market?: string;
-                days?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ReviewServiceFairnessReport"];
-                };
-            };
-        };
-    };
-    queue: {
-        parameters: {
-            query?: {
-                status?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ReviewServiceQueueItem"][];
-                };
-            };
-        };
-    };
-    get: {
+    voidEvent_1: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ReviewServiceReview"];
-                };
-            };
-        };
-    };
-    add: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
+                eventId: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AdminMatchControllerAddStylist"];
+                "application/json": components["schemas"]["AdminTrackingControllerVoidEvent"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchEventsEvent"];
+                };
+            };
+        };
+    };
+    events_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                matchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchEventsEvent"][];
+                };
+            };
+        };
+    };
+    record_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                matchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminTrackingControllerRecordBooking"];
             };
         };
         responses: {
@@ -718,71 +657,20 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ReviewServiceReview"];
+                    "*/*": components["schemas"]["TrackingServiceRecorded"];
                 };
             };
         };
     };
-    change: {
+    metrics: {
         parameters: {
-            query?: never;
+            query?: {
+                market?: string;
+                from?: string;
+                to?: string;
+            };
             header?: never;
-            path: {
-                id: string;
-                matchId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdminMatchControllerMatchChange"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ReviewServiceReview"];
-                };
-            };
-        };
-    };
-    reorder: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdminMatchControllerOrder"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ReviewServiceReview"];
-                };
-            };
-        };
-    };
-    publish: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -793,29 +681,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ReviewServiceReview"];
-                };
-            };
-        };
-    };
-    stylists: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ReviewServiceStylistOption"][];
+                    "*/*": components["schemas"]["MetricsServiceMetrics"];
                 };
             };
         };
@@ -840,7 +706,7 @@ export interface operations {
             };
         };
     };
-    create_1: {
+    create: {
         parameters: {
             query?: never;
             header?: never;
@@ -976,6 +842,29 @@ export interface operations {
             };
         };
     };
+    matches_1: {
+        parameters: {
+            query?: {
+                market?: string;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrackingQueriesRecentMatch"][];
+                };
+            };
+        };
+    };
     preview: {
         parameters: {
             query?: never;
@@ -1088,16 +977,69 @@ export interface operations {
             };
         };
     };
-    create: {
+    voidEvent: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                orgId: string;
+                eventId: string;
+            };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["IntakeControllerCreateRequest"];
+                "application/json": components["schemas"]["AdminTrackingControllerVoidEvent"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchEventsEvent"];
+                };
+            };
+        };
+    };
+    events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                matchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchEventsEvent"][];
+                };
+            };
+        };
+    };
+    record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                matchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminTrackingControllerRecordBooking"];
             };
         };
         responses: {
@@ -1107,12 +1049,77 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["IntakeControllerCreated"];
+                    "*/*": components["schemas"]["TrackingServiceRecorded"];
                 };
             };
         };
     };
-    view: {
+    matches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylistTrackingControllerStylistMatch"][];
+                };
+            };
+        };
+    };
+    stats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MetricsServiceStylistStats"];
+                };
+            };
+        };
+    };
+    book: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+                matchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    viewed: {
         parameters: {
             query?: never;
             header?: never;
@@ -1128,57 +1135,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "*/*": components["schemas"]["IntakeServiceClientView"];
-                };
-            };
-        };
-    };
-    uploadSlot: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["IntakeControllerPhotoFile"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["IntakeControllerUploadSlot"];
-                };
-            };
-        };
-    };
-    confirm: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                token: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["IntakeServiceClientView"];
-                };
+                content?: never;
             };
         };
     };

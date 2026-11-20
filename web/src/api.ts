@@ -276,3 +276,12 @@ export type FairnessRow = {
   meanTopScore: number | null
 }
 export type FairnessReport = { market: string; since: string; rows: FairnessRow[] }
+// Tracking (booking clicks, manual bookings, pilot metrics): generated types, named for the pages.
+import type { components as TrackingSchemas } from './api.gen'
+export type Metrics = TrackingSchemas['schemas']['MetricsServiceMetrics']
+export type MetricsWeek = TrackingSchemas['schemas']['TrackingQueriesWeekRow']
+export type StylistStats = TrackingSchemas['schemas']['MetricsServiceStylistStats']
+export type RecentMatch = TrackingSchemas['schemas']['TrackingQueriesRecentMatch']
+export type RecordedEvent = TrackingSchemas['schemas']['TrackingServiceRecorded']
+export type MatchEventView = TrackingSchemas['schemas']['MatchEventsEvent']
+export type StylistMatch = TrackingSchemas['schemas']['StylistTrackingControllerStylistMatch']

@@ -1,47 +1,6 @@
 {
   "components" : {
     "schemas" : {
-      "AdminMatchControllerAddStylist" : {
-        "properties" : {
-          "note" : {
-            "maxLength" : 2000,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "orgId" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        },
-        "required" : [ "note", "orgId" ]
-      },
-      "AdminMatchControllerMatchChange" : {
-        "properties" : {
-          "hidden" : {
-            "type" : "boolean"
-          },
-          "note" : {
-            "maxLength" : 2000,
-            "minLength" : 0,
-            "type" : "string"
-          }
-        },
-        "required" : [ "hidden", "note" ]
-      },
-      "AdminMatchControllerOrder" : {
-        "properties" : {
-          "matchIds" : {
-            "items" : {
-              "format" : "uuid",
-              "type" : "string"
-            },
-            "maxItems" : 100,
-            "minItems" : 0,
-            "type" : "array"
-          }
-        },
-        "required" : [ "matchIds" ]
-      },
       "AdminOrgControllerCreateOrg" : {
         "properties" : {
           "name" : {
@@ -109,87 +68,33 @@
         },
         "required" : [ "createdAt", "id", "members", "name", "type" ]
       },
-      "CandidateQueriesFairnessRow" : {
+      "AdminTrackingControllerRecordBooking" : {
         "properties" : {
-          "bookedRequests" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "clickedRequests" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "failed" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "hairType" : {
+          "note" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
             "type" : "string"
           },
-          "meanTopScore" : {
-            "format" : "double",
-            "type" : "number"
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
           },
-          "noSystemMatches" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "published" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "requests" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "reviewed" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "shownMatches" : {
-            "format" : "int64",
-            "type" : "integer"
-          },
-          "withAdminChanges" : {
-            "format" : "int64",
-            "type" : "integer"
+          "type" : {
+            "enum" : [ "VIEWED", "CLICKED_BOOK", "BOOKED", "REBOOKED", "VOIDED" ],
+            "type" : "string"
           }
         },
-        "required" : [ "bookedRequests", "clickedRequests", "failed", "hairType", "meanTopScore", "noSystemMatches", "published", "requests", "reviewed", "shownMatches", "withAdminChanges" ]
+        "required" : [ "note", "occurredAt", "type" ]
       },
-      "ClientMatch" : {
+      "AdminTrackingControllerVoidEvent" : {
         "properties" : {
-          "bookUrl" : {
-            "type" : "string"
-          },
-          "instagram" : {
-            "type" : "string"
-          },
-          "locationName" : {
-            "type" : "string"
-          },
-          "matchId" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "photoUrls" : {
-            "items" : {
-              "type" : "string"
-            },
-            "type" : "array"
-          },
-          "rank" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
           "reason" : {
-            "type" : "string"
-          },
-          "stylistName" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
             "type" : "string"
           }
         },
-        "required" : [ "bookUrl", "instagram", "locationName", "matchId", "photoUrls", "rank", "reason", "stylistName" ]
+        "required" : [ "reason" ]
       },
       "ConsentControllerAcceptRequest" : {
         "properties" : {
@@ -214,162 +119,6 @@
           }
         },
         "required" : [ "acceptedAt", "text", "version" ]
-      },
-      "IntakeControllerCreateRequest" : {
-        "properties" : {
-          "budgetTier" : {
-            "format" : "int32",
-            "maximum" : 4,
-            "minimum" : 1,
-            "type" : "integer"
-          },
-          "email" : {
-            "format" : "email",
-            "maxLength" : 254,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "firstName" : {
-            "maxLength" : 40,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "hairType" : {
-            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
-            "type" : "string"
-          },
-          "inspiration" : {
-            "$ref" : "#/components/schemas/IntakeControllerPhotoFile"
-          },
-          "length" : {
-            "enum" : [ "PIXIE", "SHORT", "MEDIUM", "LONG" ],
-            "type" : "string"
-          },
-          "neighborhood" : {
-            "maxLength" : 80,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "pastIssues" : {
-            "items" : {
-              "enum" : [ "DIDNT_LISTEN", "NOT_THE_LOOK_I_ASKED_FOR", "CUT_TOO_SHORT", "COLOR_CAME_OUT_WRONG", "DAMAGED_MY_HAIR", "NO_EXPERIENCE_WITH_MY_HAIR_TYPE", "RUSHED", "PRICE_SURPRISE", "HARD_TO_BOOK", "OTHER" ],
-              "type" : "string"
-            },
-            "maxItems" : 10,
-            "minItems" : 0,
-            "type" : "array"
-          },
-          "pastIssuesNote" : {
-            "maxLength" : 500,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "service" : {
-            "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
-            "type" : "string"
-          },
-          "texture" : {
-            "enum" : [ "FINE", "MEDIUM", "THICK" ],
-            "type" : "string"
-          }
-        },
-        "required" : [ "budgetTier", "email", "firstName", "hairType", "inspiration", "length", "neighborhood", "pastIssues", "pastIssuesNote", "service", "texture" ]
-      },
-      "IntakeControllerCreated" : {
-        "properties" : {
-          "statusPath" : {
-            "type" : "string"
-          },
-          "token" : {
-            "type" : "string"
-          },
-          "upload" : {
-            "$ref" : "#/components/schemas/IntakeControllerUploadSlot"
-          }
-        },
-        "required" : [ "statusPath", "token", "upload" ]
-      },
-      "IntakeControllerPhotoFile" : {
-        "properties" : {
-          "contentType" : {
-            "minLength" : 1,
-            "type" : "string"
-          },
-          "sizeBytes" : {
-            "format" : "int64",
-            "minimum" : 0,
-            "type" : "integer"
-          }
-        },
-        "required" : [ "contentType", "sizeBytes" ]
-      },
-      "IntakeControllerUploadSlot" : {
-        "properties" : {
-          "expiresAt" : {
-            "format" : "date-time",
-            "type" : "string"
-          },
-          "headers" : {
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "type" : "object"
-          },
-          "method" : {
-            "type" : "string"
-          },
-          "url" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "expiresAt", "headers", "method", "url" ]
-      },
-      "IntakeServiceClientView" : {
-        "properties" : {
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string"
-          },
-          "firstName" : {
-            "type" : "string"
-          },
-          "hairType" : {
-            "type" : "string"
-          },
-          "length" : {
-            "type" : "string"
-          },
-          "matches" : {
-            "items" : {
-              "$ref" : "#/components/schemas/ClientMatch"
-            },
-            "type" : "array"
-          },
-          "photoDeleted" : {
-            "type" : "boolean"
-          },
-          "photoDeletesAt" : {
-            "format" : "date-time",
-            "type" : "string"
-          },
-          "photoUploaded" : {
-            "type" : "boolean"
-          },
-          "photoUrl" : {
-            "type" : "string"
-          },
-          "service" : {
-            "type" : "string"
-          },
-          "stage" : {
-            "enum" : [ "PHOTO_NEEDED", "RECEIVED", "MATCHING", "READY", "CLOSED" ],
-            "type" : "string"
-          },
-          "texture" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "createdAt", "firstName", "hairType", "length", "matches", "photoDeleted", "photoDeletesAt", "photoUploaded", "photoUrl", "service", "stage", "texture" ]
       },
       "InviteControllerAccepted" : {
         "properties" : {
@@ -444,6 +193,52 @@
         },
         "required" : [ "createdAt", "expiresAt", "id" ]
       },
+      "MatchEventsEvent" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "matchId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "matchRequestId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "note" : {
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "source" : {
+            "enum" : [ "CLIENT", "ADMIN", "STYLIST" ],
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "VIEWED", "CLICKED_BOOK", "BOOKED", "REBOOKED", "VOIDED" ],
+            "type" : "string"
+          },
+          "voidReason" : {
+            "type" : "string"
+          },
+          "voided" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "createdAt", "id", "matchId", "matchRequestId", "note", "occurredAt", "orgId", "source", "type", "voidReason", "voided" ]
+      },
       "MeControllerMe" : {
         "properties" : {
           "claimedRoles" : {
@@ -496,239 +291,347 @@
         },
         "required" : [ "orgId", "orgName", "orgType", "role" ]
       },
-      "ReviewServiceEvidencePhoto" : {
+      "MetricsServiceMetrics" : {
         "properties" : {
-          "hairType" : {
+          "from" : {
+            "format" : "date",
             "type" : "string"
           },
-          "id" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "service" : {
-            "type" : "string"
-          },
-          "url" : {
-            "format" : "uri",
-            "type" : "string"
-          }
-        },
-        "required" : [ "hairType", "id", "service", "url" ]
-      },
-      "ReviewServiceFairnessReport" : {
-        "properties" : {
-          "market" : {
-            "type" : "string"
-          },
-          "rows" : {
+          "hairTypes" : {
             "items" : {
-              "$ref" : "#/components/schemas/CandidateQueriesFairnessRow"
+              "$ref" : "#/components/schemas/TrackingQueriesHairTypeRow"
             },
             "type" : "array"
           },
-          "since" : {
-            "format" : "date-time",
-            "type" : "string"
-          }
-        },
-        "required" : [ "market", "rows", "since" ]
-      },
-      "ReviewServiceMatchView" : {
-        "properties" : {
-          "adminNote" : {
-            "type" : "string"
-          },
-          "adminOverride" : {
-            "type" : "boolean"
-          },
-          "evidence" : {
-            "items" : {
-              "$ref" : "#/components/schemas/ReviewServiceEvidencePhoto"
-            },
-            "type" : "array"
-          },
-          "finalRank" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "hidden" : {
-            "type" : "boolean"
-          },
-          "id" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "instagram" : {
-            "type" : "string"
-          },
-          "locationName" : {
-            "type" : "string"
-          },
-          "orgId" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "reason" : {
-            "type" : "string"
-          },
-          "score" : {
-            "format" : "double",
-            "type" : "number"
-          },
-          "source" : {
-            "type" : "string"
-          },
-          "stylistLive" : {
-            "type" : "boolean"
-          },
-          "stylistName" : {
-            "type" : "string"
-          },
-          "systemRank" : {
-            "format" : "int32",
-            "type" : "integer"
-          }
-        },
-        "required" : [ "adminNote", "adminOverride", "evidence", "finalRank", "hidden", "id", "instagram", "locationName", "orgId", "reason", "score", "source", "stylistLive", "stylistName", "systemRank" ]
-      },
-      "ReviewServiceQueueItem" : {
-        "properties" : {
-          "candidates" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string"
-          },
-          "firstName" : {
-            "type" : "string"
-          },
-          "hairType" : {
-            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
-            "type" : "string"
-          },
-          "id" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "length" : {
-            "type" : "string"
-          },
           "market" : {
             "type" : "string"
           },
-          "service" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          },
-          "statusReason" : {
-            "type" : "string"
-          },
-          "texture" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "candidates", "createdAt", "firstName", "hairType", "id", "length", "market", "service", "status", "statusReason", "texture" ]
-      },
-      "ReviewServiceRequestView" : {
-        "properties" : {
-          "budgetTier" : {
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "createdAt" : {
-            "format" : "date-time",
-            "type" : "string"
-          },
-          "firstName" : {
-            "type" : "string"
-          },
-          "hairType" : {
-            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
-            "type" : "string"
-          },
-          "id" : {
-            "format" : "uuid",
-            "type" : "string"
-          },
-          "inspirationDeleted" : {
-            "type" : "boolean"
-          },
-          "length" : {
-            "type" : "string"
-          },
-          "market" : {
-            "type" : "string"
-          },
-          "neighborhood" : {
-            "type" : "string"
-          },
-          "notes" : {
-            "type" : "string"
-          },
-          "pastIssues" : {
+          "markets" : {
             "items" : {
               "type" : "string"
             },
             "type" : "array"
           },
+          "stylists" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TrackingQueriesStylistRow"
+            },
+            "type" : "array"
+          },
+          "timeZone" : {
+            "type" : "string"
+          },
+          "to" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "totals" : {
+            "$ref" : "#/components/schemas/MetricsServiceTotals"
+          },
+          "weeks" : {
+            "items" : {
+              "$ref" : "#/components/schemas/TrackingQueriesWeekRow"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "from", "hairTypes", "market", "markets", "stylists", "timeZone", "to", "totals", "weeks" ]
+      },
+      "MetricsServiceStylistStats" : {
+        "properties" : {
+          "allTime" : {
+            "$ref" : "#/components/schemas/TrackingQueriesOrgCounts"
+          },
+          "last30Days" : {
+            "$ref" : "#/components/schemas/TrackingQueriesOrgCounts"
+          }
+        },
+        "required" : [ "allTime", "last30Days" ]
+      },
+      "MetricsServiceTotals" : {
+        "properties" : {
+          "bookingClicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bookings" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsBooked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsClicked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsMatched" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsRebooked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "rebookCohort" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "rebookCohortRebooked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "rebookRate" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "rebooks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "requestsPublished" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "stylistsActive" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "stylistsLive" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "bookingClicks", "bookings", "clientsBooked", "clientsClicked", "clientsMatched", "clientsRebooked", "rebookCohort", "rebookCohortRebooked", "rebookRate", "rebooks", "requestsPublished", "stylistsActive", "stylistsLive" ]
+      },
+      "StylistTrackingControllerStylistMatch" : {
+        "properties" : {
+          "bookingClicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bookings" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientFirstName" : {
+            "type" : "string"
+          },
+          "finalRank" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "matchId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
           "publishedAt" : {
             "format" : "date-time",
             "type" : "string"
           },
+          "rebooks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
           "service" : {
             "type" : "string"
+          }
+        },
+        "required" : [ "bookingClicks", "bookings", "clientFirstName", "finalRank", "matchId", "publishedAt", "rebooks", "service" ]
+      },
+      "TrackingQueriesHairTypeRow" : {
+        "properties" : {
+          "clientsBooked" : {
+            "format" : "int64",
+            "type" : "integer"
           },
-          "status" : {
-            "type" : "string"
+          "clientsClicked" : {
+            "format" : "int64",
+            "type" : "integer"
           },
-          "statusReason" : {
-            "type" : "string"
+          "clientsMatched" : {
+            "format" : "int64",
+            "type" : "integer"
           },
-          "texture" : {
+          "hairType" : {
             "type" : "string"
           }
         },
-        "required" : [ "budgetTier", "createdAt", "firstName", "hairType", "id", "inspirationDeleted", "length", "market", "neighborhood", "notes", "pastIssues", "publishedAt", "service", "status", "statusReason", "texture" ]
+        "required" : [ "clientsBooked", "clientsClicked", "clientsMatched", "hairType" ]
       },
-      "ReviewServiceReview" : {
+      "TrackingQueriesOrgCounts" : {
         "properties" : {
-          "inspirationUrl" : {
-            "format" : "uri",
-            "type" : "string"
+          "bookingClicks" : {
+            "format" : "int64",
+            "type" : "integer"
           },
-          "matches" : {
-            "items" : {
-              "$ref" : "#/components/schemas/ReviewServiceMatchView"
-            },
-            "type" : "array"
+          "bookings" : {
+            "format" : "int64",
+            "type" : "integer"
           },
-          "request" : {
-            "$ref" : "#/components/schemas/ReviewServiceRequestView"
+          "matchesShown" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "rebooks" : {
+            "format" : "int64",
+            "type" : "integer"
           }
         },
-        "required" : [ "inspirationUrl", "matches", "request" ]
+        "required" : [ "bookingClicks", "bookings", "matchesShown", "rebooks" ]
       },
-      "ReviewServiceStylistOption" : {
+      "TrackingQueriesRecentMatch" : {
         "properties" : {
-          "alreadyMatched" : {
-            "type" : "boolean"
+          "bookingClicks" : {
+            "format" : "int64",
+            "type" : "integer"
           },
-          "displayName" : {
+          "bookings" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientEmail" : {
             "type" : "string"
           },
-          "locationName" : {
+          "clientFirstName" : {
+            "type" : "string"
+          },
+          "finalRank" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "market" : {
+            "type" : "string"
+          },
+          "matchId" : {
+            "format" : "uuid",
             "type" : "string"
           },
           "orgId" : {
             "format" : "uuid",
             "type" : "string"
+          },
+          "publishedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "rebooks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "requestId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          },
+          "stylistName" : {
+            "type" : "string"
           }
         },
-        "required" : [ "alreadyMatched", "displayName", "locationName", "orgId" ]
+        "required" : [ "bookingClicks", "bookings", "clientEmail", "clientFirstName", "finalRank", "market", "matchId", "orgId", "publishedAt", "rebooks", "requestId", "service", "stylistName" ]
+      },
+      "TrackingQueriesStylistRow" : {
+        "properties" : {
+          "bookingClicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bookings" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsBooked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsRebooked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "matchesShown" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "readyPhotos" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "rebooks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "bookingClicks", "bookings", "clientsBooked", "clientsRebooked", "displayName", "matchesShown", "orgId", "readyPhotos", "rebooks", "status" ]
+      },
+      "TrackingQueriesWeekRow" : {
+        "properties" : {
+          "bookingClicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bookings" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientsMatched" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "rebooks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "requestsPublished" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "weekStart" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "required" : [ "bookingClicks", "bookings", "clientsMatched", "rebooks", "requestsPublished", "weekStart" ]
+      },
+      "TrackingServiceRecorded" : {
+        "properties" : {
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "matchId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "note" : {
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "source" : {
+            "enum" : [ "CLIENT", "ADMIN", "STYLIST" ],
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "VIEWED", "CLICKED_BOOK", "BOOKED", "REBOOKED", "VOIDED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "matchId", "note", "occurredAt", "source", "type" ]
       }
     }
   },
@@ -738,109 +641,12 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
-    "/api/admin/match-reports/fairness" : {
-      "get" : {
-        "operationId" : "fairness",
-        "parameters" : [ {
-          "in" : "query",
-          "name" : "market",
-          "required" : false,
-          "schema" : {
-            "maxLength" : 64,
-            "minLength" : 0,
-            "type" : "string"
-          }
-        }, {
-          "in" : "query",
-          "name" : "days",
-          "required" : false,
-          "schema" : {
-            "default" : 90,
-            "format" : "int32",
-            "maximum" : 3650,
-            "minimum" : 1,
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReviewServiceFairnessReport"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "admin-match-controller" ]
-      }
-    },
-    "/api/admin/match-requests" : {
-      "get" : {
-        "operationId" : "queue",
-        "parameters" : [ {
-          "in" : "query",
-          "name" : "status",
-          "required" : false,
-          "schema" : {
-            "default" : "IN_REVIEW",
-            "pattern" : "MATCHING|IN_REVIEW|PUBLISHED|FAILED",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/ReviewServiceQueueItem"
-                  },
-                  "type" : "array"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "admin-match-controller" ]
-      }
-    },
-    "/api/admin/match-requests/{id}" : {
-      "get" : {
-        "operationId" : "get",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReviewServiceReview"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "admin-match-controller" ]
-      }
-    },
-    "/api/admin/match-requests/{id}/matches" : {
+    "/api/admin/events/{eventId}/void" : {
       "post" : {
-        "operationId" : "add",
+        "operationId" : "voidEvent_1",
         "parameters" : [ {
           "in" : "path",
-          "name" : "id",
+          "name" : "eventId",
           "required" : true,
           "schema" : {
             "format" : "uuid",
@@ -851,39 +657,59 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/AdminMatchControllerAddStylist"
+                "$ref" : "#/components/schemas/AdminTrackingControllerVoidEvent"
               }
             }
           },
           "required" : true
         },
         "responses" : {
-          "201" : {
+          "200" : {
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ReviewServiceReview"
+                  "$ref" : "#/components/schemas/MatchEventsEvent"
                 }
               }
             },
-            "description" : "Created"
+            "description" : "OK"
           }
         },
-        "tags" : [ "admin-match-controller" ]
+        "tags" : [ "admin-tracking-controller" ]
       }
     },
-    "/api/admin/match-requests/{id}/matches/{matchId}" : {
-      "put" : {
-        "operationId" : "change",
+    "/api/admin/matches/{matchId}/events" : {
+      "get" : {
+        "operationId" : "events_1",
         "parameters" : [ {
           "in" : "path",
-          "name" : "id",
+          "name" : "matchId",
           "required" : true,
           "schema" : {
             "format" : "uuid",
             "type" : "string"
           }
-        }, {
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/MatchEventsEvent"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-tracking-controller" ]
+      },
+      "post" : {
+        "operationId" : "record_1",
+        "parameters" : [ {
           "in" : "path",
           "name" : "matchId",
           "required" : true,
@@ -896,100 +722,51 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/AdminMatchControllerMatchChange"
+                "$ref" : "#/components/schemas/AdminTrackingControllerRecordBooking"
               }
             }
           },
           "required" : true
         },
         "responses" : {
-          "200" : {
+          "201" : {
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ReviewServiceReview"
+                  "$ref" : "#/components/schemas/TrackingServiceRecorded"
                 }
               }
             },
-            "description" : "OK"
+            "description" : "Created"
           }
         },
-        "tags" : [ "admin-match-controller" ]
+        "tags" : [ "admin-tracking-controller" ]
       }
     },
-    "/api/admin/match-requests/{id}/order" : {
-      "put" : {
-        "operationId" : "reorder",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/AdminMatchControllerOrder"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReviewServiceReview"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "admin-match-controller" ]
-      }
-    },
-    "/api/admin/match-requests/{id}/publish" : {
-      "post" : {
-        "operationId" : "publish",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "format" : "uuid",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ReviewServiceReview"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "admin-match-controller" ]
-      }
-    },
-    "/api/admin/match-requests/{id}/stylists" : {
+    "/api/admin/metrics" : {
       "get" : {
-        "operationId" : "stylists",
+        "operationId" : "metrics",
         "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
+          "in" : "query",
+          "name" : "market",
+          "required" : false,
           "schema" : {
-            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "from",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "to",
+          "required" : false,
+          "schema" : {
+            "format" : "date",
             "type" : "string"
           }
         } ],
@@ -998,17 +775,14 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/ReviewServiceStylistOption"
-                  },
-                  "type" : "array"
+                  "$ref" : "#/components/schemas/MetricsServiceMetrics"
                 }
               }
             },
             "description" : "OK"
           }
         },
-        "tags" : [ "admin-match-controller" ]
+        "tags" : [ "admin-tracking-controller" ]
       }
     },
     "/api/admin/orgs" : {
@@ -1032,7 +806,7 @@
         "tags" : [ "admin-org-controller" ]
       },
       "post" : {
-        "operationId" : "create_1",
+        "operationId" : "create",
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -1209,6 +983,44 @@
         "tags" : [ "admin-org-controller" ]
       }
     },
+    "/api/admin/tracking/matches" : {
+      "get" : {
+        "operationId" : "matches_1",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "market",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "q",
+          "required" : false,
+          "schema" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/TrackingQueriesRecentMatch"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-tracking-controller" ]
+      }
+    },
     "/api/invites/{token}" : {
       "get" : {
         "operationId" : "preview",
@@ -1341,14 +1153,112 @@
         "tags" : [ "consent-controller" ]
       }
     },
-    "/api/public/match-requests" : {
+    "/api/orgs/{orgId}/events/{eventId}/void" : {
       "post" : {
-        "operationId" : "create",
+        "operationId" : "voidEvent",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "eventId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/IntakeControllerCreateRequest"
+                "$ref" : "#/components/schemas/AdminTrackingControllerVoidEvent"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MatchEventsEvent"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-tracking-controller" ]
+      }
+    },
+    "/api/orgs/{orgId}/matches/{matchId}/events" : {
+      "get" : {
+        "operationId" : "events",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "matchId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/MatchEventsEvent"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-tracking-controller" ]
+      },
+      "post" : {
+        "operationId" : "record",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "matchId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminTrackingControllerRecordBooking"
               }
             }
           },
@@ -1359,24 +1269,25 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/IntakeControllerCreated"
+                  "$ref" : "#/components/schemas/TrackingServiceRecorded"
                 }
               }
             },
             "description" : "Created"
           }
         },
-        "tags" : [ "intake-controller" ]
+        "tags" : [ "stylist-tracking-controller" ]
       }
     },
-    "/api/public/match-requests/{token}" : {
+    "/api/orgs/{orgId}/tracking/matches" : {
       "get" : {
-        "operationId" : "view",
+        "operationId" : "matches",
         "parameters" : [ {
           "in" : "path",
-          "name" : "token",
+          "name" : "orgId",
           "required" : true,
           "schema" : {
+            "format" : "uuid",
             "type" : "string"
           }
         } ],
@@ -1385,55 +1296,76 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/IntakeServiceClientView"
+                  "items" : {
+                    "$ref" : "#/components/schemas/StylistTrackingControllerStylistMatch"
+                  },
+                  "type" : "array"
                 }
               }
             },
             "description" : "OK"
           }
         },
-        "tags" : [ "intake-controller" ]
+        "tags" : [ "stylist-tracking-controller" ]
       }
     },
-    "/api/public/match-requests/{token}/inspiration" : {
-      "post" : {
-        "operationId" : "uploadSlot",
+    "/api/orgs/{orgId}/tracking/stats" : {
+      "get" : {
+        "operationId" : "stats",
         "parameters" : [ {
           "in" : "path",
-          "name" : "token",
+          "name" : "orgId",
           "required" : true,
           "schema" : {
+            "format" : "uuid",
             "type" : "string"
           }
         } ],
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/IntakeControllerPhotoFile"
-              }
-            }
-          },
-          "required" : true
-        },
         "responses" : {
           "200" : {
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/IntakeControllerUploadSlot"
+                  "$ref" : "#/components/schemas/MetricsServiceStylistStats"
                 }
               }
             },
             "description" : "OK"
           }
         },
-        "tags" : [ "intake-controller" ]
+        "tags" : [ "stylist-tracking-controller" ]
       }
     },
-    "/api/public/match-requests/{token}/inspiration/confirm" : {
+    "/api/public/book/{token}/{matchId}" : {
+      "get" : {
+        "operationId" : "book",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "matchId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "public-tracking-controller" ]
+      }
+    },
+    "/api/public/match-requests/{token}/viewed" : {
       "post" : {
-        "operationId" : "confirm",
+        "operationId" : "viewed",
         "parameters" : [ {
           "in" : "path",
           "name" : "token",
@@ -1444,17 +1376,10 @@
         } ],
         "responses" : {
           "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/IntakeServiceClientView"
-                }
-              }
-            },
             "description" : "OK"
           }
         },
-        "tags" : [ "intake-controller" ]
+        "tags" : [ "public-tracking-controller" ]
       }
     }
   },

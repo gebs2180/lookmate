@@ -1,0 +1,246 @@
+/*
+ * Tracking pages: the metrics dashboard, the record-booking form and the stylist stats card. Kept out of index.css
+ * (shared by four parallel sessions). Chart colours are the dataviz reference palette's first three categorical slots
+ * (blue, orange, aqua), which pass the colour-vision checks in both modes; aqua is under 3:1 on white, so every line
+ * also has a direct label and the numbers are in a table.
+ */
+
+.viz-root {
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --viz-grid: var(--color-line);
+  margin: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) .viz-root {
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+  }
+}
+
+:root[data-theme='dark'] .viz-root {
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+}
+
+.viz-title {
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+
+.viz-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  list-style: none;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.viz-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.viz-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--series-1);
+}
+
+.viz-swatch.s2,
+.viz-dot.s2 {
+  background: var(--series-2);
+}
+
+.viz-swatch.s3 {
+  background: var(--series-3);
+}
+
+.viz-plot {
+  position: relative;
+}
+
+.viz-plot svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.viz-grid {
+  stroke: var(--viz-grid);
+  stroke-width: 1;
+}
+
+.viz-tick {
+  fill: var(--color-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.viz-end {
+  fill: var(--color-text);
+  font-size: 11px;
+}
+
+.viz-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke: var(--series-1);
+}
+
+.viz-line.s2 {
+  stroke: var(--series-2);
+}
+
+.viz-line.s3 {
+  stroke: var(--series-3);
+}
+
+.viz-dot {
+  fill: var(--series-1);
+  stroke: var(--color-surface);
+  stroke-width: 2;
+}
+
+.viz-dot.s2 {
+  fill: var(--series-2);
+}
+
+.viz-dot.s3 {
+  fill: var(--series-3);
+}
+
+.viz-crosshair {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.viz-hit {
+  fill: transparent;
+  outline: none;
+}
+
+.viz-hit:focus-visible {
+  fill: var(--color-surface-sunken);
+  fill-opacity: 0.5;
+}
+
+.viz-tooltip {
+  position: absolute;
+  top: 0;
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-2);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translateX(12px);
+}
+
+.viz-tooltip[data-flip='left'] {
+  transform: translateX(calc(-100% - 12px));
+}
+
+.viz-tooltip .viz-swatch {
+  vertical-align: middle;
+}
+
+.viz-table {
+  margin-top: var(--space-3);
+}
+
+.metric-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.metric-tiles li {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  background: var(--color-surface-raised);
+}
+
+.metric-tiles .metric-value {
+  display: block;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: var(--leading-tight);
+}
+
+.metric-tiles .metric-label {
+  display: block;
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.metric-tiles .metric-note {
+  display: block;
+  color: var(--color-muted);
+  font-size: var(--text-xs);
+  margin-top: var(--space-1);
+}
+
+.metric-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-end;
+}
+
+.metric-filters .field {
+  margin: 0;
+}
+
+.metric-section {
+  margin-top: var(--space-6);
+}
+
+.table td.num,
+.table th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tracking-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.tracking-saved {
+  color: var(--color-success-text);
+  background: var(--color-success-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+}
+
+.tracking-voided td:first-child {
+  text-decoration: line-through;
+}
