@@ -236,4 +236,77 @@ class TrackingFlowTest {
                         .param("r", s.requestId()).update())
                 .hasMessageContaining("append-only");
     }
+
+    // --- Voiding ------------------------------------------------------------------------------------------------
+
+    @Test
+    void aStylistVoidsAMistakenBookingOnTheirOwnMatch() throws Exception {
+        String orgA = api.stylistOrg("Void A", "auth0|void-a");
+        String orgB = api.stylistOrg("Void B", "auth0|void-b");
+        Seeded a = seed(UUID.fromString(orgA), "https://booksy.com/va");
+        Seeded b = seed(UUID.fromString(orgB), "https://booksy.com/vb");
+        var stylistA = api.user("auth0|void-a", List.of());
+        String events = "/api/orgs/" + orgA + "/matches/" + a.matchId() + "/events";
+
+        String booked = TestApi.read(api.postJson(events, "{\"type\":\"BOOKED\"}", stylistA).andExpect(status().isCreated()), "$.id");
+        String rebooked = TestApi.read(api.postJson(events, "{\"type\":\"REBOOKED\"}", stylistA).andExpect(status().isCreated()), "$.id");
+
+        // The rebook counts on the booking: void the rebook first.
+        api.postJson("/api/orgs/" + orgA + "/events/" + booked + "/void", "{\"reason\":\"wrong client\"}", stylistA)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("BOOKING_HAS_REBOOKS"));
+        api.postJson("/api/orgs/" + orgA + "/events/" + rebooked + "/void", "{\"reason\":\"wrong client\"}", stylistA)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.voided").value(true))
+                .andExpect(jsonPath("$.voidReason").value("wrong client"));
+        api.postJson("/api/orgs/" + orgA + "/events/" + booked + "/void", "{\"reason\":\"wrong client\"}", stylistA)
+                .andExpect(status().isOk());
+        api.postJson("/api/orgs/" + orgA + "/events/" + booked + "/void", "{\"reason\":\"again\"}", stylistA)
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("ALREADY_VOIDED"));
+        api.postJson("/api/orgs/" + orgA + "/events/" + booked + "/void", "{\"reason\":\" \"}", stylistA)
+                .andExpect(status().isBadRequest());
+
+        // Voided events still show, marked; they count nowhere; the booking can be recorded again.
+        api.get(events, stylistA)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[*].voided").value(org.hamcrest.Matchers.everyItem(org.hamcrest.Matchers.is(true))));
+        api.get("/api/orgs/" + orgA + "/tracking/stats", stylistA)
+                .andExpect(jsonPath("$.allTime.bookings").value(0))
+                .andExpect(jsonPath("$.allTime.rebooks").value(0));
+        api.postJson(events, "{\"type\":\"BOOKED\"}", stylistA).andExpect(status().isCreated());
+        assertThat(fx.count(a.requestId(), "BOOKED")).isEqualTo(1);
+
+        // Not another org's events, and not the client's own clicks.
+        String bBooked = TestApi.read(api.postJson("/api/admin/matches/" + b.matchId() + "/events", "{\"type\":\"BOOKED\"}", api.admin()), "$.id");
+        api.postJson("/api/orgs/" + orgA + "/events/" + bBooked + "/void", "{\"reason\":\"x\"}", stylistA)
+                .andExpect(status().isNotFound());
+        api.get("/api/orgs/" + orgA + "/matches/" + b.matchId() + "/events", stylistA).andExpect(status().isNotFound());
+        mvc.perform(get("/api/public/book/" + a.token() + "/" + a.matchId())).andExpect(status().isFound());
+        String click = jdbc.sql("select id::text from match_event where match_id = :m and type = 'CLICKED_BOOK'")
+                .param("m", a.matchId()).query(String.class).single();
+        api.postJson("/api/orgs/" + orgA + "/events/" + click + "/void", "{\"reason\":\"x\"}", stylistA)
+                .andExpect(status().isNotFound());
+        // The admin can void a click (a test click, say).
+        api.postJson("/api/admin/events/" + click + "/void", "{\"reason\":\"my own test click\"}", api.admin())
+                .andExpect(status().isOk());
+        assertThat(fx.count(a.requestId(), "CLICKED_BOOK")).isZero();
+    }
+
+    @Test
+    void aStylistSeesTheirMatchesWithTheClientsFirstNameOnly() throws Exception {
+        String org = api.stylistOrg("List Suite", "auth0|list-a");
+        Seeded s = seed(UUID.fromString(org), "https://booksy.com/list");
+        api.stylistOrg("Other List", "auth0|list-b");
+
+        api.get("/api/orgs/" + org + "/tracking/matches", api.user("auth0|list-a", List.of()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].matchId").value(s.matchId().toString()))
+                .andExpect(jsonPath("$[0].clientFirstName").value("Sam"))
+                .andExpect(jsonPath("$[0].clientEmail").doesNotExist());
+        api.get("/api/orgs/" + org + "/tracking/matches", api.user("auth0|list-b", List.of()))
+                .andExpect(status().isNotFound());
+    }
 }

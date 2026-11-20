@@ -24,7 +24,8 @@ import org.springframework.web.server.ResponseStatusException;
 public class TrackingService {
 
     /** Why a manual entry was refused; the web app branches on these. */
-    enum Code { ALREADY_BOOKED, REBOOK_WITHOUT_BOOKING, OCCURRED_IN_FUTURE, OCCURRED_BEFORE_REQUEST }
+    enum Code { ALREADY_BOOKED, REBOOK_WITHOUT_BOOKING, OCCURRED_IN_FUTURE, OCCURRED_BEFORE_REQUEST, ALREADY_VOIDED,
+        BOOKING_HAS_REBOOKS }
 
     /** Clock skew allowed on a hand-entered time before it counts as "in the future". */
     private static final Duration FUTURE_SLACK = Duration.ofMinutes(5);
@@ -127,6 +128,50 @@ public class TrackingService {
         UUID id = events.append(new MatchEvents.New(target.matchId(), target.requestId(), target.orgId(), type, source,
                 recordedBy, cleanNote, when));
         return new Recorded(id, target.matchId(), type, source, when, cleanNote);
+    }
+
+    /**
+     * The events on a match, newest first, voided ones marked. For a stylist ({@code orgId} set) the match must be
+     * theirs, else 404.
+     */
+    @Transactional(readOnly = true)
+    java.util.List<MatchEvents.Event> events(UUID matchId, UUID orgId) {
+        queries.entryTarget(matchId)
+                .filter(t -> orgId == null || t.orgId().equals(orgId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
+        return events.forMatch(matchId);
+    }
+
+    /**
+     * Undoes a wrongly recorded event by appending a VOIDED row that points at it, with the reason. The admin
+     * ({@code orgId} null) can void any event; a stylist only the bookings and rebooks on their own matches. A booking
+     * that a later rebook depends on can't be voided until that rebook is.
+     */
+    @Transactional
+    MatchEvents.Event voidEvent(UUID eventId, UUID orgId, Source source, UUID recordedBy, String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Say why the event is being voided");
+        }
+        MatchEvents.Event target = events.find(eventId)
+                .filter(e -> e.type() != Type.VOIDED)
+                .filter(e -> orgId == null
+                        || (orgId.equals(e.orgId()) && (e.type() == Type.BOOKED || e.type() == Type.REBOOKED)))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+        events.lock(target.matchId() != null ? target.matchId() : target.matchRequestId());
+        MatchEvents.Event current = events.find(eventId).orElseThrow();
+        if (current.voided()) {
+            throw new ApiException(HttpStatus.CONFLICT, Code.ALREADY_VOIDED, "This event was already voided.");
+        }
+        if (target.type() == Type.BOOKED) {
+            UUID clientId = queries.entryTarget(target.matchId()).orElseThrow().clientId();
+            if (queries.rebooksDependOn(clientId, target.orgId(), target.id())) {
+                throw new ApiException(HttpStatus.CONFLICT, Code.BOOKING_HAS_REBOOKS,
+                        "A rebook with this stylist counts on this booking. Void the rebook first.");
+            }
+        }
+        events.append(new MatchEvents.New(target.matchId(), target.matchRequestId(), target.orgId(), Type.VOIDED, source,
+                recordedBy, reason.strip(), clock.instant(), target.id()));
+        return events.find(eventId).orElseThrow();
     }
 
     /** A link token is a short random string; something very long can't match and isn't worth hashing. */

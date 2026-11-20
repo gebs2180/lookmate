@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/admin/matches/{matchId}/events": {
+    "/api/admin/events/{eventId}/void": {
         parameters: {
             query?: never;
             header?: never;
@@ -12,6 +12,22 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        put?: never;
+        post: operations["voidEvent_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/matches/{matchId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["events_1"];
         put?: never;
         post: operations["record_1"];
         delete?: never;
@@ -123,7 +139,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["matches"];
+        get: operations["matches_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -196,7 +212,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/orgs/{orgId}/matches/{matchId}/events": {
+    "/api/orgs/{orgId}/events/{eventId}/void": {
         parameters: {
             query?: never;
             header?: never;
@@ -205,7 +221,39 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        post: operations["voidEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/matches/{matchId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["events"];
+        put?: never;
         post: operations["record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/tracking/matches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["matches"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -296,7 +344,10 @@ export interface components {
             /** Format: date-time */
             occurredAt: string;
             /** @enum {string} */
-            type: "VIEWED" | "CLICKED_BOOK" | "BOOKED" | "REBOOKED";
+            type: "VIEWED" | "CLICKED_BOOK" | "BOOKED" | "REBOOKED" | "VOIDED";
+        };
+        AdminTrackingControllerVoidEvent: {
+            reason: string;
         };
         ConsentControllerAcceptRequest: {
             version: string;
@@ -339,6 +390,27 @@ export interface components {
             expiresAt: string;
             /** Format: uuid */
             id: string;
+        };
+        MatchEventsEvent: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            matchId: string;
+            /** Format: uuid */
+            matchRequestId: string;
+            note: string;
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            orgId: string;
+            /** @enum {string} */
+            source: "CLIENT" | "ADMIN" | "STYLIST";
+            /** @enum {string} */
+            type: "VIEWED" | "CLICKED_BOOK" | "BOOKED" | "REBOOKED" | "VOIDED";
+            voidReason: string;
+            voided: boolean;
         };
         MeControllerMe: {
             claimedRoles: string[];
@@ -401,6 +473,22 @@ export interface components {
             stylistsActive: number;
             /** Format: int64 */
             stylistsLive: number;
+        };
+        StylistTrackingControllerStylistMatch: {
+            /** Format: int64 */
+            bookingClicks: number;
+            /** Format: int64 */
+            bookings: number;
+            clientFirstName: string;
+            /** Format: int32 */
+            finalRank: number;
+            /** Format: uuid */
+            matchId: string;
+            /** Format: date-time */
+            publishedAt: string;
+            /** Format: int64 */
+            rebooks: number;
+            service: string;
         };
         TrackingQueriesHairTypeRow: {
             /** Format: int64 */
@@ -489,7 +577,7 @@ export interface components {
             /** @enum {string} */
             source: "CLIENT" | "ADMIN" | "STYLIST";
             /** @enum {string} */
-            type: "VIEWED" | "CLICKED_BOOK" | "BOOKED" | "REBOOKED";
+            type: "VIEWED" | "CLICKED_BOOK" | "BOOKED" | "REBOOKED" | "VOIDED";
         };
     };
     responses: never;
@@ -500,6 +588,54 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    voidEvent_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminTrackingControllerVoidEvent"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchEventsEvent"];
+                };
+            };
+        };
+    };
+    events_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                matchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchEventsEvent"][];
+                };
+            };
+        };
+    };
     record_1: {
         parameters: {
             query?: never;
@@ -706,7 +842,7 @@ export interface operations {
             };
         };
     };
-    matches: {
+    matches_1: {
         parameters: {
             query?: {
                 market?: string;
@@ -841,6 +977,56 @@ export interface operations {
             };
         };
     };
+    voidEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                eventId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminTrackingControllerVoidEvent"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchEventsEvent"];
+                };
+            };
+        };
+    };
+    events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                matchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MatchEventsEvent"][];
+                };
+            };
+        };
+    };
     record: {
         parameters: {
             query?: never;
@@ -864,6 +1050,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["TrackingServiceRecorded"];
+                };
+            };
+        };
+    };
+    matches: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylistTrackingControllerStylistMatch"][];
                 };
             };
         };

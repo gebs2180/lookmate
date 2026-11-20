@@ -18,12 +18,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 class StylistTrackingController {
 
+    /** A published match of this stylist's. The client's first name only: their contact details stay with the admin. */
+    record StylistMatch(UUID matchId, String clientFirstName, String service, java.time.Instant publishedAt,
+                        Integer finalRank, long bookingClicks, long bookings, long rebooks) {
+    }
+
+    private final TrackingQueries queries;
     private final OrgAccess orgAccess;
     private final MetricsService metrics;
     private final TrackingService tracking;
     private final CurrentUser currentUser;
 
-    StylistTrackingController(OrgAccess orgAccess, MetricsService metrics, TrackingService tracking, CurrentUser currentUser) {
+    StylistTrackingController(TrackingQueries queries, OrgAccess orgAccess, MetricsService metrics, TrackingService tracking, CurrentUser currentUser) {
+        this.queries = queries;
         this.orgAccess = orgAccess;
         this.metrics = metrics;
         this.tracking = tracking;
@@ -46,5 +53,30 @@ class StylistTrackingController {
         Source source = currentUser.isAdmin() ? Source.ADMIN : Source.STYLIST;
         return tracking.recordBooking(matchId, orgId, request.type(), source, currentUser.id(), request.note(),
                 request.occurredAt());
+    }
+
+    /** The stylist's 50 most recent published matches, to record a booking against. */
+    @GetMapping("/api/orgs/{orgId}/tracking/matches")
+    java.util.List<StylistMatch> matches(@PathVariable UUID orgId) {
+        orgAccess.require(orgId, OrgType.STYLIST);
+        return queries.recentMatches(null, orgId, null, 50).stream()
+                .map(m -> new StylistMatch(m.matchId(), m.clientFirstName(), m.service(), m.publishedAt(), m.finalRank(),
+                        m.bookingClicks(), m.bookings(), m.rebooks()))
+                .toList();
+    }
+
+    @GetMapping("/api/orgs/{orgId}/matches/{matchId}/events")
+    java.util.List<MatchEvents.Event> events(@PathVariable UUID orgId, @PathVariable UUID matchId) {
+        orgAccess.require(orgId, OrgType.STYLIST);
+        return tracking.events(matchId, orgId);
+    }
+
+    /** Only bookings and rebooks on this org's matches; anything else is a 404. */
+    @PostMapping("/api/orgs/{orgId}/events/{eventId}/void")
+    MatchEvents.Event voidEvent(@PathVariable UUID orgId, @PathVariable UUID eventId,
+                                @Valid @RequestBody AdminTrackingController.VoidEvent request) {
+        orgAccess.require(orgId, OrgType.STYLIST);
+        Source source = currentUser.isAdmin() ? Source.ADMIN : Source.STYLIST;
+        return tracking.voidEvent(eventId, orgId, source, currentUser.id(), request.reason());
     }
 }

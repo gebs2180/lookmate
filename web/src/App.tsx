@@ -4,7 +4,7 @@ import { Link, Route, Routes, useLocation } from 'react-router'
 import { HomePage } from './pages/HomePage'
 import { InvitePage } from './pages/InvitePage'
 import { AdminMetricsPage } from './pages/tracking/AdminMetricsPage'
-import { RecordBookingPage } from './pages/tracking/RecordBookingPage'
+import { RecordBookingPage, StylistBookingsPage } from './pages/tracking/RecordBookingPage'
 import { StylistStatsPage } from './pages/tracking/StylistStatsCard'
 import { Loading, NotFound, RouteErrorBoundary } from './ui'
 import { useRouteFocus } from './useRouteFocus'
@@ -59,6 +59,7 @@ function App() {
                 <Route path="/admin/metrics" element={<AdminMetricsPage />} />
                 <Route path="/admin/bookings" element={<RecordBookingPage />} />
                 <Route path="/orgs/:orgId/stats" element={<StylistStatsPage />} />
+                <Route path="/orgs/:orgId/bookings" element={<StylistBookingsPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

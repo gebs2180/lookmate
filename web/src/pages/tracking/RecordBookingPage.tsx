@@ -1,21 +1,59 @@
-import { useState, type FormEvent } from 'react'
-import { apiPath, useApi, type RecentMatch, type RecordedEvent } from '../../api'
+import { useMemo, useState, type FormEvent } from 'react'
+import { useParams } from 'react-router'
+import { apiPath, useApi, type MatchEventView, type RecentMatch, type RecordedEvent, type StylistMatch } from '../../api'
 import { label, message } from '../../format'
 import { Loading, PageError } from '../../ui'
 import { useLoad } from '../../useLoad'
 import './tracking.css'
 
-/**
- * The admin enters a booking or a rebook the stylist reported, until booking platforms report them. Events are
- * append-only: a mistake can't be edited away, so the form asks for a confirmation of what's being recorded.
- */
+/** A match row as both lists show it; the admin's also has the client's email. */
+type Row = Pick<StylistMatch, 'matchId' | 'clientFirstName' | 'publishedAt' | 'finalRank' | 'bookingClicks' | 'bookings' | 'rebooks'> & {
+  clientEmail?: string
+  stylistName?: string
+}
+
+/** Where one side (the admin, or one stylist org) reads and writes. */
+type Paths = {
+  list: (query: string) => string
+  events: (matchId: string) => string
+  voidEvent: (eventId: string) => string
+}
+
+const ADMIN: Paths = {
+  list: (q) => `/api/admin/tracking/matches${q ? `?q=${encodeURIComponent(q)}` : ''}`,
+  events: (matchId) => apiPath`/api/admin/matches/${matchId}/events`,
+  voidEvent: (eventId) => apiPath`/api/admin/events/${eventId}/void`,
+}
+
+function orgPaths(orgId: string): Paths {
+  return {
+    list: () => apiPath`/api/orgs/${orgId}/tracking/matches`,
+    events: (matchId) => apiPath`/api/orgs/${orgId}/matches/${matchId}/events`,
+    voidEvent: (eventId) => apiPath`/api/orgs/${orgId}/events/${eventId}/void`,
+  }
+}
+
+/** The admin enters a booking or rebook a stylist reported, and voids one entered by mistake. */
 export function RecordBookingPage() {
+  return <BookingEntry paths={ADMIN} admin />
+}
+
+/** The same for a stylist, on their own matches: clients appear by first name only. */
+export function StylistBookingsPage() {
+  const { orgId = '' } = useParams()
+  // Stable per org: the list reloads when its paths change.
+  const paths = useMemo(() => orgPaths(orgId), [orgId])
+  if (!orgId) return <PageError message="No stylist org in the link." />
+  return <BookingEntry paths={paths} admin={false} />
+}
+
+function BookingEntry({ paths, admin }: { paths: Paths; admin: boolean }) {
   const api = useApi()
   const [search, setSearch] = useState('')
   const [query, setQuery] = useState('')
   const { data: matches, error, reload } = useLoad(
-    () => api<RecentMatch[]>('GET', `/api/admin/tracking/matches${query ? `?q=${encodeURIComponent(query)}` : ''}`),
-    [api, query],
+    () => api<(RecentMatch | StylistMatch)[]>('GET', paths.list(query)),
+    [api, paths, query],
   )
   const [matchId, setMatchId] = useState('')
   const [type, setType] = useState<'BOOKED' | 'REBOOKED'>('BOOKED')
@@ -24,6 +62,15 @@ export function RecordBookingPage() {
   const [busy, setBusy] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
+  const [version, setVersion] = useState(0)
+
+  const rows: Row[] = (matches ?? []).map((m) => m as Row)
+  const selected = rows.find((m) => m.matchId === matchId)
+
+  function refresh() {
+    reload()
+    setVersion((v) => v + 1)
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -35,17 +82,12 @@ export function RecordBookingPage() {
     setSaveError(null)
     setSaved(null)
     try {
-      // A date alone means midday in the admin's own time zone, safely inside that day.
+      // A date alone means midday in the user's own time zone, safely inside that day.
       const occurredAt = date ? new Date(`${date}T12:00:00`).toISOString() : undefined
-      const recorded = await api<RecordedEvent>('POST', apiPath`/api/admin/matches/${matchId}/events`, {
-        type,
-        note: note.trim() || undefined,
-        occurredAt,
-      })
-      const m = matches?.find((x) => x.matchId === matchId)
-      setSaved(`Recorded a ${label(recorded.type)} for ${m?.clientFirstName ?? 'the client'} with ${m?.stylistName ?? 'the stylist'}.`)
+      const recorded = await api<RecordedEvent>('POST', paths.events(matchId), { type, note: note.trim() || undefined, occurredAt })
+      setSaved(`Recorded a ${label(recorded.type)} for ${selected?.clientFirstName ?? 'the client'}${selected?.stylistName ? ` with ${selected.stylistName}` : ''}.`)
       setNote('')
-      reload()
+      refresh()
     } catch (err) {
       setSaveError(message(err))
     } finally {
@@ -57,29 +99,34 @@ export function RecordBookingPage() {
 
   return (
     <>
-      <h1>Record a booking</h1>
-      <p className="muted">For a booking or a return visit the stylist or client told you about. These can't be edited later.</p>
+      <h1>{admin ? 'Record a booking' : 'Your bookings from LookMate'}</h1>
+      <p className="muted">
+        For a booking or a return visit that came from a LookMate match. A mistake can be voided below; the record keeps
+        both.
+      </p>
 
-      <form
-        className="metric-filters"
-        role="search"
-        onSubmit={(e) => {
-          e.preventDefault()
-          setQuery(search.trim())
-        }}
-      >
-        <div className="field">
-          <label htmlFor="rb-search" className="field-label">Find a match</label>
-          <input id="rb-search" type="search" value={search} placeholder="Stylist, client name or email" onChange={(e) => setSearch(e.target.value)} />
-        </div>
-        <button type="submit">Search</button>
-      </form>
+      {admin && (
+        <form
+          className="metric-filters"
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault()
+            setQuery(search.trim())
+          }}
+        >
+          <div className="field">
+            <label htmlFor="rb-search" className="field-label">Find a match</label>
+            <input id="rb-search" type="search" value={search} placeholder="Stylist, client name or email" onChange={(e) => setSearch(e.target.value)} />
+          </div>
+          <button type="submit">Search</button>
+        </form>
+      )}
 
       <form className="form" onSubmit={submit} aria-label="Record a booking">
         {!matches ? (
           <Loading />
-        ) : matches.length === 0 ? (
-          <p>No published matches found.</p>
+        ) : rows.length === 0 ? (
+          <p>No published matches yet.</p>
         ) : (
           <fieldset>
             <legend className="field-label">Match</legend>
@@ -91,7 +138,7 @@ export function RecordBookingPage() {
                       <span className="tracking-sr-only">Pick</span>
                     </th>
                     <th scope="col">Client</th>
-                    <th scope="col">Stylist</th>
+                    {admin && <th scope="col">Stylist</th>}
                     <th scope="col">Published</th>
                     <th scope="col" className="num">Clicks</th>
                     <th scope="col" className="num">Booked</th>
@@ -99,7 +146,7 @@ export function RecordBookingPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {matches.map((m) => (
+                  {rows.map((m) => (
                     <tr key={m.matchId}>
                       <td>
                         <input
@@ -108,16 +155,18 @@ export function RecordBookingPage() {
                           value={m.matchId}
                           checked={matchId === m.matchId}
                           onChange={() => setMatchId(m.matchId)}
-                          aria-label={`${m.clientFirstName ?? 'Client'} with ${m.stylistName ?? 'stylist'}`}
+                          aria-label={`${m.clientFirstName ?? 'Client'}, published ${new Date(m.publishedAt).toLocaleDateString()}`}
                         />
                       </td>
                       <td>
                         {m.clientFirstName ?? '–'}
                         {m.clientEmail && <div className="muted">{m.clientEmail}</div>}
                       </td>
-                      <td>
-                        {m.stylistName ?? '–'} <span className="muted">#{m.finalRank}</span>
-                      </td>
+                      {admin && (
+                        <td>
+                          {m.stylistName ?? '–'} <span className="muted">#{m.finalRank}</span>
+                        </td>
+                      )}
                       <td>{new Date(m.publishedAt).toLocaleDateString()}</td>
                       <td className="num">{m.bookingClicks}</td>
                       <td className="num">{m.bookings}</td>
@@ -141,7 +190,7 @@ export function RecordBookingPage() {
         </fieldset>
 
         <div className="field">
-          <label htmlFor="rb-date" className="field-label">Date of the appointment booking</label>
+          <label htmlFor="rb-date" className="field-label">Date the booking was made</label>
           <input id="rb-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-describedby="rb-date-hint" />
           <p id="rb-date-hint" className="field-hint">Leave empty for today.</p>
         </div>
@@ -158,6 +207,114 @@ export function RecordBookingPage() {
           </button>
         </div>
       </form>
+
+      {matchId && <MatchEvents key={`${matchId}-${version}`} path={paths.events(matchId)} voidPath={paths.voidEvent} admin={admin} onChange={refresh} />}
     </>
+  )
+}
+
+/** What's recorded on the picked match, with a Void action on each live event the user may void. */
+function MatchEvents({
+  path,
+  voidPath,
+  admin,
+  onChange,
+}: {
+  path: string
+  voidPath: (eventId: string) => string
+  admin: boolean
+  onChange: () => void
+}) {
+  const api = useApi()
+  const { data: events, error } = useLoad(() => api<MatchEventView[]>('GET', path), [api, path])
+  const [voiding, setVoiding] = useState<string | null>(null)
+  const [reason, setReason] = useState('')
+  const [voidError, setVoidError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  async function confirmVoid(e: FormEvent) {
+    e.preventDefault()
+    if (!voiding) return
+    setBusy(true)
+    setVoidError(null)
+    try {
+      await api('POST', voidPath(voiding), { reason: reason.trim() })
+      setVoiding(null)
+      setReason('')
+      onChange()
+    } catch (err) {
+      setVoidError(message(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (error) return <p className="error" role="alert">{error}</p>
+  if (!events) return <Loading />
+
+  return (
+    <section className="metric-section" aria-labelledby="rb-events-title">
+      <h2 id="rb-events-title">Recorded on this match</h2>
+      {events.length === 0 ? (
+        <p>Nothing yet.</p>
+      ) : (
+        <div className="scroll">
+          <table className="table">
+            <thead>
+              <tr>
+                <th scope="col">What</th>
+                <th scope="col">When</th>
+                <th scope="col">By</th>
+                <th scope="col">Note</th>
+                <th scope="col">
+                  <span className="tracking-sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {events.map((ev) => {
+                const mayVoid = !ev.voided && (admin || ev.type === 'BOOKED' || ev.type === 'REBOOKED')
+                return (
+                  <tr key={ev.id} className={ev.voided ? 'tracking-voided' : undefined}>
+                    <td>
+                      {label(ev.type)}
+                      {ev.voided && <div className="muted">Voided: {ev.voidReason}</div>}
+                    </td>
+                    <td>{new Date(ev.occurredAt).toLocaleDateString()}</td>
+                    <td>{label(ev.source)}</td>
+                    <td>{ev.note ?? ''}</td>
+                    <td>
+                      {mayVoid && (
+                        <button type="button" className="link" onClick={() => setVoiding(ev.id)}>
+                          Void
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {voiding && (
+        <form className="form" onSubmit={confirmVoid} aria-label="Void an event">
+          <div className="field">
+            <label htmlFor="rb-void-reason" className="field-label">Why is this being voided?</label>
+            <input id="rb-void-reason" required maxLength={2000} value={reason} onChange={(e) => setReason(e.target.value)} />
+          </div>
+          {voidError && <p className="error" role="alert">{voidError}</p>}
+          <div className="actions">
+            <button type="submit" disabled={busy || !reason.trim()} aria-busy={busy}>
+              Void it
+            </button>
+            <button type="button" className="link" onClick={() => setVoiding(null)}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+    </section>
   )
 }

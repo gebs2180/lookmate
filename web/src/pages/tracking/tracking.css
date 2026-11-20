@@ -240,3 +240,7 @@
   border-radius: var(--radius-sm);
   padding: var(--space-2) var(--space-3);
 }
+
+.tracking-voided td:first-child {
+  text-decoration: line-through;
+}

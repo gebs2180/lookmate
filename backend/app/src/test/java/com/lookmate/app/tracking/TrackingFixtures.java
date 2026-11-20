@@ -89,18 +89,31 @@ class TrackingFixtures {
         return id;
     }
 
-    void event(UUID matchId, UUID requestId, UUID orgId, String type, Instant at) {
+    UUID event(UUID matchId, UUID requestId, UUID orgId, String type, Instant at) {
+        UUID id = UUID.randomUUID();
         jdbc.sql("""
                         insert into match_event (id, match_id, match_request_id, org_id, type, source, occurred_at, created_at)
                         values (:id, :match, :request, :org, :type, :source, :at, now())
                         """)
-                .param("id", UUID.randomUUID()).param("match", matchId).param("request", requestId).param("org", orgId)
+                .param("id", id).param("match", matchId).param("request", requestId).param("org", orgId)
                 .param("type", type).param("source", type.equals("BOOKED") || type.equals("REBOOKED") ? "ADMIN" : "CLIENT")
                 .param("at", Timestamp.from(at)).update();
+        return id;
+    }
+
+    /** A VOIDED row for {@code eventId}, as the admin would write it. */
+    void voidEvent(UUID eventId, UUID matchId, UUID requestId, UUID orgId) {
+        jdbc.sql("""
+                        insert into match_event (id, match_id, match_request_id, org_id, type, source, note, occurred_at,
+                          created_at, voids_event_id)
+                        values (:id, :match, :request, :org, 'VOIDED', 'ADMIN', 'entered by mistake', now(), now(), :voids)
+                        """)
+                .param("id", UUID.randomUUID()).param("match", matchId).param("request", requestId).param("org", orgId)
+                .param("voids", eventId).update();
     }
 
     long count(UUID requestId, String type) {
-        return jdbc.sql("select count(*) from match_event where match_request_id = :r and type = :t")
+        return jdbc.sql("select count(*) from match_event_live where match_request_id = :r and type = :t")
                 .param("r", requestId).param("t", type).query(Long.class).single();
     }
 }

@@ -3,6 +3,7 @@ package com.lookmate.app.tracking;
 import com.lookmate.app.identity.CurrentUser;
 import com.lookmate.app.tracking.MatchEvents.Source;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
@@ -25,6 +26,9 @@ class AdminTrackingController {
 
     /** BOOKED or REBOOKED; {@code occurredAt} defaults to now. */
     record RecordBooking(@NotNull MatchEvents.Type type, @Size(max = 2000) String note, Instant occurredAt) {
+    }
+
+    record VoidEvent(@NotBlank @Size(max = 2000) String reason) {
     }
 
     private final MetricsService metrics;
@@ -51,7 +55,7 @@ class AdminTrackingController {
     @GetMapping("/api/admin/tracking/matches")
     List<TrackingQueries.RecentMatch> matches(@RequestParam(required = false) String market,
                                               @RequestParam(required = false) @Size(max = 200) String q) {
-        return queries.recentMatches(market == null || market.isBlank() ? null : market, q, 50);
+        return queries.recentMatches(market == null || market.isBlank() ? null : market, null, q, 50);
     }
 
     @PostMapping("/api/admin/matches/{matchId}/events")
@@ -59,5 +63,16 @@ class AdminTrackingController {
     TrackingService.Recorded record(@PathVariable UUID matchId, @Valid @RequestBody RecordBooking request) {
         return tracking.recordBooking(matchId, null, request.type(), Source.ADMIN, currentUser.id(), request.note(),
                 request.occurredAt());
+    }
+
+    @GetMapping("/api/admin/matches/{matchId}/events")
+    List<MatchEvents.Event> events(@PathVariable UUID matchId) {
+        return tracking.events(matchId, null);
+    }
+
+    /** Undoes a wrongly recorded event; the original stays, marked voided, with the reason. */
+    @PostMapping("/api/admin/events/{eventId}/void")
+    MatchEvents.Event voidEvent(@PathVariable UUID eventId, @Valid @RequestBody VoidEvent request) {
+        return tracking.voidEvent(eventId, null, Source.ADMIN, currentUser.id(), request.reason());
     }
 }

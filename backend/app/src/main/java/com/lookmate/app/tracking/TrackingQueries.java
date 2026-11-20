@@ -112,7 +112,7 @@ class TrackingQueries {
     boolean bookedBefore(UUID clientId, UUID orgId, Instant before) {
         return jdbc.sql("""
                         select exists (
-                          select 1 from match_event e join match_request r on r.id = e.match_request_id
+                          select 1 from match_event_live e join match_request r on r.id = e.match_request_id
                           where r.client_id = :client and e.org_id = :org and e.type = 'BOOKED'
                             and e.occurred_at < cast(:before as timestamptz))
                         """)
@@ -122,8 +122,28 @@ class TrackingQueries {
                 .query(Boolean.class).single();
     }
 
+    /**
+     * Whether a live REBOOKED of this client with this stylist would be left with no earlier live BOOKED if
+     * {@code bookedEventId} were voided.
+     */
+    boolean rebooksDependOn(UUID clientId, UUID orgId, UUID bookedEventId) {
+        return jdbc.sql("""
+                        select exists (
+                          select 1 from match_event_live x join match_request rx on rx.id = x.match_request_id
+                          where x.type = 'REBOOKED' and x.org_id = :org and rx.client_id = :client
+                            and not exists (
+                              select 1 from match_event_live b join match_request rb on rb.id = b.match_request_id
+                              where b.type = 'BOOKED' and b.org_id = :org and rb.client_id = :client
+                                and b.id <> :booked and b.occurred_at < x.occurred_at))
+                        """)
+                .param("client", clientId)
+                .param("org", orgId)
+                .param("booked", bookedEventId)
+                .query(Boolean.class).single();
+    }
+
     /** Recently published matches, newest first, for the admin's "record a booking" picker. */
-    List<RecentMatch> recentMatches(String market, String search, int limit) {
+    List<RecentMatch> recentMatches(String market, UUID orgId, String search, int limit) {
         String like = search == null || search.isBlank() ? null : "%" + search.strip().toLowerCase().replace("%", "") + "%";
         return jdbc.sql("""
                         select m.id, r.id as request_id, m.org_id, p.display_name, c.first_name, c.email, r.market,
@@ -135,9 +155,10 @@ class TrackingQueries {
                         join match_request r on r.id = m.match_request_id
                         join client c on c.id = r.client_id
                         left join stylist_profile p on p.org_id = m.org_id
-                        left join match_event e on e.match_id = m.id
+                        left join match_event_live e on e.match_id = m.id
                         where r.published_at is not null and m.final_rank is not null and not m.hidden
                           and (cast(:market as text) is null or r.market = :market)
+                          and (cast(:org as uuid) is null or m.org_id = :org)
                           and (cast(:like as text) is null
                                or lower(coalesce(p.display_name, '')) like :like
                                or lower(coalesce(c.first_name, '')) like :like
@@ -148,6 +169,7 @@ class TrackingQueries {
                         """)
                 .param("market", market)
                 .param("like", like)
+                .param("org", orgId)
                 .param("limit", limit)
                 .query((rs, n) -> new RecentMatch(uuid(rs, "id"), uuid(rs, "request_id"), uuid(rs, "org_id"),
                         rs.getString("display_name"), rs.getString("first_name"), rs.getString("email"),
@@ -200,7 +222,7 @@ class TrackingQueries {
                                count(distinct r.client_id) filter (where e.type = 'BOOKED') as clients_booked,
                                count(*) filter (where e.type = 'REBOOKED') as rebooks,
                                count(distinct r.client_id) filter (where e.type = 'REBOOKED') as clients_rebooked
-                        from match_event e join match_request r on r.id = e.match_request_id
+                        from match_event_live e join match_request r on r.id = e.match_request_id
                         where e.occurred_at >= cast(:start as timestamptz) and e.occurred_at < cast(:end as timestamptz)
                           and (cast(:market as text) is null or r.market = :market)
                         """)
@@ -214,14 +236,14 @@ class TrackingQueries {
         long[] rebook = jdbc.sql("""
                         with booked as (
                           select r.client_id, e.org_id, min(e.occurred_at) as first_booked
-                          from match_event e join match_request r on r.id = e.match_request_id
+                          from match_event_live e join match_request r on r.id = e.match_request_id
                           where e.type = 'BOOKED'
                             and e.occurred_at >= cast(:start as timestamptz) and e.occurred_at < cast(:end as timestamptz)
                             and (cast(:market as text) is null or r.market = :market)
                           group by r.client_id, e.org_id),
                         flagged as (
                           select b.client_id,
-                                 exists (select 1 from match_event x join match_request rx on rx.id = x.match_request_id
+                                 exists (select 1 from match_event_live x join match_request rx on rx.id = x.match_request_id
                                          where x.type = 'REBOOKED' and x.org_id = b.org_id and rx.client_id = b.client_id
                                            and x.occurred_at > b.first_booked) as rebooked
                           from booked b)
@@ -252,7 +274,7 @@ class TrackingQueries {
                                  count(*) filter (where e.type = 'CLICKED_BOOK') as clicks,
                                  count(*) filter (where e.type = 'BOOKED') as bookings,
                                  count(*) filter (where e.type = 'REBOOKED') as rebooks
-                          from match_event e join match_request r on r.id = e.match_request_id
+                          from match_event_live e join match_request r on r.id = e.match_request_id
                           where e.occurred_at >= cast(:start as timestamptz) and e.occurred_at < cast(:end as timestamptz)
                             and (cast(:market as text) is null or r.market = :market)
                           group by 1)
@@ -280,7 +302,7 @@ class TrackingQueries {
                                  count(*) filter (where e.type = 'REBOOKED') as rebooks,
                                  count(distinct r.client_id) filter (where e.type = 'BOOKED') as clients_booked,
                                  count(distinct r.client_id) filter (where e.type = 'REBOOKED') as clients_rebooked
-                          from match_event e join match_request r on r.id = e.match_request_id
+                          from match_event_live e join match_request r on r.id = e.match_request_id
                           where e.org_id is not null
                             and e.occurred_at >= cast(:start as timestamptz) and e.occurred_at < cast(:end as timestamptz)
                             and (cast(:market as text) is null or r.market = :market)
@@ -326,7 +348,7 @@ class TrackingQueries {
                                count(distinct r.client_id) filter (where e.type = 'BOOKED') as booked
                         from match_request r
                         join client c on c.id = r.client_id
-                        left join match_event e on e.match_request_id = r.id and e.type in ('CLICKED_BOOK', 'BOOKED')
+                        left join match_event_live e on e.match_request_id = r.id and e.type in ('CLICKED_BOOK', 'BOOKED')
                         where r.published_at >= cast(:start as timestamptz) and r.published_at < cast(:end as timestamptz)
                           and (cast(:market as text) is null or r.market = :market)
                         group by 1
@@ -354,7 +376,7 @@ class TrackingQueries {
                         select count(*) filter (where type = 'CLICKED_BOOK') as clicks,
                                count(*) filter (where type = 'BOOKED') as bookings,
                                count(*) filter (where type = 'REBOOKED') as rebooks
-                        from match_event
+                        from match_event_live
                         where org_id = :org
                           and occurred_at >= cast(:start as timestamptz) and occurred_at < cast(:end as timestamptz)
                         """)

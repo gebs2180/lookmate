@@ -80,11 +80,21 @@
             "type" : "string"
           },
           "type" : {
-            "enum" : [ "VIEWED", "CLICKED_BOOK", "BOOKED", "REBOOKED" ],
+            "enum" : [ "VIEWED", "CLICKED_BOOK", "BOOKED", "REBOOKED", "VOIDED" ],
             "type" : "string"
           }
         },
         "required" : [ "note", "occurredAt", "type" ]
+      },
+      "AdminTrackingControllerVoidEvent" : {
+        "properties" : {
+          "reason" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "reason" ]
       },
       "ConsentControllerAcceptRequest" : {
         "properties" : {
@@ -182,6 +192,52 @@
           }
         },
         "required" : [ "createdAt", "expiresAt", "id" ]
+      },
+      "MatchEventsEvent" : {
+        "properties" : {
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "matchId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "matchRequestId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "note" : {
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "source" : {
+            "enum" : [ "CLIENT", "ADMIN", "STYLIST" ],
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "VIEWED", "CLICKED_BOOK", "BOOKED", "REBOOKED", "VOIDED" ],
+            "type" : "string"
+          },
+          "voidReason" : {
+            "type" : "string"
+          },
+          "voided" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "createdAt", "id", "matchId", "matchRequestId", "note", "occurredAt", "orgId", "source", "type", "voidReason", "voided" ]
       },
       "MeControllerMe" : {
         "properties" : {
@@ -348,6 +404,41 @@
           }
         },
         "required" : [ "bookingClicks", "bookings", "clientsBooked", "clientsClicked", "clientsMatched", "clientsRebooked", "rebookCohort", "rebookCohortRebooked", "rebookRate", "rebooks", "requestsPublished", "stylistsActive", "stylistsLive" ]
+      },
+      "StylistTrackingControllerStylistMatch" : {
+        "properties" : {
+          "bookingClicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "bookings" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientFirstName" : {
+            "type" : "string"
+          },
+          "finalRank" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "matchId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "publishedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "rebooks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "service" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "bookingClicks", "bookings", "clientFirstName", "finalRank", "matchId", "publishedAt", "rebooks", "service" ]
       },
       "TrackingQueriesHairTypeRow" : {
         "properties" : {
@@ -536,7 +627,7 @@
             "type" : "string"
           },
           "type" : {
-            "enum" : [ "VIEWED", "CLICKED_BOOK", "BOOKED", "REBOOKED" ],
+            "enum" : [ "VIEWED", "CLICKED_BOOK", "BOOKED", "REBOOKED", "VOIDED" ],
             "type" : "string"
           }
         },
@@ -550,7 +641,72 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/admin/events/{eventId}/void" : {
+      "post" : {
+        "operationId" : "voidEvent_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "eventId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminTrackingControllerVoidEvent"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MatchEventsEvent"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-tracking-controller" ]
+      }
+    },
     "/api/admin/matches/{matchId}/events" : {
+      "get" : {
+        "operationId" : "events_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "matchId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/MatchEventsEvent"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "admin-tracking-controller" ]
+      },
       "post" : {
         "operationId" : "record_1",
         "parameters" : [ {
@@ -829,7 +985,7 @@
     },
     "/api/admin/tracking/matches" : {
       "get" : {
-        "operationId" : "matches",
+        "operationId" : "matches_1",
         "parameters" : [ {
           "in" : "query",
           "name" : "market",
@@ -997,7 +1153,88 @@
         "tags" : [ "consent-controller" ]
       }
     },
+    "/api/orgs/{orgId}/events/{eventId}/void" : {
+      "post" : {
+        "operationId" : "voidEvent",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "eventId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminTrackingControllerVoidEvent"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MatchEventsEvent"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-tracking-controller" ]
+      }
+    },
     "/api/orgs/{orgId}/matches/{matchId}/events" : {
+      "get" : {
+        "operationId" : "events",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "matchId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/MatchEventsEvent"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-tracking-controller" ]
+      },
       "post" : {
         "operationId" : "record",
         "parameters" : [ {
@@ -1037,6 +1274,36 @@
               }
             },
             "description" : "Created"
+          }
+        },
+        "tags" : [ "stylist-tracking-controller" ]
+      }
+    },
+    "/api/orgs/{orgId}/tracking/matches" : {
+      "get" : {
+        "operationId" : "matches",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/StylistTrackingControllerStylistMatch"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
           }
         },
         "tags" : [ "stylist-tracking-controller" ]

@@ -33,6 +33,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  *           BOOKED        r1/A 10-06, r2/A 10-14, r4/A 10-02
  *           REBOOKED      r1/A 10-27, r4/A 11-10 (after the range)
  *           VIEWED        r1 10-05 (not in the table)
+ *           voided        a BOOKED and a CLICKED_BOOK on r3/D 10-22 (count nowhere)
  * </pre>
  */
 @SpringBootTest
@@ -101,6 +102,11 @@ class MetricsTest {
         fx.event(m1a, r1, a, "REBOOKED", at("2026-10-27"));
         fx.event(m4a, r4, a, "REBOOKED", at("2026-11-10"));
         fx.event(null, r1, null, "VIEWED", at("2026-10-05"));
+        // Entered by mistake and voided: counts nowhere.
+        UUID wrong = fx.event(m3d, r3, d, "BOOKED", at("2026-10-22"));
+        fx.voidEvent(wrong, m3d, r3, d);
+        UUID wrongClick = fx.event(m3d, r3, d, "CLICKED_BOOK", at("2026-10-22"));
+        fx.voidEvent(wrongClick, m3d, r3, d);
 
         TestApi api = new TestApi(mvc, security);
         api.get("/api/admin/metrics?market=" + market + "&from=2026-10-01&to=2026-10-31", api.admin())

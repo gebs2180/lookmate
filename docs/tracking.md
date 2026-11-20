@@ -3,7 +3,16 @@
 The `tracking` module (`com.lookmate.app.tracking`) covers brief items 6 and 7: "Book" hands off to the stylist's own
 booking link with UTM tags, clicks are recorded, bookings and rebooks are entered by hand, and the admin gets the pilot
 table. Everything it records goes to `match_event` (V2), which is append-only: a database trigger refuses updates, so
-a correction is a new row.
+a correction is a new row (a `VOIDED` event, below).
+
+## Decisions (Zach, 2026-11-20)
+
+- Wrong entries are undone by voiding (append-only `VOIDED` rows), not edits or deletes.
+- Days and weeks are Eastern time (`America/New_York`, so EST/EDT) for now, for every market.
+- Stylists see their matched clients' first names (never email or phone).
+- Only LIVE stylists are linked to: a match to a stylist who is no longer LIVE doesn't redirect. (Matching should only
+  match active stylists, LIVE with a READY photo, in the first place.)
+- The `match_request (published_at)` and READY-photo indexes are left to the intake and stylists modules.
 
 ## Endpoints
 
@@ -16,9 +25,15 @@ a correction is a new row.
 | Admin | `POST /api/admin/matches/{matchId}/events` | `{type: BOOKED\|REBOOKED, note?, occurredAt?}`, `source = ADMIN` |
 | Stylist (own org) | `POST /api/orgs/{orgId}/matches/{matchId}/events` | Same body; `OrgAccess.require(orgId, STYLIST)`, and the match must be this org's. `source = STYLIST` (or `ADMIN` if the admin uses the route) |
 | Stylist (own org) | `GET /api/orgs/{orgId}/tracking/stats` | Matches shown, clicks, bookings, rebooks: last 30 days and all time |
+| Stylist (own org) | `GET /api/orgs/{orgId}/tracking/matches` | Their 50 most recent published matches: client first name, service, counts |
+| Admin | `GET /api/admin/matches/{matchId}/events` | The match's events, newest first, voided ones marked with the reason |
+| Stylist (own org) | `GET /api/orgs/{orgId}/matches/{matchId}/events` | The same, for their own match |
+| Admin | `POST /api/admin/events/{eventId}/void` | `{reason}`: voids any event |
+| Stylist (own org) | `POST /api/orgs/{orgId}/events/{eventId}/void` | `{reason}`: voids a BOOKED or REBOOKED on their own match |
 
-Web: `/admin/metrics` (dashboard), `/admin/bookings` (record-a-booking form), `/orgs/:orgId/stats` (the stylist's stats
-card as a page; `StylistStatsCard` is exported for the stylist home page to embed).
+Web: `/admin/metrics` (dashboard), `/admin/bookings` (record or void a booking), `/orgs/:orgId/bookings` (the same
+for a stylist's own matches), `/orgs/:orgId/stats` (the stylist's stats card as a page; `StylistStatsCard` is exported
+for the stylist home page to embed).
 
 ### The redirect
 
@@ -43,9 +58,18 @@ card as a page; `StylistStatsCard` is exported for the stylist home page to embe
 - A `REBOOKED` needs an earlier `BOOKED` by the same client with the same stylist (through any of the client's
   matches), else `409 REBOOK_WITHOUT_BOOKING`.
 
+### Voiding
+
+- A `VOIDED` row points at the event it undoes (`voids_event_id`, unique, so once only) and must carry the reason in
+  `note`. The original row stays. Every count reads the `match_event_live` view (V6), which leaves out `VOIDED` rows and
+  the rows they void, so a voided booking can be recorded again.
+- The admin can void any event (a test click, say); a stylist only BOOKED and REBOOKED on their own org's matches.
+- A BOOKED that a later REBOOKED (same client, same stylist) depends on can't be voided while that rebook stands:
+  `409 BOOKING_HAS_REBOOKS`. Voiding twice is `409 ALREADY_VOIDED`. A VOIDED row can't be voided; re-record instead.
+
 ## Metric definitions
 
-Range: `from`..`to` are inclusive dates in `lookmate.tracking.time-zone` (America/New_York); default the last 84 days
+Voided events count nowhere. Range: `from`..`to` are inclusive dates in `lookmate.tracking.time-zone` (America/New_York); default the last 84 days
 (12 weeks), at most two years. `market` empty means all markets; events are filtered by their request's market.
 
 | Metric | Definition |
@@ -84,5 +108,3 @@ every query is a small scan. What supports them:
 
 - No rate limit on the public routes yet (SecurityConfig says each public route rate-limits). The click dedupe keeps
   repeated clicks from inflating counts; a shared limiter belongs with intake's public routes.
-- No way to correct a wrongly entered booking: events are append-only. A "VOID" event type would need a migration and
-  a decision.
