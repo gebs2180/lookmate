@@ -62,18 +62,19 @@ After a fresh setup, or a change to auth, matching or the client flow. Log in as
 in"; after login the app shows the roles the backend sees, from `/api/me`: ADMIN should be there).
 
 1. **`/admin/locations`:** add one salon location (any Salon Lofts address). Demo stylists need one to go live.
-2. **`/admin/demo`:** first fetch photos for the 40 slots from [Pexels](https://www.pexels.com/api/):
-   - Get a free Pexels API key at pexels.com/api and add `PEXELS_API_KEY=<key>` to `web/.env.local` (git-ignored; see
-     `web/.env.example`). No `VITE_` prefix: Vite would bundle it into the app. Never commit it.
-   - Run `cd web && npm run demo:photos` (`npm.cmd` on Windows). It searches Pexels for salon shots that fit each slot's
-     tags (a few searches a slot, under the 200-an-hour limit; a few minutes) and saves `maya-1.jpg` to `nia-5.jpg`,
-     `CREDITS.md` and a contact sheet, `index.html`, in `web/demo-photos/`, which is git-ignored: never commit them.
-   - Open `web/demo-photos/index.html` and review every pick against its tags. Delete any poor one and run again: it
-     fetches only missing slots and won't pick a deleted photo twice (`--force` fetches all again). Slots with no
-     fitting photo stay empty and get a drawn placeholder; "before" slots stay empty unless one photographer has the
-     same client before and after. Files you put in by hand are kept.
-   - **Demo display only.** Pexels' terms forbid using these photos for machine learning: never use them for
-     embeddings, matching evaluation or labelled sets. Show the photographer credit from `CREDITS.md` when you can.
+2. **`/admin/demo`:** first put photos in the 40 slots, picked by hand on [Pexels](https://www.pexels.com):
+   - Run `cd web && npm run demo:photos` (`npm.cmd` on Windows) and open `web/demo-photos/index.html`. It lists every
+     slot (`maya-1.jpg` to `nia-5.jpg`) with its tags, one or two Pexels search links, and the photo it has or "empty".
+   - Download a real salon photo per slot that fits its tags (a stylist at work, or a finished look in a salon), as
+     JPEG, into any folder. Leave a slot empty rather than use a wrong photo: it gets a drawn placeholder. Fill a
+     before/after pair only with the same client; otherwise leave the "before" slot empty.
+   - Run `npm run demo:photos -- import <folder>`. For each file it shows the open slots and asks which one (Enter
+     skips). It checks the file is a JPEG within the upload limits, copies it to `web/demo-photos/<slot>.jpg`, and
+     records the photographer and Pexels page (read from `pexels-<photographer>-<id>.jpg` names) in `CREDITS.md`. A
+     filled slot is replaced only after you confirm, or with `--force`. `web/demo-photos/` is git-ignored: never commit it.
+   - **Demo display only.** Pexels' licence allows downloading single photos by hand, but its terms forbid automated or
+     bulk copying and machine-learning use: never script downloads, and never use these photos for embeddings,
+     matching evaluation or labelled sets. Show the photographer credit from `CREDITS.md` when you can.
    - Then choose every file in `web/demo-photos/` on the page and create the demo stylists. They go live, marked as
      demo, with booking links to example.com. Without photos they get drawn placeholders, which are fine for the
      screens but not for step 3.

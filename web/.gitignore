@@ -23,5 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-# Pexels demo photos from npm run demo:photos (never committed)
+# Demo photos picked by hand on Pexels and imported with npm run demo:photos (never committed)
 demo-photos/
