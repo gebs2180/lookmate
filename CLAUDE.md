@@ -16,6 +16,7 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
   Resend accounts, but a **separate Auth0 tenant** and **separate database**. Details: [docs/hosting.md](docs/hosting.md).
 - **Scale without slowing down:** see [docs/architecture.md](docs/architecture.md). Stateless API, Postgres as the
   queue (`SKIP LOCKED`), embeddings keyed by model, `market` on every place-bound row.
+- **Design (proposed):** "Chair-side" direction, flows, tokens and plan in [docs/ux/design-direction.md](docs/ux/design-direction.md).
 - **Clients don't sign in.** Intake and the match list work through `/api/public/**` and an emailed link token.
   Stylists and the admin use Auth0; ADMIN needs MFA.
 

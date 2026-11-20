@@ -1,0 +1,1048 @@
+<title>LookMate Chair-side Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..600;1,6..96,400..600&family=Hanken+Grotesk:wght@400..700&display=swap">
+<style>
+/* Layout: a studio wall of live phone screens, grouped by who uses them, with the designer's notes pinned under each. */
+:root {
+  --bg: #fbf8f7; --surface: #ffffff; --sunken: #f3edee; --raised: #ffffff;
+  --text: #23142a; --muted: #6a5870; --border: #9a8a9c; --line: #ebe2e5;
+  --accent: #8c1d47; --accent-hover: #6f1538; --on-accent: #ffffff; --accent-soft: #f6e3ea; --accent-text: #8c1d47;
+  --success-text: #175a38; --success-soft: #e1f2e8; --warning-text: #6e4300; --warning-soft: #fbefd9;
+  --info-text: #47306a; --info-soft: #ece6f3; --danger-text: #96201a;
+  --wall: #efe7e9; --device: #23142a;
+  --shadow-1: 0 1px 2px rgb(35 20 42 / 0.06), 0 4px 12px -6px rgb(35 20 42 / 0.18);
+  --shadow-2: 0 2px 6px rgb(35 20 42 / 0.08), 0 16px 32px -12px rgb(35 20 42 / 0.28);
+  --tag-bg: rgb(20 10 20 / 0.62);
+  --sans: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --display: 'Bodoni Moda', 'Didot', 'Bodoni 72', Georgia, serif;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1); --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #140b17; --surface: #1d1221; --sunken: #10080f; --raised: #26182b;
+  --text: #f7eef3; --muted: #bca9bf; --border: #7e6b83; --line: #34243a;
+  --accent: #f28db2; --accent-hover: #f7aecb; --on-accent: #2a0716; --accent-soft: #3b1a2a; --accent-text: #f7a9c6;
+  --success-text: #8fe3b2; --success-soft: #13301f; --warning-text: #f5c77f; --warning-soft: #2e2212;
+  --info-text: #cdbdf0; --info-soft: #2a2140; --danger-text: #ffaaa2;
+  --wall: #0d070f; --device: #000000;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.5), 0 6px 16px -8px rgb(0 0 0 / 0.7);
+  --shadow-2: 0 8px 28px -6px rgb(0 0 0 / 0.7); --tag-bg: rgb(10 5 10 / 0.7);
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #140b17; --surface: #1d1221; --sunken: #10080f; --raised: #26182b;
+  --text: #f7eef3; --muted: #bca9bf; --border: #7e6b83; --line: #34243a;
+  --accent: #f28db2; --accent-hover: #f7aecb; --on-accent: #2a0716; --accent-soft: #3b1a2a; --accent-text: #f7a9c6;
+  --success-text: #8fe3b2; --success-soft: #13301f; --warning-text: #f5c77f; --warning-soft: #2e2212;
+  --info-text: #cdbdf0; --info-soft: #2a2140; --danger-text: #ffaaa2;
+  --wall: #0d070f; --device: #000000;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.5), 0 6px 16px -8px rgb(0 0 0 / 0.7);
+  --shadow-2: 0 8px 28px -6px rgb(0 0 0 / 0.7); --tag-bg: rgb(10 5 10 / 0.7);
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--wall); color: var(--text); font-family: var(--sans); font-size: 16px; line-height: 1.55; margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 4rem; }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { text-wrap: balance; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; }
+
+/* ---------- Wall chrome ---------- */
+.wall-head { display: flex; flex-wrap: wrap; gap: 1rem 2rem; align-items: end; justify-content: space-between; padding-block: 2.5rem 1.5rem; }
+.wall-head h1 { font-family: var(--display); font-weight: 500; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.05; letter-spacing: -0.01em; }
+.wall-head h1 em { color: var(--accent-text); }
+.wall-head p { color: var(--muted); max-width: 38rem; margin-top: .6rem; }
+.wall-tools { display: flex; gap: .5rem; flex-wrap: wrap; }
+.pill-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0 1rem; border-radius: 999px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); text-decoration: none; font-weight: 600; font-size: .9rem; cursor: pointer; }
+.pill-link:hover { border-color: var(--text); }
+.persona { margin-top: 3rem; }
+.persona-head { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: baseline; border-top: 1px solid var(--line); padding-top: 1.25rem; }
+.eyebrow { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--accent-text); }
+.persona-head h2 { font-family: var(--display); font-weight: 500; font-size: 1.875rem; }
+.persona-head p { color: var(--muted); flex-basis: 100%; max-width: 44rem; }
+.row { display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 1.5rem; }
+.slot { width: min(360px, 100%); display: flex; flex-direction: column; gap: .9rem; }
+.slot-label { display: flex; gap: .5rem; align-items: baseline; font-weight: 700; }
+.slot-label span { color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.notes { font-size: .875rem; color: var(--muted); display: grid; gap: .35rem; padding: 0; margin: 0; list-style: none; }
+.notes li { padding-left: 1rem; position: relative; }
+.notes li::before { content: ""; position: absolute; left: 0; top: .6em; width: .4rem; height: 1px; background: var(--accent); }
+.notes b { color: var(--text); font-weight: 650; }
+
+/* ---------- Device ---------- */
+.phone { width: 100%; height: 740px; border-radius: 38px; background: var(--device); padding: 10px; box-shadow: var(--shadow-2); }
+.screen { position: relative; height: 100%; border-radius: 29px; overflow: hidden; background: var(--bg); display: flex; flex-direction: column; }
+.status { height: 34px; flex: none; display: flex; justify-content: space-between; align-items: center; padding: 0 22px; font-size: .75rem; font-weight: 700;
+  font-variant-numeric: tabular-nums; }
+.scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.appbar { display: flex; align-items: center; justify-content: space-between; padding: 6px 18px 10px; }
+.mark { display: inline-flex; align-items: center; gap: .45rem; font-weight: 700; letter-spacing: .02em; font-size: .95rem; color: var(--text); }
+.mark svg { width: 26px; height: 26px; }
+.mark small { font-weight: 600; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line);
+  padding: 1px 5px; border-radius: 4px; }
+.pad { padding: 0 18px 22px; display: flex; flex-direction: column; gap: 1rem; }
+
+/* ---------- App components (these are the design, at phone size) ---------- */
+.h-display { font-family: var(--display); font-weight: 500; font-size: 2.5rem; line-height: 1.04; letter-spacing: -0.015em; }
+.h-display em { font-style: italic; color: var(--accent-text); }
+.h-screen { font-family: var(--display); font-weight: 500; font-size: 1.875rem; line-height: 1.1; }
+.lead { font-size: 1.0625rem; color: var(--muted); }
+.hint { font-size: .875rem; color: var(--muted); }
+.small { font-size: .8125rem; }
+.btn { appearance: none; border: 0; cursor: pointer; min-height: 52px; padding: 0 1.4rem; border-radius: 999px; font-weight: 650; font-size: 1rem;
+  background: var(--accent); color: var(--on-accent); display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  transition: transform 120ms var(--ease), background 120ms; text-decoration: none; }
+.btn:hover { background: var(--accent-hover); }
+.btn:active { transform: scale(.98); }
+.btn[disabled] { background: var(--sunken); color: var(--muted); cursor: not-allowed; transform: none; }
+.btn.block { width: 100%; }
+.btn.quiet { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn.quiet:hover { border-color: var(--text); background: transparent; }
+.btn.ghost { background: transparent; color: var(--accent-text); min-height: 44px; padding: 0 .5rem; }
+.textlink { color: var(--accent-text); font-weight: 650; text-decoration: underline; text-underline-offset: 3px; background: none; border: 0; padding: 0; cursor: pointer; }
+.card { background: var(--surface); border-radius: 20px; box-shadow: var(--shadow-1); }
+.chip { display: inline-flex; align-items: center; gap: .3rem; font-size: .75rem; font-weight: 700; padding: .2rem .55rem; border-radius: 6px;
+  background: var(--accent-soft); color: var(--accent-text); }
+.chip.neutral { background: var(--sunken); color: var(--muted); }
+.chip.ok { background: var(--success-soft); color: var(--success-text); }
+.chip.warn { background: var(--warning-soft); color: var(--warning-text); }
+.chip.info { background: var(--info-soft); color: var(--info-text); }
+
+/* Hair texture glyphs: one drawing language for all four types, same size, same weight. */
+.glyph { width: 30px; height: 30px; flex: none; color: var(--accent-text); }
+.glyph path { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Photos: placeholder duotones in real hair colours, the texture drawn in, tags on a scrim. */
+.ph { position: relative; border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 5; max-width: 100%; color: #fff; isolation: isolate; }
+.ph::before { content: ""; position: absolute; inset: 0; background: linear-gradient(160deg, var(--t1), var(--t2)); z-index: -2; }
+.ph .tex { position: absolute; inset: -10% -10% 0; opacity: .32; z-index: -1; }
+.ph .tex path { fill: none; stroke: #fff; stroke-width: 1.2; stroke-linecap: round; }
+.ph .ptag { position: absolute; left: 6px; bottom: 6px; right: 6px; font-size: .6875rem; font-weight: 700; line-height: 1.25; background: var(--tag-bg);
+  color: #fff; padding: 3px 6px; border-radius: 5px; width: fit-content; max-width: calc(100% - 12px); }
+
+/* Landing */
+.hero-collage { display: grid; grid-template-columns: 1.2fr 1fr; gap: 8px; }
+.hero-collage .ph:first-child { grid-row: span 2; aspect-ratio: auto; }
+.steps3 { display: grid; gap: .8rem; counter-reset: s; padding: 0; margin: 0; list-style: none; }
+.steps3 li { display: grid; grid-template-columns: 2rem 1fr; gap: .6rem; align-items: start; }
+.steps3 li::before { counter-increment: s; content: counter(s); font-family: var(--display); font-size: 1.5rem; line-height: 1; color: var(--accent-text); }
+.steps3 b { display: block; }
+.texture-band { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; font-size: .75rem; font-weight: 650; }
+.texture-band div { background: var(--surface); border-radius: 12px; padding: .7rem .2rem .5rem; display: grid; justify-items: center; gap: .25rem; box-shadow: var(--shadow-1); }
+.trust { display: flex; gap: .6rem; align-items: start; font-size: .875rem; color: var(--muted); }
+.trust svg { flex: none; width: 20px; height: 20px; color: var(--accent-text); margin-top: 1px; }
+
+/* Quiz */
+.qtop { display: flex; align-items: center; gap: .75rem; padding: 2px 18px 6px; }
+.qtop .back { width: 44px; height: 44px; border-radius: 50%; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center; margin-left: -10px; }
+.qtop .back[disabled] { opacity: .3; cursor: default; }
+.bar { flex: 1; height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; transition: width 220ms var(--ease); }
+.qcount { font-size: .75rem; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 2.6rem; text-align: right; }
+.qbody { animation: rise 220ms var(--ease); }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+.opts { display: grid; gap: .55rem; }
+.opts.two { grid-template-columns: 1fr 1fr; }
+.opt { appearance: none; text-align: left; cursor: pointer; border: 1.5px solid var(--line); background: var(--surface); border-radius: 14px; padding: .8rem .9rem;
+  min-height: 52px; display: flex; flex-direction: column; gap: .15rem; transition: border-color 120ms, background 120ms; }
+.opt:hover { border-color: var(--border); }
+.opt[aria-pressed="true"], .opt[aria-checked="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.opt b { font-weight: 650; }
+.opt span { font-size: .8125rem; color: var(--muted); }
+.opt.hair { align-items: flex-start; gap: .35rem; padding: .9rem; }
+.opt.hair .glyph { width: 36px; height: 36px; }
+.chips { display: flex; flex-wrap: wrap; gap: .45rem; }
+.chipbtn { appearance: none; cursor: pointer; min-height: 44px; padding: 0 1rem; border-radius: 999px; border: 1.5px solid var(--line); background: var(--surface);
+  font-weight: 600; font-size: .9375rem; }
+.chipbtn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-text); }
+.field { display: grid; gap: .35rem; }
+.field label { font-weight: 650; font-size: .9375rem; }
+.input { width: 100%; min-height: 52px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface); padding: 0 .9rem; font: inherit; color: var(--text); }
+textarea.input { padding: .7rem .9rem; min-height: 88px; resize: vertical; }
+.input:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); }
+.qfoot { flex: none; padding: 10px 18px 16px; background: linear-gradient(to top, var(--bg) 70%, transparent); display: grid; gap: .4rem; }
+.skip { justify-self: center; }
+
+/* Upload + privacy */
+.drop { border: 1.5px dashed var(--border); border-radius: 18px; padding: 1.4rem 1rem; display: grid; justify-items: center; gap: .5rem; text-align: center;
+  background: var(--surface); cursor: pointer; }
+.drop svg { width: 34px; height: 34px; color: var(--accent-text); }
+.picked { display: grid; grid-template-columns: 104px 1fr; gap: .9rem; align-items: center; }
+.privacy { background: var(--info-soft); color: var(--info-text); border-radius: 16px; padding: .9rem 1rem; display: grid; gap: .55rem; }
+.privacy h4 { margin: 0; font-size: .9375rem; display: flex; gap: .45rem; align-items: center; }
+.privacy ul { margin: 0; padding: 0; list-style: none; display: grid; gap: .35rem; font-size: .875rem; }
+.privacy li { display: grid; grid-template-columns: 18px 1fr; gap: .45rem; }
+.privacy svg { width: 18px; height: 18px; }
+
+/* Finding */
+.echo { font-family: var(--display); font-style: italic; font-size: 1.5rem; line-height: 1.25; }
+.echo-box { border-left: 2px solid var(--accent); padding: .2rem 0 .2rem 1rem; display: grid; gap: .5rem; }
+.timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.timeline li { display: grid; grid-template-columns: 28px 1fr; gap: .75rem; padding-bottom: 1rem; position: relative; }
+.timeline li::after { content: ""; position: absolute; left: 13px; top: 28px; bottom: 2px; width: 2px; background: var(--line); }
+.timeline li:last-child::after { display: none; }
+.dot { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--line); background: var(--bg); font-size: .75rem; }
+.done .dot { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.now .dot { border-color: var(--accent); }
+.now .dot::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(.55); opacity: .5; } }
+.timeline b { display: block; }
+.shimmer { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.shimmer div { aspect-ratio: 4/5; border-radius: 10px; background: linear-gradient(100deg, var(--sunken) 30%, var(--line) 50%, var(--sunken) 70%);
+  background-size: 300% 100%; animation: sweep 2.4s linear infinite; }
+@keyframes sweep { to { background-position: -150% 0; } }
+
+/* Matches */
+.match { padding: 1rem; display: grid; gap: .75rem; }
+.mhead { display: grid; grid-template-columns: 44px 1fr auto; gap: .7rem; align-items: center; }
+.avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; color: #fff; font-size: .9rem; }
+.mhead b { display: block; font-size: 1.0625rem; line-height: 1.2; }
+.rank { font-family: var(--display); font-size: 1.75rem; line-height: 1; color: var(--accent-text); }
+.reason { font-weight: 650; display: flex; gap: .5rem; align-items: center; }
+.reason .glyph { width: 24px; height: 24px; }
+.evidence { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.why { font-size: .875rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: .6rem; }
+.why summary { cursor: pointer; font-weight: 650; color: var(--text); min-height: 32px; display: flex; align-items: center; }
+.why ul { margin: .3rem 0 0; padding-left: 1.1rem; display: grid; gap: .2rem; }
+.mact { display: grid; grid-template-columns: 1fr auto; gap: .5rem; }
+.sample { font-size: .6875rem; letter-spacing: .06em; text-transform: uppercase; }
+.toast { position: absolute; left: 14px; right: 14px; bottom: 14px; background: var(--text); color: var(--bg); padding: .8rem 1rem; border-radius: 14px;
+  font-size: .875rem; box-shadow: var(--shadow-2); animation: rise 220ms var(--ease); z-index: 5; }
+
+/* Stylist */
+.progress-row { display: flex; align-items: center; gap: .8rem; }
+.ring { width: 52px; height: 52px; flex: none; }
+.ring circle { fill: none; stroke-width: 5; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.tile { appearance: none; border: 0; padding: 0; background: none; cursor: pointer; border-radius: 12px; position: relative; text-align: left; }
+.tile .flag { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: .75rem;
+  font-weight: 800; background: var(--surface); color: var(--accent-text); box-shadow: var(--shadow-1); }
+.tile.untagged .ph { outline: 2px dashed var(--accent); outline-offset: -2px; }
+.addtile { aspect-ratio: 4/5; border-radius: 12px; border: 1.5px dashed var(--border); display: grid; place-items: center; text-align: center; font-size: .8125rem;
+  font-weight: 650; color: var(--accent-text); background: var(--surface); cursor: pointer; }
+.sheet-backdrop { position: absolute; inset: 0; background: rgb(20 10 20 / .45); z-index: 4; display: flex; align-items: flex-end; animation: fade 200ms; }
+@keyframes fade { from { opacity: 0; } }
+.sheet { background: var(--raised); width: 100%; max-height: 92%; overflow-y: auto; border-radius: 22px 22px 0 0; padding: 8px 16px 16px; display: grid; gap: .9rem;
+  animation: up 360ms var(--ease-sheet); }
+@keyframes up { from { transform: translateY(100%); } }
+.grab { width: 40px; height: 4px; border-radius: 4px; background: var(--line); justify-self: center; }
+.sheet-top { display: grid; grid-template-columns: 64px 1fr; gap: .8rem; align-items: center; }
+.tgroup { display: grid; gap: .4rem; }
+.tgroup > b { font-size: .8125rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.seg4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.seg4 .opt { padding: .5rem .2rem; align-items: center; text-align: center; min-height: 64px; gap: .1rem; font-size: .8125rem; font-weight: 650; }
+.seg4 .opt .glyph { width: 26px; height: 26px; }
+.seg3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+.seg3 .opt, .segx .opt { align-items: center; text-align: center; font-weight: 650; font-size: .875rem; min-height: 46px; padding: .4rem; }
+.quickfill { display: flex; gap: .5rem; align-items: center; background: var(--sunken); border-radius: 12px; padding: .5rem .7rem; font-size: .8125rem; }
+.sheet-actions { position: sticky; bottom: -16px; background: var(--raised); padding: .6rem 0 .2rem; display: grid; grid-template-columns: auto 1fr; gap: .5rem; }
+.check { list-style: none; padding: 0; margin: 0; display: grid; gap: .5rem; }
+.check li { display: grid; grid-template-columns: 30px 1fr auto; gap: .7rem; align-items: center; background: var(--surface); border-radius: 14px; padding: .75rem .8rem;
+  box-shadow: var(--shadow-1); }
+.check .tick { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--border); font-size: .8rem; }
+.check .ok .tick, .check li.ok .tick { background: var(--success-text); border-color: var(--success-text); color: var(--surface); }
+.check small { display: block; color: var(--muted); font-size: .8125rem; }
+.coverage { display: grid; gap: .35rem; font-size: .8125rem; }
+.coverage div { display: grid; grid-template-columns: 64px 1fr 1.6rem; gap: .5rem; align-items: center; font-variant-numeric: tabular-nums; }
+.coverage i { display: block; height: 8px; border-radius: 4px; background: var(--accent); min-width: 2px; }
+.coverage .track { background: var(--sunken); border-radius: 4px; }
+
+/* ---------- Admin desktop ---------- */
+.desk-scroll { overflow-x: auto; margin-top: 1.5rem; padding-bottom: .5rem; }
+.desk { min-width: 1180px; border-radius: 16px; background: var(--device); padding: 10px; box-shadow: var(--shadow-2); }
+.desk-screen { background: var(--bg); border-radius: 9px; overflow: hidden; display: grid; grid-template-columns: 210px 1fr; min-height: 760px; }
+.side { background: var(--surface); border-right: 1px solid var(--line); padding: 18px 14px; display: grid; align-content: start; gap: .2rem; }
+.side .mark { margin-bottom: 1rem; }
+.side a { display: flex; justify-content: space-between; padding: .55rem .7rem; border-radius: 10px; color: var(--text); text-decoration: none; font-size: .9375rem; font-weight: 600; }
+.side a.on { background: var(--accent-soft); color: var(--accent-text); }
+.side a span { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 600; }
+.side h5 { margin: 1rem .7rem .3rem; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.review { padding: 20px 24px; display: grid; grid-template-columns: 270px minmax(0, 1fr) 240px; gap: 20px; align-content: start; }
+.review-head { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: end; gap: 1rem; }
+.review-head h3 { font-family: var(--display); font-weight: 500; font-size: 1.75rem; }
+.col { display: grid; gap: 14px; align-content: start; }
+.panel { background: var(--surface); border-radius: 16px; padding: 14px; box-shadow: var(--shadow-1); display: grid; gap: .6rem; }
+.panel h4 { margin: 0; font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.kv { display: grid; grid-template-columns: 96px 1fr; gap: .3rem .6rem; font-size: .875rem; margin: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-weight: 600; }
+.heard { background: var(--accent-soft); color: var(--accent-text); border-radius: 12px; padding: .7rem .8rem; font-size: .9rem; }
+.heard q { font-family: var(--display); font-style: italic; font-size: 1.05rem; display: block; margin-top: .3rem; color: var(--text); }
+.cand { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow-1); padding: 12px; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 14px; align-items: start; }
+.cand.hidden-c { opacity: .5; }
+.cand .rank { text-align: center; }
+.cand .ev { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; max-width: 340px; margin-top: .6rem; }
+.score { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: center; font-size: .8125rem; font-variant-numeric: tabular-nums; color: var(--muted); margin-top: .3rem; }
+.score .track { height: 6px; background: var(--sunken); border-radius: 3px; overflow: hidden; }
+.score i { display: block; height: 100%; background: var(--accent); }
+.ctrl { display: grid; gap: 4px; }
+.iconbtn { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; display: grid; place-items: center; font-weight: 700; }
+.iconbtn:hover { border-color: var(--border); }
+.iconbtn[disabled] { opacity: .35; cursor: default; }
+.mini { font-size: .75rem; }
+.fair { display: grid; gap: .3rem; font-size: .8125rem; }
+.fair div { display: grid; grid-template-columns: 56px 1fr 1.4rem; gap: .4rem; align-items: center; font-variant-numeric: tabular-nums; }
+.fair .track { height: 6px; background: var(--sunken); border-radius: 3px; overflow: hidden; }
+.fair i { display: block; height: 100%; background: var(--accent); }
+
+
+/* Instant results, browse, admin log (auto-publish) */
+.rise { animation: rise 420ms var(--ease) both; }
+.waitgrid { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: .9rem; align-items: start; }
+.waitgrid .timeline b { font-size: .9375rem; line-height: 1.3; }
+.waitgrid .timeline .hint { font-size: .8125rem; }
+.scan { position: relative; border-radius: 12px; overflow: hidden; }
+.sweep { position: absolute; left: 0; right: 0; height: 30%; top: -30%; background: linear-gradient(to bottom, transparent, rgb(255 255 255 / .55), transparent); animation: scan 1.4s ease-in-out infinite; }
+@keyframes scan { to { top: 100%; } }
+.shimmer .tilewait { aspect-ratio: 4/5; border-radius: 10px; background: linear-gradient(100deg, var(--sunken) 30%, var(--line) 50%, var(--sunken) 70%); background-size: 300% 100%; animation: sweep 2.4s linear infinite; }
+.shimmer .pop { animation: pop 380ms var(--ease) both; }
+@keyframes pop { from { opacity: 0; transform: scale(.92); } }
+.tabs { display: flex; gap: .3rem; background: var(--sunken); border-radius: 999px; padding: 4px; }
+.tab { flex: 1; appearance: none; border: 0; background: transparent; min-height: 40px; border-radius: 999px; font-weight: 650; font-size: .875rem; color: var(--muted); cursor: pointer; padding: 0 .9rem; }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: var(--shadow-1); }
+.scard { padding: 1rem; display: grid; gap: .6rem; }
+.works { display: flex; flex-wrap: wrap; gap: .3rem .8rem; font-size: .8125rem; font-weight: 650; color: var(--muted); font-variant-numeric: tabular-nums; }
+.works span { display: inline-flex; align-items: center; gap: .25rem; }
+.works .glyph { width: 18px; height: 18px; color: var(--muted); }
+.works .hit { color: var(--accent-text); }
+.works .hit .glyph { color: var(--accent-text); }
+.filterbar { overflow-x: auto; margin: 0 -18px; padding: 0 18px 2px; scrollbar-width: none; }
+.chips.nowrap { flex-wrap: nowrap; width: max-content; }
+.seg5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.seg5 .opt { padding: .45rem .1rem; align-items: center; text-align: center; min-height: 58px; gap: .05rem; font-size: .75rem; font-weight: 650; }
+.seg5 .opt .glyph { width: 22px; height: 22px; }
+.monitor { padding: 20px 24px; display: grid; gap: 16px; align-content: start; min-width: 0; }
+.mon-head { display: flex; justify-content: space-between; align-items: end; gap: 1rem; }
+.mon-head h3 { font-family: var(--display); font-weight: 500; font-size: 1.75rem; }
+.switch-row { display: flex; gap: .8rem; align-items: center; text-align: right; }
+.switch-row b, .switch-row span { display: block; }
+.switch { width: 52px; height: 30px; border-radius: 999px; border: 0; background: var(--border); position: relative; cursor: pointer; flex: none; transition: background 160ms; }
+.switch i { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: var(--surface); box-shadow: var(--shadow-1); transition: transform 160ms var(--ease); }
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"] i { transform: translateX(22px); }
+.banner { background: var(--warning-soft); color: var(--warning-text); border-radius: 12px; padding: .7rem .9rem; font-size: .9rem; }
+.fair-card { background: var(--surface); border-radius: 16px; box-shadow: var(--shadow-1); padding: 14px 16px; display: grid; grid-template-columns: 210px 1fr auto; gap: 18px; align-items: center; }
+.fair-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.fair-cell { display: grid; grid-template-columns: 1fr auto; gap: .2rem .5rem; font-size: .8125rem; font-variant-numeric: tabular-nums; }
+.fair-cell .track { grid-column: 1 / -1; height: 6px; background: var(--sunken); border-radius: 3px; overflow: hidden; }
+.fair-cell i { display: block; height: 100%; background: var(--accent); }
+.fair-cell.low i { background: var(--warning-text); }
+.fair-cell .chip, .fair-cell .hint { grid-column: 1 / -1; justify-self: start; }
+.mon-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 16px; align-items: start; }
+.log { width: 100%; border-collapse: collapse; font-size: .875rem; font-variant-numeric: tabular-nums; }
+.log th { text-align: left; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 700; padding: .5rem .4rem; border-bottom: 1px solid var(--line); }
+.log td { padding: .6rem .4rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.log tr[data-row] { cursor: pointer; }
+.log tr[data-row]:hover td { background: var(--sunken); }
+.log tr.sel td { background: var(--accent-soft); }
+.log tr.sel td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.confirm { margin-top: .6rem; background: var(--sunken); border-radius: 10px; padding: .6rem .7rem; display: grid; gap: .5rem; font-size: .8125rem; }
+.btn.mini { min-height: 34px; padding: 0 .8rem; font-size: .8125rem; }
+.events { margin: 0; padding: 0; list-style: none; display: grid; gap: .35rem; font-size: .875rem; }
+.events li { display: grid; grid-template-columns: 70px 1fr; gap: .5rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+}
+</style>
+
+<div class="wrap">
+  <header class="wall-head">
+    <div>
+      <div class="eyebrow">LookMate · working name · design direction “Chair-side”</div>
+      <h1>The stylist who’s <em>already done</em> your look.</h1>
+      <p>A clickable prototype of the pilot’s key screens. Every phone is live: tap through the quiz and watch the wait turn into results, filter every stylist, tag a photo and watch the go-live checklist update, and flip the admin’s review switch. Photos are drawn placeholders in real hair colours; all people are made up.</p>
+    </div>
+    <div class="wall-tools">
+      <a class="pill-link" href="#client">Client</a>
+      <a class="pill-link" href="#stylist">Stylist</a>
+      <a class="pill-link" href="#admin">Admin</a>
+      <button class="pill-link" id="themeBtn" type="button">Switch theme</button>
+    </div>
+  </header>
+
+  <!-- ================= CLIENT ================= -->
+  <section class="persona" id="client">
+    <div class="persona-head">
+      <span class="eyebrow">Client · signed out · phone</span>
+      <h2>Feel heard before anyone touches your hair</h2>
+      <p>Usually arriving from an Instagram link. Matches publish automatically in seconds; recommendations come first, and every stylist is one tab away. No account, no password.</p>
+    </div>
+    <div class="row">
+      <div class="slot">
+        <div class="slot-label"><span>1</span>Landing</div>
+        <div class="phone"><div class="screen">
+          <div class="status"><span>9:41</span><span>●●●</span></div>
+          <div class="scroll">
+            <div class="appbar"><span class="mark" data-mark></span><button class="btn ghost small" type="button">Stylists</button></div>
+            <div class="pad">
+              <div class="hero-collage" id="heroCollage"></div>
+              <h3 class="h-display">The stylist who’s <em>already done</em> your look.</h3>
+              <p class="lead">Show us the hair you want. We match you with Columbus stylists whose own work looks like it, on hair like yours.</p>
+              <button class="btn block" type="button" data-go="quiz">Find my stylist</button>
+              <div class="trust"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 9V6.5a5 5 0 0 1 10 0V9M4 9h12v8H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+                <span>Free, no account. Your photo stays private and is deleted after 30 days.</span></div>
+              <div>
+                <div class="eyebrow" style="margin-bottom:.5rem">Every hair type, equally</div>
+                <div class="texture-band" id="textureBand"></div>
+              </div>
+              <ol class="steps3">
+                <li><span><b>Tell us about your hair</b><span class="hint">Seven quick questions, most of them one tap.</span></span></li>
+                <li><span><b>Add one inspiration photo</b><span class="hint">A screenshot or a saved post is perfect.</span></span></li>
+                <li><span><b>Get 3–5 stylists, with proof</b><span class="hint">In seconds. Their own photos of looks like yours, plus every other stylist to browse.</span></span></li>
+              </ol>
+              <p class="hint small">Independent stylists at Salon Lofts in Columbus. Our picks are suggestions: you can book anyone.</p>
+            </div>
+          </div>
+        </div></div>
+        <ul class="notes">
+          <li><b>Photography leads.</b> The collage shows finished work across four textures before a single word.</li>
+          <li><b>Privacy in the first screen</b>, not in a footer: it answers the worry before it forms.</li>
+          <li>Numbered steps are a real sequence, so the numbers carry meaning.</li>
+        </ul>
+      </div>
+
+      <div class="slot" id="quizSlot">
+        <div class="slot-label"><span>2</span>Style quiz <span>· tap through</span></div>
+        <div class="phone"><div class="screen" id="quizScreen"></div></div>
+        <ul class="notes">
+          <li><b>One question a screen</b>, answer-to-advance on single choices: no Next button to hunt for.</li>
+          <li><b>Hair type is a 2×2 grid</b> of equal cards with drawn textures, so no type reads as the default. Curl codes appear only as a hint.</li>
+          <li>“Texture” is renamed <b>strand thickness</b> for clients and stylists: in textured-hair care, “texture” means curl pattern.</li>
+          <li>The past-stylist question becomes <b>“What should your next stylist get right?”</b> with their own words optional.</li>
+        </ul>
+      </div>
+
+      <div class="slot" id="photoSlot">
+        <div class="slot-label"><span>3</span>Inspiration photo</div>
+        <div class="phone"><div class="screen" id="photoScreen"></div></div>
+        <ul class="notes">
+          <li><b>Privacy promise sits under the picker</b>, in a calm info tone, not a warning tone. Three short facts, each one true in the code today.</li>
+          <li>The retention number comes from the server setting, so the copy can’t drift from the job.</li>
+          <li>After picking: a preview with “Change photo”, and a nudge to send the look, not a selfie.</li>
+        </ul>
+      </div>
+
+      <div class="slot" id="findingSlot">
+        <div class="slot-label"><span>4</span>Instant results <span>· <button class="textlink" type="button" data-replay>replay the wait</button></span></div>
+        <div class="phone"><div class="screen" id="instantScreen"></div></div>
+        <ul class="notes">
+          <li><b>No “we’ll email you”.</b> Ranking takes seconds, so the wait is a short, honest show on the same page: three real steps, the client’s own photo, and stylists’ work filling in.</li>
+          <li><b>The echo</b> holds the wait: their own words in display italic, so the first thing after sending is proof they were heard.</li>
+          <li>The wait <b>turns into the results</b> in place: the placeholder tiles become the evidence photos, and the cards rise in one by one.</li>
+          <li><b>Recommendations first, “See all stylists” beside them</b> as a tab. Book names the destination (“Book on Vagaro ↗”).</li>
+        </ul>
+      </div>
+
+      <div class="slot" id="browseSlot">
+        <div class="slot-label"><span>5</span>See all stylists <span>· filter</span></div>
+        <div class="phone"><div class="screen" id="browseScreen"></div></div>
+        <ul class="notes">
+          <li><b>Clients choose.</b> Every live stylist, filtered by service and hair type, starting from the client’s own answers.</li>
+          <li>Each card shows <b>how much work they have per hair type</b> (“Curly 14 · Coily 6”), the same evidence the recommendations use.</li>
+          <li>Recommended stylists carry a quiet label and sort first; nothing else is ranked by us, and there are no stars or prices to sort by.</li>
+          <li><b>“Sample stylist”</b> labels a demo profile wherever a client could see it.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= STYLIST ================= -->
+  <section class="persona" id="stylist">
+    <div class="persona-head">
+      <span class="eyebrow">Stylist · signed in · phone, between clients</span>
+      <h2>Your portfolio, tagged in a minute</h2>
+      <p>Two thumbs, a few minutes between appointments. Tagging is the only work we ask of stylists, so each photo takes four taps and “Save and next”.</p>
+    </div>
+    <div class="row">
+      <div class="slot">
+        <div class="slot-label"><span>6</span>Portfolio and tag sheet <span>· tap a photo</span></div>
+        <div class="phone"><div class="screen" id="portfolioScreen"></div></div>
+        <ul class="notes">
+          <li><b>Untagged photos wear a dashed outline</b> and the bar counts them, so the next job is always visible.</li>
+          <li><b>Tag sheet order follows matching</b>: service and hair type first (the two matching filters on), then strand thickness, length, before/after.</li>
+          <li><b>“Same as last photo”</b> and <b>“Save and next”</b> make a batch from one appointment a few taps each.</li>
+          <li>Hair type uses the same glyphs and words as the client quiz, so both sides mean the same thing.</li>
+        </ul>
+      </div>
+      <div class="slot">
+        <div class="slot-label"><span>7</span>Go-live checklist</div>
+        <div class="phone"><div class="screen" id="liveScreen"></div></div>
+        <ul class="notes">
+          <li><b>One checklist, each row a link</b> to the step that fixes it. The Go live button says exactly what’s missing.</li>
+          <li>The booking link shows the detected platform, so a wrong paste is caught here, not by a client.</li>
+          <li><b>“Your work by hair type”</b> is informative, never a score: it shows what clients will be matched on.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= ADMIN ================= -->
+  <section class="persona" id="admin">
+    <div class="persona-head">
+      <span class="eyebrow">Admin · desktop or tablet</span>
+      <h2>Watch every match, step in after the fact</h2>
+      <p>Matches publish automatically. The admin screen is a log: what each client was shown, what they clicked and booked, and fairness by hair type up top. Hide a match or a stylist after the fact. Turn on “Review before publish” to see the secondary approval state.</p>
+    </div>
+    <div class="desk-scroll"><div class="desk"><div class="desk-screen">
+      <nav class="side" aria-label="Admin">
+        <span class="mark" data-mark></span>
+        <h5>Matching</h5>
+        <a class="on" href="#admin">Match log <span id="sideCount"></span></a>
+        <a href="#admin">Fairness report <span></span></a>
+        <h5>Stylists</h5>
+        <a href="#admin">Stylists <span>23</span></a>
+        <a href="#admin">Locations <span>18</span></a>
+        <a href="#admin">Demo stylists <span>6</span></a>
+        <h5>Pilot</h5>
+        <a href="#admin">Metrics <span></span></a>
+        <a href="#admin">Record a booking <span></span></a>
+      </nav>
+      <div class="monitor">
+        <div class="mon-head">
+          <div><span class="eyebrow">Columbus · today</span><h3>Match log</h3></div>
+          <div class="switch-row">
+            <div><b>Review before publish</b><span class="hint mini" id="switchHint">Off: clients see matches in seconds</span></div>
+            <button class="switch" type="button" role="switch" aria-checked="false" id="reviewSwitch" aria-label="Review before publish"><i></i></button>
+          </div>
+        </div>
+        <div id="modeBanner"></div>
+        <div class="fair-card">
+          <div><span class="eyebrow">Fairness · last 30 days</span><p class="hint mini">Share of requests where the client clicked Book, by the client’s hair type</p></div>
+          <div class="fair-row" id="fairRow"></div>
+          <a class="btn" href="#admin">Open fairness report →</a>
+        </div>
+        <div class="mon-grid">
+          <div class="panel" style="align-content:start">
+            <div class="tabs" id="logTabs"></div>
+            <div style="overflow-x:auto"><table class="log"><thead><tr><th>Time</th><th>Client</th><th>Shown</th><th>Viewed</th><th>Book clicks</th><th>Booked</th></tr></thead><tbody id="logRows"></tbody></table></div>
+          </div>
+          <div id="logDetail" class="col"></div>
+        </div>
+      </div>
+    </div></div></div>
+    <ul class="notes" style="margin-top:1rem;max-width:52rem">
+      <li><b>Fairness sits above the log</b>, not two clicks away: a hair type falling behind is the first thing the admin sees each morning.</li>
+      <li><b>Every row answers “what did this client see, and did it work?”</b>: shown, viewed, clicked, booked. Rows that need a look (few matches, a near-type match) carry a chip.</li>
+      <li><b>After-the-fact actions</b> are per match (“Hide from Jordan”) and per stylist (“Hide everywhere”), each with an inline confirmation that says what the client will see.</li>
+      <li><b>Review before publish</b> is a switch, off by default. When on, a banner says so, new requests wait in their own tab, and the old reorder, hide and publish controls return.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // ---------- Brand mark: two overlapping rings (a match), name-agnostic ----------
+  const MARK = '<svg viewBox="0 0 26 26" aria-hidden="true"><circle cx="10" cy="13" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="16" cy="13" r="7" fill="none" stroke="var(--accent)" stroke-width="1.8"/></svg>';
+  document.querySelectorAll('[data-mark]').forEach((el) => { el.innerHTML = MARK + '<span>LookMate</span><small>working name</small>'; });
+
+  // ---------- Hair glyphs ----------
+  const GLYPH = {
+    STRAIGHT: 'M9 5v22M16 5v22M23 5v22',
+    WAVY: 'M10 4c-4 4 4 8 0 12s4 8 0 12M17 4c-4 4 4 8 0 12s4 8 0 12M24 4c-4 4 4 8 0 12s4 8 0 12',
+    CURLY: 'M12 4a3.2 3.2 0 1 1 0 6.2a3.2 3.2 0 1 0 0 6.2a3.2 3.2 0 1 1 0 6.2a3.2 3.2 0 1 0 0 6.2M21 4a3.2 3.2 0 1 1 0 6.2a3.2 3.2 0 1 0 0 6.2a3.2 3.2 0 1 1 0 6.2a3.2 3.2 0 1 0 0 6.2',
+    COILY: 'M9 4l5 1.6l-5 1.6l5 1.6l-5 1.6l5 1.6l-5 1.6l5 1.6l-5 1.6l5 1.6l-5 1.6l5 1.6l-5 1.6l5 1.6l-5 1.6M19 4l5 1.6l-5 1.6l5 1.6l-5 1.6l5 1.6l-5 1.6l5 1.6l-5 1.6l5 1.6l-5 1.6l5 1.6l-5 1.6l5 1.6l-5 1.6',
+  };
+  const glyph = (t) => `<svg class="glyph" viewBox="0 0 32 32" aria-hidden="true"><path d="${GLYPH[t]}"/></svg>`;
+  const HAIR = [
+    { v: 'STRAIGHT', l: 'Straight', h: 'Falls flat from root to tip', c: 'Often called type 1' },
+    { v: 'WAVY', l: 'Wavy', h: 'Loose S-shaped bends', c: 'Often called 2A–2C' },
+    { v: 'CURLY', l: 'Curly', h: 'Defined loops or spirals', c: 'Often called 3A–3C' },
+    { v: 'COILY', l: 'Coily', h: 'Tight coils or zig-zags', c: 'Often called 4A–4C' },
+  ];
+  const hairLabel = (v) => HAIR.find((h) => h.v === v).l;
+
+  // ---------- Photo placeholders ----------
+  const TONES = { espresso: ['#3b2a26', '#7a5440'], copper: ['#7e3c20', '#c97a48'], honey: ['#8a6234', '#d4ad74'], plum: ['#4b2340', '#9c5a86'],
+    ash: ['#4e4a4b', '#a9a2a0'], jet: ['#141113', '#4e4248'], rose: ['#6d2f3f', '#c98a8f'], auburn: ['#5a1f1a', '#a8503a'] };
+  const TEX = {
+    STRAIGHT: () => Array.from({ length: 14 }, (_, i) => `M${i * 8} 0v130`).join(''),
+    WAVY: () => Array.from({ length: 12 }, (_, i) => { const x = i * 9; return `M${x} 0c-6 8 6 16 0 24s6 16 0 24s6 16 0 24s6 16 0 24s6 16 0 24`; }).join(''),
+    CURLY: () => Array.from({ length: 9 }, (_, i) => { const x = 6 + i * 12; let d = `M${x} 0`; for (let k = 0; k < 11; k++) d += `a4 4 0 1 ${k % 2} 0 11`; return d; }).join(''),
+    COILY: () => Array.from({ length: 11 }, (_, i) => { const x = 4 + i * 10; let d = `M${x} 0`; for (let k = 0; k < 40; k++) d += `l${k % 2 ? -5 : 5} 3.2`; return d; }).join(''),
+  };
+  const ph = (tone, type, tag, extra = '') => {
+    const [a, b] = TONES[tone];
+    return `<div class="ph" style="--t1:${a};--t2:${b}" ${extra} role="img" aria-label="${esc(tag || hairLabel(type) + ' hair, placeholder photo')}">
+      <svg class="tex" viewBox="0 0 100 125" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path d="${TEX[type]()}"/></svg>
+      ${tag ? `<span class="ptag">${esc(tag)}</span>` : ''}</div>`;
+  };
+
+  // Landing collage + texture band
+  $('#heroCollage').innerHTML = ph('copper', 'CURLY', 'Rounded curly cut') + ph('jet', 'COILY', 'Tapered coils') + ph('honey', 'WAVY', 'Lived-in balayage');
+  $('#textureBand').innerHTML = HAIR.map((h) => `<div>${glyph(h.v)}${h.l}</div>`).join('');
+
+  // ---------- Quiz ----------
+  const SERVICES = ['Cut', 'Color', 'Balayage', 'Highlights', 'Silk press', 'Braids', 'Locs', 'Extensions', 'Perm', 'Treatment', 'Styling', 'Something else'];
+  const WANTS = ['Listen to what I ask for', 'Get the look I showed them', 'Don’t cut too short', 'Get the color right', 'Be gentle with my hair',
+    'Know my hair type', 'Take their time', 'Be clear about price', 'Be easy to book'];
+  const q = { step: 0, service: 'Cut', hair: 'CURLY', strands: 'Medium', length: 'Medium', budget: '$$', area: 'Clintonville',
+    wants: ['Know my hair type', 'Don’t cut too short'], note: 'A rounded shag that keeps my curls. Please don’t take too much length.', email: 'jordan.r@example.com', name: 'Jordan' };
+  const STEPS = [
+    { key: 'service', title: 'What are you booking?', hint: 'Pick the main thing. You can tell the stylist the rest.' },
+    { key: 'hair', title: 'How does your hair grow naturally?', hint: 'Think wash day, no heat or products. If it’s a mix, pick what you see most.' },
+    { key: 'strands', title: 'How fine or thick is a single strand?', hint: 'Roll one strand between your fingers.' },
+    { key: 'length', title: 'How long is it now?', hint: 'Measure curls and coils as they usually sit. Either way is fine.' },
+    { key: 'budget', title: 'What do you usually spend?', hint: 'For this service, before tip.' },
+    { key: 'area', title: 'Where in Columbus suits you?', hint: 'A neighborhood or area. Optional.' },
+    { key: 'wants', title: 'What should your next stylist get right?', hint: 'Pick any. This goes to the stylist who checks your matches.' },
+    { key: 'photo' }, { key: 'contact', title: 'Where should we send your matches?', hint: 'We email you a private link. No account, no password.' },
+  ];
+  const single = (key, opts, cls = '') => `<div class="opts ${cls}" role="radiogroup">${opts.map((o) => {
+    const v = o.v ?? o; const on = q[key] === v;
+    return `<button type="button" class="opt" role="radio" aria-checked="${on}" data-set="${key}" data-val="${esc(v)}"><b>${esc(o.l ?? o)}</b>${o.h ? `<span>${esc(o.h)}</span>` : ''}</button>`;
+  }).join('')}</div>`;
+
+  function quizBody() {
+    const s = STEPS[q.step];
+    if (s.key === 'service') return `<div class="chips" role="radiogroup">${SERVICES.map((v) => `<button type="button" class="chipbtn" role="radio" aria-pressed="${q.service === v}" data-set="service" data-val="${v}">${v}</button>`).join('')}</div>`;
+    if (s.key === 'hair') return `<div class="opts two" role="radiogroup">${HAIR.map((h) => `<button type="button" class="opt hair" role="radio" aria-checked="${q.hair === h.v}" data-set="hair" data-val="${h.v}">${glyph(h.v)}<b>${h.l}</b><span>${h.h}</span><span class="small">${h.c}</span></button>`).join('')}</div>
+      <button type="button" class="textlink" style="justify-self:start">Not sure? See photo examples</button>`;
+    if (s.key === 'strands') return single('strands', [{ v: 'Fine', h: 'Hard to feel at all' }, { v: 'Medium', h: 'You can feel it, just' }, { v: 'Thick', h: 'Feels like a thread' }, { v: 'Not sure' }]);
+    if (s.key === 'length') return single('length', [{ v: 'Cropped', h: 'Pixie, buzz or TWA' }, { v: 'Short', h: 'Above the shoulders' }, { v: 'Medium', h: 'Around the shoulders' }, { v: 'Long', h: 'Past the shoulders' }]);
+    if (s.key === 'budget') return single('budget', [{ v: '$', h: 'Under $60' }, { v: '$$', h: '$60–$120' }, { v: '$$$', h: '$120–$200' }, { v: '$$$$', h: 'Over $200' }, { v: 'Not sure' }]);
+    if (s.key === 'area') return `<div class="field"><label for="qArea">Neighborhood</label><input class="input" id="qArea" value="${esc(q.area)}" placeholder="Short North, Bexley, Dublin…"></div>
+      <div class="chips">${['Clintonville', 'Short North', 'Easton', 'Dublin', 'Grandview'].map((v) => `<button type="button" class="chipbtn" aria-pressed="${q.area === v}" data-area="${v}">${v}</button>`).join('')}</div>`;
+    if (s.key === 'wants') return `<div class="chips">${WANTS.map((v) => `<button type="button" class="chipbtn" aria-pressed="${q.wants.includes(v)}" data-want="${esc(v)}">${esc(v)}</button>`).join('')}</div>
+      <div class="field"><label for="qNote">In your own words (optional)</label><textarea class="input" id="qNote" maxlength="500">${esc(q.note)}</textarea></div>`;
+    if (s.key === 'contact') return `<div class="field"><label for="qEmail">Email</label><input class="input" id="qEmail" type="email" inputmode="email" autocomplete="email" value="${esc(q.email)}"></div>
+      <div class="field"><label for="qName">First name (optional)</label><input class="input" id="qName" autocomplete="given-name" value="${esc(q.name)}"></div>
+      <p class="hint small">By sending, you agree we keep your photo private and delete it after 30 days, and clear your email a year after your last request.</p>`;
+    return '';
+  }
+  const AUTO = new Set(['service', 'hair', 'strands', 'length', 'budget']);
+  function renderQuiz() {
+    const s = STEPS[q.step];
+    const total = STEPS.length;
+    const screen = $('#quizScreen');
+    const isPhoto = STEPS[q.step].key === 'photo';
+    const body = isPhoto ? photoInner(true) : `<div class="pad qbody"><h3 class="h-screen">${s.title}</h3><p class="hint">${s.hint}</p>${quizBody()}</div>`;
+    const last = q.step === total - 1;
+    screen.innerHTML = `<div class="status"><span>9:42</span><span>●●●</span></div>
+      <div class="qtop"><button class="back" type="button" aria-label="Back" ${q.step === 0 ? 'disabled' : ''} data-back>←</button>
+        <div class="bar" aria-hidden="true"><i style="width:${((q.step + 1) / total) * 100}%"></i></div><span class="qcount">${q.step + 1} of ${total}</span></div>
+      <div class="scroll">${body}</div>
+      <div class="qfoot">${AUTO.has(s.key) ? '<p class="hint small" style="text-align:center">Tap an answer to continue</p>' :
+        `<button class="btn block" type="button" data-next>${last ? 'Find my stylists' : 'Continue'}</button>${['area', 'wants'].includes(s.key) ? '<button class="btn ghost skip" type="button" data-next>Skip</button>' : ''}`}</div>`;
+  }
+  $('#quizScreen').addEventListener('click', (e) => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.back !== undefined) { q.step = Math.max(0, q.step - 1); renderQuiz(); return; }
+    if (t.dataset.set) { q[t.dataset.set] = t.dataset.val; renderQuiz(); setTimeout(() => { q.step++; renderQuiz(); }, 260); return; }
+    if (t.dataset.area) { q.area = t.dataset.area; renderQuiz(); return; }
+    if (t.dataset.want) { const v = t.dataset.want; q.wants = q.wants.includes(v) ? q.wants.filter((x) => x !== v) : [...q.wants, v]; renderQuiz(); return; }
+    if (t.dataset.pick !== undefined) { photoPicked = !photoPicked; renderQuiz(); renderPhoto(); return; }
+    if (t.dataset.next !== undefined) {
+      if (q.step === STEPS.length - 1) { runInstant(); go('findingSlot'); return; }
+      q.step++; renderQuiz();
+    }
+  });
+  $('#quizScreen').addEventListener('input', (e) => {
+    if (e.target.id === 'qNote') q.note = e.target.value;
+    if (e.target.id === 'qArea') q.area = e.target.value;
+    if (e.target.id === 'qEmail') q.email = e.target.value;
+    if (e.target.id === 'qName') q.name = e.target.value;
+  });
+
+  // ---------- Photo step (also shown standalone in slot 3) ----------
+  let photoPicked = true;
+  const LOCK = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 9V6.5a5 5 0 0 1 10 0V9M4 9h12v8H4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+  const EYE = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2.2" fill="currentColor"/></svg>';
+  const CLOCK = '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 6v4.3l2.8 1.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  const PIN = '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 18s5.5-5.2 5.5-9.3a5.5 5.5 0 0 0-11 0C4.5 12.8 10 18 10 18z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 16L16 4" stroke="currentColor" stroke-width="1.5"/></svg>';
+  function photoInner(inQuiz) {
+    return `<div class="pad qbody">
+      ${inQuiz ? '' : '<span class="eyebrow">Question 8 of 9</span>'}
+      <h3 class="h-screen">Show us the look you want</h3>
+      <p class="hint">One photo of the style: a screenshot, a saved post, or a picture you took. The hair matters, not the face.</p>
+      ${photoPicked ? `<div class="picked">${ph('copper', 'CURLY', 'Your photo')}<div style="display:grid;gap:.4rem"><b>Looks great.</b><span class="hint small">We can see the shape and the curl clearly.</span><button class="textlink" type="button" data-pick style="justify-self:start">Change photo</button></div></div>`
+        : `<button type="button" class="drop" data-pick><svg viewBox="0 0 34 34" aria-hidden="true"><rect x="3" y="7" width="28" height="21" rx="4" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="15" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5 26l8-7 6 5 4-3 8 6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><b>Choose a photo</b><span class="hint small">From your camera roll or screenshots · JPEG, PNG or HEIC</span></button>`}
+      <div class="privacy" role="note">
+        <h4>${LOCK.replace('aria-hidden', 'width="18" height="18" aria-hidden')} Your photo stays private</h4>
+        <ul>
+          <li>${EYE}<span>Only you and the LookMate team see it. It never appears on a stylist’s profile or anywhere public.</span></li>
+          <li>${PIN}<span>We remove location and camera details before it’s stored.</span></li>
+          <li>${CLOCK}<span>We delete it after 30 days. Your page shows the exact date.</span></li>
+        </ul>
+      </div>
+    </div>`;
+  }
+  function renderPhoto() {
+    $('#photoScreen').innerHTML = `<div class="status"><span>9:43</span><span>●●●</span></div>
+      <div class="qtop"><button class="back" type="button" aria-label="Back" disabled>←</button><div class="bar" aria-hidden="true"><i style="width:${(8 / 9) * 100}%"></i></div><span class="qcount">8 of 9</span></div>
+      <div class="scroll">${photoInner(false)}</div>
+      <div class="qfoot"><button class="btn block" type="button" ${photoPicked ? '' : 'disabled'}>${photoPicked ? 'Continue' : 'Choose a photo to continue'}</button></div>`;
+  }
+  $('#photoScreen').addEventListener('click', (e) => { if (e.target.closest('[data-pick]')) { photoPicked = !photoPicked; renderPhoto(); renderQuiz(); } });
+
+  // ---------- Echo ----------
+  const echoQuote = () => q.note.trim() ? `“${esc(q.note.trim())}”` : `“${esc(q.service)} on ${hairLabel(q.hair).toLowerCase()} hair, like your photo.”`;
+  const echoChips = () => [q.service, hairLabel(q.hair) + ' hair', q.strands + ' strands', q.area, ...q.wants].filter(Boolean).filter((x) => !x.startsWith('Not sure'))
+    .map((x) => `<span class="chip neutral">${esc(x)}</span>`).join('');
+
+  // ---------- Instant results: a short in-page wait that turns into the matches ----------
+  const MATCHES = [
+    { name: 'Priya Raman', init: 'PR', bg: '#7e3c20', loc: 'Salon Lofts · Clintonville', reason: '14 similar cuts on curly hair', type: 'CURLY', book: 'Vagaro',
+      ev: [['copper', 'CURLY', 'After · curly shag'], ['espresso', 'CURLY', 'Before / after'], ['auburn', 'CURLY', 'After · rounded cut']],
+      why: ['Shape closest to your photo of anyone we checked', 'Cuts curly hair dry, curl by curl', 'Her before/after pairs keep length'] },
+    { name: 'Amara Okafor', init: 'AO', bg: '#4b2340', loc: 'Salon Lofts · Easton', reason: '9 similar cuts on curly hair, 6 on coily', type: 'CURLY', book: 'Booksy',
+      ev: [['plum', 'CURLY', 'After · curly layers'], ['jet', 'COILY', 'After · coily taper'], ['espresso', 'CURLY', 'After · shag']],
+      why: ['Specialises in curly and coily cuts and silk press', 'Strong match on the rounded shape'] },
+    { name: 'Jess Navarro', init: 'JN', bg: '#8a6234', loc: 'Salon Lofts · Short North', reason: '6 shag cuts on wavy and curly hair', type: 'WAVY', book: 'GlossGenius', sample: true,
+      ev: [['rose', 'CURLY', 'After · curly shag'], ['honey', 'WAVY', 'After · wavy shag'], ['ash', 'WAVY', 'Before / after']],
+      why: ['Most of her shag work is on wavy hair: a near match, ranked third'] },
+  ];
+  const WAIT = [
+    ['Reading your photo', 'The shape, the length, how the curls sit.'],
+    ['Looking through 286 photos of curly cuts', 'Work by 23 independent stylists in Columbus.'],
+    ['Choosing your closest stylists', 'Ranked by their own work on hair like yours.'],
+  ];
+  const inst = { phase: 3, timers: [] };
+  function matchCard(m, i) {
+    return `<article class="card match rise" style="animation-delay:${i * 120}ms">
+      <div class="mhead"><div class="avatar" style="background:${m.bg}" aria-hidden="true">${m.init}</div>
+        <div><b>${m.name}</b><span class="hint small">${m.loc}</span>${m.sample ? '<br><span class="chip neutral sample">Sample stylist</span>' : ''}</div>
+        <span class="rank" aria-label="Recommendation ${i + 1}">${i + 1}</span></div>
+      <p class="reason">${glyph(m.type)}<span>${m.reason}</span></p>
+      <div class="evidence">${m.ev.map((e) => ph(...e)).join('')}</div>
+      <details class="why"><summary>Why ${m.name.split(' ')[0]}?</summary><ul>${m.why.map((w) => `<li>${w}</li>`).join('')}</ul></details>
+      <div class="mact"><button class="btn" type="button" data-book="${m.name}|${m.book}">Book on ${m.book} ↗</button><button class="btn quiet" type="button" aria-label="${m.name} on Instagram">IG</button></div>
+    </article>`;
+  }
+  function renderInstant() {
+    const done = inst.phase >= 3;
+    const name = esc(q.name.trim() || 'there');
+    const filled = Math.min(inst.phase, 2);
+    const tiles = MATCHES.map((m, i) => i < filled ? `<div class="pop">${ph(...m.ev[0].slice(0, 2), '')}</div>` : '<div class="tilewait"></div>').join('');
+    const body = done ? `
+      <div class="appbar"><span class="mark" data-mark>${MARK}<span>LookMate</span></span><span class="chip neutral">Private link</span></div>
+      <div class="pad">
+        <span class="eyebrow">Found in 4 seconds</span>
+        <h3 class="h-screen">${name === 'there' ? 'These' : name + ', these'} stylists have done your look on ${hairLabel(q.hair).toLowerCase()} hair.</h3>
+        <div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true" type="button">For you · 3</button><button class="tab" role="tab" aria-selected="false" type="button" data-go="browse">See all stylists</button></div>
+        <div class="echo-box"><p class="echo" style="font-size:1.15rem">${echoQuote()}</p></div>
+        <div style="display:grid;gap:1rem">${MATCHES.map(matchCard).join('')}</div>
+        <div class="card" style="padding:1rem;display:grid;gap:.5rem">
+          <b>Not feeling these?</b>
+          <p class="hint">These are suggestions. Browse every stylist and book anyone you like.</p>
+          <button class="btn quiet" type="button" data-go="browse">See all 23 stylists</button>
+        </div>
+        <p class="hint small">You book on the stylist’s own page. LookMate never takes payments. Your photo is deleted on Dec 20. We’ve emailed you this page’s private link.</p>
+      </div>` : `
+      <div class="appbar"><span class="mark" data-mark>${MARK}<span>LookMate</span></span></div>
+      <div class="pad">
+        <span class="eyebrow">Request sent</span>
+        <h3 class="h-screen">Thanks${name === 'there' ? '' : ', ' + name}. Here’s what we heard.</h3>
+        <div class="echo-box"><p class="echo" style="font-size:1.3rem">${echoQuote()}</p></div>
+        <div class="waitgrid"><div class="scan">${ph('copper', 'CURLY', 'Your photo')}<span class="sweep" aria-hidden="true"></span></div>
+        <ol class="timeline" aria-live="polite">${WAIT.map(([t, h], i) => `<li class="${i < inst.phase ? 'done' : i === inst.phase ? 'now' : ''}"><span class="dot">${i < inst.phase ? '✓' : ''}</span><span><b>${t}</b><span class="hint">${h}</span></span></li>`).join('')}</ol></div>
+        <div class="shimmer" aria-hidden="true">${tiles}</div>
+        <p class="hint small">Takes a few seconds. You can leave: we’ve emailed you a private link to this page.</p>
+      </div>`;
+    $('#instantScreen').innerHTML = `<div class="status"><span>9:44</span><span>●●●</span></div><div class="scroll">${body}</div>`;
+  }
+  function runInstant() {
+    inst.timers.forEach(clearTimeout); inst.timers = []; inst.phase = 0; renderInstant();
+    [1100, 2200, 3400].forEach((t, i) => inst.timers.push(setTimeout(() => { inst.phase = i + 1; renderInstant(); }, t)));
+  }
+  $('#instantScreen').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-book]'); if (b) toast('#instantScreen', b.dataset.book);
+  });
+  function toast(sel, data) {
+    const [who, where] = data.split('|'); const scr = $(sel);
+    scr.querySelector('.toast')?.remove();
+    const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status');
+    t.textContent = `Opens ${who.split(' ')[0]}’s booking page on ${where} in a new tab. Prototype only: nothing is opened.`;
+    scr.appendChild(t); setTimeout(() => t.remove(), 3200);
+  }
+
+  // ---------- See all stylists ----------
+  const DIRECTORY = [
+    { name: 'Priya Raman', init: 'PR', bg: '#7e3c20', loc: 'Clintonville', book: 'Vagaro', svc: ['Cut', 'Color'], work: { CURLY: 14, WAVY: 5 }, ph: [['copper', 'CURLY'], ['auburn', 'CURLY'], ['honey', 'WAVY']], rec: 1 },
+    { name: 'Amara Okafor', init: 'AO', bg: '#4b2340', loc: 'Easton', book: 'Booksy', svc: ['Cut', 'Silk press'], work: { CURLY: 9, COILY: 11 }, ph: [['jet', 'COILY'], ['plum', 'CURLY'], ['espresso', 'COILY']], rec: 2 },
+    { name: 'Jess Navarro', init: 'JN', bg: '#8a6234', loc: 'Short North', book: 'GlossGenius', svc: ['Cut', 'Balayage', 'Color'], work: { STRAIGHT: 4, WAVY: 12, CURLY: 6 }, ph: [['honey', 'WAVY'], ['rose', 'CURLY'], ['ash', 'STRAIGHT']], rec: 3, sample: true },
+    { name: 'Dee Whitfield', init: 'DW', bg: '#1e1a1d', loc: 'Polaris', book: 'Booksy', svc: ['Locs', 'Braids', 'Cut'], work: { COILY: 15, CURLY: 4 }, ph: [['jet', 'COILY'], ['espresso', 'COILY'], ['plum', 'CURLY']] },
+    { name: 'Kayla Brooks', init: 'KB', bg: '#5a1f1a', loc: 'Bexley', book: 'Vagaro', svc: ['Braids', 'Silk press', 'Treatment'], work: { COILY: 10, CURLY: 7 }, ph: [['espresso', 'COILY'], ['auburn', 'CURLY'], ['jet', 'COILY']] },
+    { name: 'Rosa Delgado', init: 'RD', bg: '#6d2f3f', loc: 'Grandview', book: 'StyleSeat', svc: ['Color', 'Balayage', 'Extensions'], work: { STRAIGHT: 7, WAVY: 8, CURLY: 3 }, ph: [['honey', 'WAVY'], ['rose', 'STRAIGHT'], ['copper', 'CURLY']] },
+    { name: 'Mei Lin Chen', init: 'MC', bg: '#4e4a4b', loc: 'Dublin', book: 'Square', svc: ['Cut', 'Highlights'], work: { STRAIGHT: 13, WAVY: 6 }, ph: [['ash', 'STRAIGHT'], ['jet', 'STRAIGHT'], ['honey', 'WAVY']] },
+  ];
+  const BSVC = ['Any service', 'Cut', 'Color', 'Balayage', 'Highlights', 'Silk press', 'Braids', 'Locs', 'Extensions', 'Treatment'];
+  const br = { svc: 'Cut', hair: 'CURLY' };
+  function renderBrowse() {
+    const anySvc = br.svc === 'Any service', anyHair = br.hair === 'ANY';
+    const list = DIRECTORY.filter((d) => (anySvc || d.svc.includes(br.svc)) && (anyHair || d.work[br.hair]))
+      .sort((a, b) => (a.rec || 9) - (b.rec || 9) || (anyHair ? 0 : (b.work[br.hair] || 0) - (a.work[br.hair] || 0)));
+    const hairName = anyHair ? '' : hairLabel(br.hair).toLowerCase();
+    const cards = list.map((d) => `<article class="card scard">
+        <div class="mhead"><div class="avatar" style="background:${d.bg}" aria-hidden="true">${d.init}</div>
+          <div><b>${d.name}</b><span class="hint small">Salon Lofts · ${d.loc}</span></div>
+          ${d.rec ? '<span class="chip">For you</span>' : d.sample ? '' : '<span></span>'}</div>
+        ${d.sample ? '<span class="chip neutral sample" style="justify-self:start">Sample stylist</span>' : ''}
+        <p class="hint small">${d.svc.join(' · ')}</p>
+        <div class="works">${HAIR.filter((h) => d.work[h.v]).map((h) => `<span class="${br.hair === h.v ? 'hit' : ''}">${glyph(h.v)}${h.l} ${d.work[h.v]}</span>`).join('')}</div>
+        <div class="evidence">${d.ph.map(([t, h]) => ph(t, h, hairLabel(h))).join('')}</div>
+        <button class="btn" type="button" data-book="${d.name}|${d.book}">Book on ${d.book} ↗</button>
+      </article>`).join('');
+    const empty = `<div class="card" style="padding:1.1rem;display:grid;gap:.6rem;text-align:center;justify-items:center">
+        <b>No stylists show ${esc(br.svc.toLowerCase())} on ${hairName} hair yet.</b>
+        <p class="hint">The pilot is small, so some combinations are thin. Try any hair type, or another service.</p>
+        <button class="btn quiet" type="button" data-bhair="ANY">Show ${esc(br.svc.toLowerCase())} on any hair type</button></div>`;
+    $('#browseScreen').innerHTML = `<div class="status"><span>10:13</span><span>●●●</span></div>
+      <div class="scroll">
+        <div class="appbar"><button class="btn ghost" type="button" data-go="instant">← Your matches</button><span class="chip neutral">Private link</span></div>
+        <div class="pad">
+          <div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="false" type="button" data-go="instant">For you · 3</button><button class="tab" role="tab" aria-selected="true" type="button">See all stylists</button></div>
+          <h3 class="h-screen">Every stylist in the pilot</h3>
+          <p class="hint">Pick anyone. Our recommendations are only a starting point.</p>
+          <div class="filterbar" aria-label="Service"><div class="chips nowrap">${BSVC.map((s) => `<button type="button" class="chipbtn" aria-pressed="${br.svc === s}" data-bsvc="${s}">${s}</button>`).join('')}</div></div>
+          <div class="seg5" role="radiogroup" aria-label="Hair type">${[{ v: 'ANY', l: 'Any' }, ...HAIR].map((h) => `<button type="button" class="opt" role="radio" aria-checked="${br.hair === h.v}" data-bhair="${h.v}">${h.v === 'ANY' ? '<svg class="glyph" viewBox="0 0 32 32" aria-hidden="true"><path d="M8 16h16"/></svg>' : glyph(h.v)}${h.l}</button>`).join('')}</div>
+          <p class="hint small" aria-live="polite"><b style="color:var(--text)">${list.length} stylist${list.length === 1 ? '' : 's'}</b>${anyHair ? '' : ` with ${hairName} work`}${anySvc ? '' : ` · ${esc(br.svc.toLowerCase())}`}. Yours first, then by how much matching work they show.</p>
+          ${list.length ? cards : empty}
+        </div>
+      </div>`;
+  }
+  $('#browseScreen').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.bsvc) { br.svc = b.dataset.bsvc; renderBrowse(); }
+    if (b.dataset.bhair) { br.hair = b.dataset.bhair; renderBrowse(); }
+    if (b.dataset.book) toast('#browseScreen', b.dataset.book);
+  });
+
+  // ---------- Stylist portfolio + tag sheet ----------
+  const SVC = ['Cut', 'Color', 'Balayage', 'Highlights', 'Silk press', 'Braids', 'Locs', 'Extensions'];
+  const photos = [
+    { tone: 'jet', type: 'COILY', tags: { svc: 'Cut', hair: 'COILY', str: 'Thick', len: 'Short', ba: 'After' } },
+    { tone: 'plum', type: 'CURLY', tags: { svc: 'Cut', hair: 'CURLY', str: 'Medium', len: 'Medium', ba: 'After' } },
+    { tone: 'espresso', type: 'COILY', tags: null },
+    { tone: 'copper', type: 'CURLY', tags: null },
+    { tone: 'ash', type: 'STRAIGHT', tags: null },
+    { tone: 'rose', type: 'WAVY', tags: null },
+    { tone: 'espresso', type: 'CURLY', tags: null },
+    { tone: 'honey', type: 'WAVY', tags: null },
+  ];
+  let open = -1; let draft = null; let lastTags = photos[1].tags;
+  const tagged = () => photos.filter((p) => p.tags).length;
+  function ringSvg(n, d) {
+    const r = 21, c = 2 * Math.PI * r, f = Math.min(1, n / d);
+    return `<svg class="ring" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="${r}" stroke="var(--line)"/><circle cx="26" cy="26" r="${r}" stroke="var(--accent)" stroke-dasharray="${c * f} ${c}" transform="rotate(-90 26 26)" stroke-linecap="round"/><text x="26" y="30" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)" font-family="var(--sans)">${n}/${d}</text></svg>`;
+  }
+  function renderPortfolio() {
+    const n = tagged();
+    const sheet = open >= 0 ? tagSheet() : '';
+    $('#portfolioScreen').innerHTML = `<div class="status"><span>12:58</span><span>●●●</span></div>
+      <div class="scroll">
+        <div class="appbar"><span class="mark" data-mark>${MARK}<span>Amara</span></span><button class="btn ghost" type="button">Profile</button></div>
+        <div class="pad">
+          <h3 class="h-screen">Your portfolio</h3>
+          <div class="progress-row">${ringSvg(n, photos.length)}<div><b>${photos.length - n ? `${photos.length - n} photos to tag` : 'All photos tagged'}</b><p class="hint small">Clients are matched on tagged photos only.</p></div></div>
+          ${photos.length - n ? `<button class="btn block" type="button" data-tagnext>Tag the next photo</button>` : ''}
+          <div class="grid3">
+            <div class="addtile" role="button" tabindex="0">+ Add<br>photos</div>
+            ${photos.map((p, i) => `<button type="button" class="tile ${p.tags ? '' : 'untagged'}" data-open="${i}" aria-label="Photo ${i + 1}, ${p.tags ? 'tagged ' + p.tags.svc + ', ' + hairLabel(p.tags.hair) : 'not tagged yet'}">
+              ${ph(p.tone, p.type, p.tags ? `${p.tags.svc} · ${hairLabel(p.tags.hair)}` : '')}${p.tags ? '' : '<span class="flag" aria-hidden="true">!</span>'}</button>`).join('')}
+          </div>
+          <p class="hint small">Tip: before/after pairs rank higher with clients, because they show the change.</p>
+        </div>
+      </div>${sheet}`;
+  }
+  function seg(key, opts, cls) {
+    return `<div class="${cls}" role="radiogroup">${opts.map((o) => {
+      const v = o.v ?? o;
+      return `<button type="button" class="opt" role="radio" aria-checked="${draft[key] === v}" data-tag="${key}" data-val="${esc(v)}">${o.g ? glyph(o.g) : ''}${esc(o.l ?? o)}</button>`;
+    }).join('')}</div>`;
+  }
+  function tagSheet() {
+    const p = photos[open];
+    const remaining = photos.filter((x, i) => !x.tags && i !== open).length;
+    const ready = draft.svc && draft.hair;
+    return `<div class="sheet-backdrop" data-close><div class="sheet" role="dialog" aria-modal="true" aria-label="Tag photo ${open + 1}">
+      <div class="grab"></div>
+      <div class="sheet-top">${ph(p.tone, p.type, '')}<div><b>Photo ${open + 1} of ${photos.length}</b><p class="hint small">${remaining} more to tag after this one</p></div></div>
+      ${lastTags ? `<div class="quickfill"><span style="flex:1">Same as last photo? <b>${lastTags.svc} · ${hairLabel(lastTags.hair)} · ${lastTags.str}</b></span><button class="btn ghost" type="button" data-same>Use</button></div>` : ''}
+      <div class="tgroup"><b>Service</b><div class="chips">${SVC.map((s) => `<button type="button" class="chipbtn" aria-pressed="${draft.svc === s}" data-tag="svc" data-val="${s}">${s}</button>`).join('')}<button type="button" class="chipbtn">More…</button></div></div>
+      <div class="tgroup"><b>Hair type</b>${seg('hair', HAIR.map((h) => ({ v: h.v, l: h.l, g: h.v })), 'seg4')}</div>
+      <div class="tgroup"><b>Strand thickness</b>${seg('str', ['Fine', 'Medium', 'Thick'], 'seg3')}</div>
+      <div class="tgroup"><b>Length</b>${seg('len', [{ v: 'Cropped', l: 'Cropped' }, { v: 'Short', l: 'Short' }, { v: 'Medium', l: 'Medium' }, { v: 'Long', l: 'Long' }], 'seg4')}</div>
+      <div class="tgroup"><b>Before and after</b>${seg('ba', [{ v: 'After', l: 'Finished look' }, { v: 'Before', l: 'Before, pair it' }], 'seg3" style="grid-template-columns:1fr 1fr')}</div>
+      <div class="sheet-actions"><button class="btn quiet" type="button" data-close>Close</button><button class="btn" type="button" data-save ${ready ? '' : 'disabled'}>${ready ? (remaining ? 'Save and next' : 'Save') : 'Pick service and hair type'}</button></div>
+    </div></div>`;
+  }
+  function openTag(i) { open = i; draft = { ...(photos[i].tags || {}) }; renderPortfolio(); }
+  $('#portfolioScreen').addEventListener('click', (e) => {
+    const t = e.target.closest('button, [data-close]'); if (!t) return;
+    if (t.dataset.open !== undefined) return openTag(+t.dataset.open);
+    if (t.dataset.tagnext !== undefined) return openTag(photos.findIndex((p) => !p.tags));
+    if (t.classList.contains('sheet-backdrop') && e.target !== t) return;
+    if (t.dataset.close !== undefined) { open = -1; renderPortfolio(); return; }
+    if (t.dataset.same !== undefined) { draft = { ...lastTags }; renderPortfolio(); return; }
+    if (t.dataset.tag) { draft[t.dataset.tag] = t.dataset.val; renderPortfolio(); return; }
+    if (t.dataset.save !== undefined) {
+      photos[open].tags = { str: 'Medium', len: 'Medium', ba: 'After', ...draft }; lastTags = photos[open].tags;
+      const next = photos.findIndex((p) => !p.tags);
+      if (next >= 0) openTag(next); else { open = -1; renderPortfolio(); }
+      renderLive();
+    }
+  });
+
+  // ---------- Go-live ----------
+  let live = false;
+  function renderLive() {
+    const n = tagged(), need = 3;
+    const by = HAIR.map((h) => ({ l: h.l, n: photos.filter((p) => p.tags && p.tags.hair === h.v).length }));
+    const max = Math.max(1, ...by.map((b) => b.n));
+    const items = [
+      { ok: true, t: 'Stylist terms', s: 'Accepted Nov 18' },
+      { ok: true, t: 'Profile', s: 'Amara Okafor · curly and coily cuts, silk press' },
+      { ok: true, t: 'Salon location', s: 'Salon Lofts · Easton, suite 14' },
+      { ok: true, t: 'Booking link', s: 'Detected: Booksy · booksy.com/amara…' },
+      { ok: n >= need, t: `${need} tagged photos`, s: n >= need ? `${n} tagged` : `${n} of ${need} tagged · tag ${need - n} more` },
+    ];
+    const missing = items.filter((i) => !i.ok).length;
+    $('#liveScreen').innerHTML = `<div class="status"><span>13:04</span><span>●●●</span></div>
+      <div class="scroll">
+        <div class="appbar"><span class="mark" data-mark>${MARK}<span>Amara</span></span><span class="chip ${live ? 'ok' : 'neutral'}">${live ? 'Live' : 'Draft'}</span></div>
+        <div class="pad">
+          <h3 class="h-screen">${live ? 'You’re live.' : missing ? 'Almost ready to go live' : 'Ready to go live'}</h3>
+          <p class="hint">${live ? 'Clients in Columbus can now be matched with your work. We’ll email you when someone books through LookMate.' : 'Once you’re live, clients whose photo looks like your work are matched with you. You can hide your profile any time.'}</p>
+          <ul class="check">${items.map((i) => `<li class="${i.ok ? 'ok' : ''}"><span class="tick" aria-hidden="true">${i.ok ? '✓' : ''}</span><span><b>${i.t}</b><small>${i.s}</small></span>${i.ok ? '<span class="hint small">Edit</span>' : '<span class="chip">Tag now</span>'}</li>`).join('')}</ul>
+          <div class="card" style="padding:1rem;display:grid;gap:.6rem"><b>Your work by hair type</b><p class="hint small">Clients are matched on hair like theirs. This is what you’ll be matched on now.</p>
+            <div class="coverage">${by.map((b) => `<div><span>${b.l}</span><span class="track"><i style="width:${(b.n / max) * 100}%;${b.n ? '' : 'background:var(--line)'}"></i></span><span>${b.n}</span></div>`).join('')}</div></div>
+          ${live ? '<button class="btn quiet block" type="button" data-live>Hide my profile</button>' : `<button class="btn block" type="button" data-live ${missing ? 'disabled' : ''}>${missing ? `Tag ${need - n} more photo${need - n > 1 ? 's' : ''} to go live` : 'Go live'}</button>`}
+          <p class="hint small" style="text-align:center">Tag photos in screen 6 and this checklist updates.</p>
+        </div>
+      </div>`;
+  }
+  $('#liveScreen').addEventListener('click', (e) => { if (e.target.closest('[data-live]')) { live = !live; renderLive(); } });
+
+  // ---------- Admin: match log, after-the-fact actions, optional review ----------
+  const REASONS = {
+    'Priya Raman': ['14 similar cuts on curly hair', 0.86, [['copper', 'CURLY'], ['espresso', 'CURLY'], ['auburn', 'CURLY'], ['rose', 'CURLY']]],
+    'Amara Okafor': ['9 similar cuts on curly hair, 6 on coily', 0.81, [['plum', 'CURLY'], ['jet', 'COILY'], ['espresso', 'CURLY'], ['jet', 'COILY']]],
+    'Jess Navarro': ['6 shag cuts on wavy and curly hair', 0.74, [['rose', 'CURLY'], ['honey', 'WAVY'], ['ash', 'WAVY'], ['honey', 'WAVY']]],
+    'Dee Whitfield': ['15 cuts and locs on coily hair', 0.83, [['jet', 'COILY'], ['espresso', 'COILY'], ['jet', 'COILY'], ['plum', 'CURLY']]],
+    'Kayla Brooks': ['8 silk presses on coily hair', 0.79, [['espresso', 'COILY'], ['jet', 'COILY'], ['auburn', 'CURLY'], ['espresso', 'COILY']]],
+    'Rosa Delgado': ['7 highlights on straight and wavy hair', 0.77, [['honey', 'WAVY'], ['rose', 'STRAIGHT'], ['ash', 'STRAIGHT'], ['honey', 'WAVY']]],
+    'Mei Lin Chen': ['13 highlights and cuts on straight hair', 0.84, [['ash', 'STRAIGHT'], ['jet', 'STRAIGHT'], ['ash', 'STRAIGHT'], ['honey', 'WAVY']]],
+  };
+  const mk = (names, clicked = [], booked = null) => names.map((n) => ({ name: n, hidden: false, clicked: clicked.includes(n), booked: booked === n }));
+  const LOG = [
+    { id: 'r1', when: '10:12', who: 'Jordan', hair: 'CURLY', svc: 'Cut', state: 'live', viewed: true, matches: mk(['Priya Raman', 'Amara Okafor', 'Jess Navarro'], ['Priya Raman'], 'Priya Raman'),
+      note: 'A rounded shag that keeps my curls. Please don’t take too much length.', tone: 'copper' },
+    { id: 'r2', when: '9:58', who: 'Simone', hair: 'COILY', svc: 'Silk press', state: 'live', viewed: true, matches: mk(['Kayla Brooks', 'Amara Okafor', 'Dee Whitfield'], ['Kayla Brooks', 'Amara Okafor']),
+      note: 'Sleek, with movement. My last press left my ends fried.', tone: 'espresso' },
+    { id: 'r3', when: '9:31', who: 'Ellie', hair: 'STRAIGHT', svc: 'Highlights', state: 'live', viewed: true, matches: mk(['Mei Lin Chen', 'Rosa Delgado', 'Jess Navarro']), note: '', tone: 'honey' },
+    { id: 'r4', when: '9:05', who: 'Marcus', hair: 'COILY', svc: 'Cut', state: 'live', viewed: false, matches: mk(['Dee Whitfield', 'Amara Okafor']), flag: 'Only 2 matches',
+      note: 'Clean taper, keep the top full.', tone: 'jet' },
+    { id: 'r5', when: '8:47', who: 'Ana', hair: 'WAVY', svc: 'Balayage', state: 'live', viewed: true, matches: mk(['Jess Navarro', 'Rosa Delgado', 'Priya Raman'], ['Rosa Delgado']), note: '', tone: 'honey' },
+  ];
+  const WAITING = [
+    { id: 'w1', when: '10:21', who: 'Tasha', hair: 'COILY', svc: 'Braids', state: 'waiting', viewed: false, matches: mk(['Kayla Brooks', 'Dee Whitfield', 'Amara Okafor']),
+      note: 'Knotless, mid-back. Please be gentle with my edges.', tone: 'jet' },
+    { id: 'w2', when: '10:18', who: 'Leah', hair: 'CURLY', svc: 'Color', state: 'waiting', viewed: false, matches: mk(['Priya Raman', 'Rosa Delgado', 'Jess Navarro']), flag: 'Near-type match',
+      note: 'Copper that still looks natural on my curls.', tone: 'copper' },
+  ];
+  const adm = { review: false, tab: 'all', sel: 'r1', confirm: null, hiddenStylists: new Set() };
+  const all = () => [...WAITING, ...LOG];
+  const cur = () => all().find((r) => r.id === adm.sel) || LOG[0];
+  const FAIR = [['Straight', 34], ['Wavy', 31], ['Curly', 29], ['Coily', 18]];
+  function renderAdmin() {
+    const waiting = WAITING.filter((r) => r.state === 'waiting');
+    $('#sideCount').textContent = adm.review && waiting.length ? waiting.length : '';
+    const sw = $('#reviewSwitch'); sw.setAttribute('aria-checked', adm.review);
+    $('#switchHint').textContent = adm.review ? 'On: new matches wait for you' : 'Off: clients see matches in seconds';
+    $('#modeBanner').innerHTML = adm.review ? `<div class="banner"><b>Review before publish is on.</b> New requests wait here until you publish them. Clients see “A stylist is checking your matches” and get an email when you do. Turn it off once textured-hair quality looks right.</div>` : '';
+    $('#fairRow').innerHTML = FAIR.map(([l, v]) => `<div class="fair-cell ${v < 22 ? 'low' : ''}"><span>${l}</span><b>${v}%</b><span class="track"><i style="width:${v * 2}%"></i></span>${v < 22 ? '<span class="chip warn">Behind: look closer</span>' : '<span class="hint mini">&nbsp;</span>'}</div>`).join('');
+    const tabs = adm.review ? [['waiting', `Waiting for review · ${waiting.length}`], ['all', 'All requests']] : [['all', 'All requests · today']];
+    if (!adm.review) adm.tab = 'all';
+    $('#logTabs').innerHTML = tabs.map(([k, l]) => `<button class="tab" role="tab" type="button" aria-selected="${adm.tab === k}" data-tab="${k}">${l}</button>`).join('');
+    const rows = adm.tab === 'waiting' ? waiting : all().filter((r) => r.state !== 'waiting');
+    $('#logRows').innerHTML = rows.length ? rows.map((r) => {
+      const vis = r.matches.filter((m) => !m.hidden && !adm.hiddenStylists.has(m.name));
+      const clicks = r.matches.filter((m) => m.clicked).length, booked = r.matches.find((m) => m.booked);
+      return `<tr class="${adm.sel === r.id ? 'sel' : ''}" data-row="${r.id}" tabindex="0">
+        <td>${r.when}</td><td><b>${r.who}</b><br><span class="hint mini">${hairLabel(r.hair)} · ${r.svc}</span>${r.flag ? `<br><span class="chip warn">${r.flag}</span>` : ''}</td>
+        <td>${r.state === 'waiting' ? '<span class="chip info">Waiting</span>' : `${vis.length} · <span class="hint mini">${esc(vis[0]?.name.split(' ')[0] || '–')} first</span>`}</td>
+        <td>${r.viewed ? '✓' : '<span class="hint">–</span>'}</td><td>${clicks || '<span class="hint">0</span>'}</td><td>${booked ? `<span class="chip ok">${booked.name.split(' ')[0]}</span>` : '<span class="hint">–</span>'}</td></tr>`;
+    }).join('') : '<tr><td colspan="6" class="hint" style="padding:1.5rem;text-align:center">Nothing waiting. New requests appear here while review is on.</td></tr>';
+    renderDetail();
+  }
+  function renderDetail() {
+    const r = cur(); const waiting = r.state === 'waiting';
+    const vis = r.matches.filter((m) => !m.hidden && !adm.hiddenStylists.has(m.name));
+    const evs = waiting ? [] : [[r.when + ':03', 'Request sent'], [r.when + ':07', 'Ranked and published automatically']]
+      .concat(r.viewed ? [[r.when + ':20', 'Client viewed the list']] : [])
+      .concat(r.matches.filter((m) => m.clicked).map((m) => ['', `Clicked Book · ${m.name}`]))
+      .concat(r.matches.filter((m) => m.booked).map((m) => ['Nov 21', `Booking recorded · ${m.name}`]));
+    const row = (m, i) => {
+      const [reason, score, ev] = REASONS[m.name]; const gone = m.hidden || adm.hiddenStylists.has(m.name);
+      const confirmKey = r.id + '|' + m.name;
+      const actions = waiting
+        ? `<div class="ctrl"><button class="iconbtn" type="button" aria-label="Move ${m.name} up" data-up="${i}" ${i === 0 ? 'disabled' : ''}>↑</button><button class="iconbtn" type="button" aria-label="Move ${m.name} down" data-down="${i}" ${i === r.matches.length - 1 ? 'disabled' : ''}>↓</button><button class="iconbtn" type="button" aria-label="${m.hidden ? 'Show' : 'Hide'} ${m.name}" data-hidematch="${i}">${m.hidden ? '+' : '×'}</button></div>`
+        : `<div class="ctrl" style="justify-items:end">${adm.hiddenStylists.has(m.name) ? `<button class="btn ghost mini" type="button" data-unhidestylist="${m.name}">Show stylist again</button>` :
+            `<button class="btn ghost mini" type="button" data-hidematch="${i}">${m.hidden ? 'Show to ' + r.who : 'Hide from ' + r.who}</button><button class="btn ghost mini" type="button" data-askstylist="${m.name}">Hide stylist…</button>`}</div>`;
+      return `<div class="cand ${gone ? 'hidden-c' : ''}">
+        <span class="rank">${gone ? '–' : vis.indexOf(m) + 1}</span>
+        <div><b>${m.name}</b> ${m.clicked ? '<span class="chip info">Clicked Book</span>' : ''} ${m.booked ? '<span class="chip ok">Booked</span>' : ''} ${m.hidden ? `<span class="chip neutral">Hidden from ${r.who}</span>` : ''} ${adm.hiddenStylists.has(m.name) ? '<span class="chip neutral">Stylist hidden</span>' : ''}
+          <p class="small" style="margin-top:.2rem">${reason}</p>
+          <div class="score"><span class="track"><i style="width:${score * 100}%"></i></span><span>${score.toFixed(2)}</span></div>
+          <div class="ev">${ev.map(([t, h]) => ph(t, h, hairLabel(h) + (h === r.hair ? '' : ' · near'))).join('')}</div>
+          ${adm.confirm === confirmKey ? `<div class="confirm"><span>Hide ${m.name.split(' ')[0]} everywhere? She leaves every client’s list and the directory until you show her again. Clients who already booked are not affected.</span><span style="display:flex;gap:.4rem"><button class="btn mini" type="button" data-hidestylist="${m.name}">Hide stylist</button><button class="btn quiet mini" type="button" data-cancel>Cancel</button></span></div>` : ''}
+        </div>${actions}</div>`;
+    };
+    $('#logDetail').innerHTML = `
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;gap:1rem;align-items:start">
+          <div><h4>${waiting ? 'Waiting for review' : 'Published automatically · 4 s'}</h4><h3 class="h-screen" style="font-size:1.5rem">${r.who} · ${hairLabel(r.hair).toLowerCase()} ${r.svc.toLowerCase()}</h3></div>
+          ${waiting ? `<button class="btn" type="button" data-publish ${vis.length ? '' : 'disabled'}>Publish ${vis.length}</button>` : `<span class="chip ${r.matches.some((m) => m.booked) ? 'ok' : 'neutral'}">${r.matches.some((m) => m.booked) ? 'Booked' : r.viewed ? 'Viewed' : 'Not opened yet'}</span>`}
+        </div>
+        <div style="display:grid;grid-template-columns:88px 1fr;gap:.8rem;align-items:start">${ph(r.tone, r.hair, 'Client photo')}
+          <div class="heard">${r.note ? `<b>In their words</b><q>${esc(r.note)}</q>` : '<b>No note.</b> Answers only.'}</div></div>
+      </div>
+      <div style="display:grid;gap:10px">${r.matches.map(row).join('')}</div>
+      ${waiting ? '' : `<div class="panel"><h4>What happened</h4><ol class="events">${evs.map(([t, l]) => `<li><span class="hint mini">${t}</span>${esc(l)}</li>`).join('')}</ol></div>`}`;
+  }
+  $('#reviewSwitch').addEventListener('click', () => { adm.review = !adm.review; adm.tab = adm.review ? 'waiting' : 'all'; adm.sel = adm.review && WAITING.some((w) => w.state === 'waiting') ? WAITING.find((w) => w.state === 'waiting').id : 'r1'; adm.confirm = null; renderAdmin(); });
+  $('#logTabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) { adm.tab = b.dataset.tab; renderAdmin(); } });
+  const pickRow = (e) => { const tr = e.target.closest('[data-row]'); if (tr) { adm.sel = tr.dataset.row; adm.confirm = null; renderAdmin(); } };
+  $('#logRows').addEventListener('click', pickRow);
+  $('#logRows').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickRow(e); } });
+  $('#logDetail').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return; const r = cur();
+    const sw = (a, z) => { [r.matches[a], r.matches[z]] = [r.matches[z], r.matches[a]]; };
+    if (b.dataset.up) sw(+b.dataset.up, +b.dataset.up - 1);
+    if (b.dataset.down) sw(+b.dataset.down, +b.dataset.down + 1);
+    if (b.dataset.hidematch) r.matches[+b.dataset.hidematch].hidden = !r.matches[+b.dataset.hidematch].hidden;
+    if (b.dataset.askstylist) adm.confirm = r.id + '|' + b.dataset.askstylist;
+    if (b.dataset.cancel !== undefined) adm.confirm = null;
+    if (b.dataset.hidestylist) { adm.hiddenStylists.add(b.dataset.hidestylist); adm.confirm = null; }
+    if (b.dataset.unhidestylist) adm.hiddenStylists.delete(b.dataset.unhidestylist);
+    if (b.dataset.publish !== undefined) { r.state = 'live'; WAITING.splice(WAITING.indexOf(r), 1); LOG.unshift(r); const next = WAITING.find((w) => w.state === 'waiting'); adm.sel = next ? next.id : r.id; if (!next) adm.tab = 'all'; }
+    renderAdmin();
+  });
+
+  // ---------- Navigation between frames ----------
+  function go(id) { document.getElementById(id)?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' }); }
+  document.addEventListener('click', (e) => {
+    const g = e.target.closest('[data-go]'); if (!g) return;
+    if (g.dataset.go === 'quiz') { q.step = 0; renderQuiz(); go('quizSlot'); }
+    if (g.dataset.go === 'browse') { renderBrowse(); go('browseSlot'); }
+    if (g.dataset.go === 'instant') go('findingSlot');
+  });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-replay]')) { runInstant(); go('findingSlot'); }
+  });
+  $('#themeBtn').addEventListener('click', () => {
+    const root = document.documentElement;
+    const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+  });
+
+  renderQuiz(); renderPhoto(); renderInstant(); renderBrowse(); renderPortfolio(); renderLive(); renderAdmin();
+})();
+</script>
