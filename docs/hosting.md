@@ -72,7 +72,7 @@ Compose sets these from `deploy/.env`; another host would set them directly.
 | `SPRING_PROFILES_ACTIVE` | yes | `prod` (the image sets it) |
 | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | yes | JDBC URL, e.g. `jdbc:postgresql://postgres:5432/lookmate` |
 | `SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI` | yes | `https://<tenant>.<region>.auth0.com/`, trailing slash included |
-| `SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES` | yes | The API identifier, e.g. `https://api.lookmate.app` |
+| `SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES` | yes | The API identifier, e.g. `https://api.combpatible.app` |
 | `STORAGE_ENDPOINT` | yes | `https://<account-id>.r2.cloudflarestorage.com` |
 | `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | yes | R2 token: Object Read & Write on the photo bucket only |
 | `STORAGE_PHOTO_BUCKET` | yes | e.g. `lookmate-photos` |
