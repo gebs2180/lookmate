@@ -89,6 +89,19 @@ lookmate:
     # A profile can go LIVE once it has this many READY portfolio photos tagged with a service and hair type
     # (the brief asks for 10-20 photos; 3 lets a pilot stylist start while they add the rest).
     min-tagged-photos-to-publish: 3
+  matching:
+    # The image-embedding model (docs/embedding-providers.md). Only "fake" exists until the team chooses one: a
+    # deterministic stand-in that matches identical images only.
+    provider: ${MATCHING_PROVIDER:fake}
+    worker:
+      # Embeds photos and ranks waiting requests. Safe on several instances (FOR UPDATE SKIP LOCKED).
+      enabled: ${MATCHING_WORKER_ENABLED:true}
+      poll-interval: 30s
+    ranking:
+      # Scoring.java. The threshold depends on the model: set it from the labelled set when the model is chosen.
+      similar-threshold: 0.8
+      adjacent-hair-type-weight: 0.5
+      keep: 5
 
 management:
   endpoints:

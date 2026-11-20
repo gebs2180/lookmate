@@ -4,6 +4,134 @@
  */
 
 export interface paths {
+    "/api/admin/match-reports/fairness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["fairness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/match-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/match-requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/match-requests/{id}/matches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["add"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/match-requests/{id}/matches/{matchId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["change"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/match-requests/{id}/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["reorder"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/match-requests/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/match-requests/{id}/stylists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stylists"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/orgs": {
         parameters: {
             query?: never;
@@ -148,22 +276,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/public/intake/settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get: operations["settings"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/public/match-requests": {
         parameters: {
             query?: never;
@@ -232,6 +344,18 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AdminMatchControllerAddStylist: {
+            note: string;
+            /** Format: uuid */
+            orgId: string;
+        };
+        AdminMatchControllerMatchChange: {
+            hidden: boolean;
+            note: string;
+        };
+        AdminMatchControllerOrder: {
+            matchIds: string[];
+        };
         AdminOrgControllerCreateOrg: {
             name: string;
             /** @enum {string} */
@@ -258,6 +382,29 @@ export interface components {
             name: string;
             /** @enum {string} */
             type: "STYLIST";
+        };
+        CandidateQueriesFairnessRow: {
+            /** Format: int64 */
+            bookedRequests: number;
+            /** Format: int64 */
+            clickedRequests: number;
+            /** Format: int64 */
+            failed: number;
+            hairType: string;
+            /** Format: double */
+            meanTopScore: number;
+            /** Format: int64 */
+            noSystemMatches: number;
+            /** Format: int64 */
+            published: number;
+            /** Format: int64 */
+            requests: number;
+            /** Format: int64 */
+            reviewed: number;
+            /** Format: int64 */
+            shownMatches: number;
+            /** Format: int64 */
+            withAdminChanges: number;
         };
         ClientMatch: {
             bookUrl: string;
@@ -328,20 +475,12 @@ export interface components {
             photoDeleted: boolean;
             /** Format: date-time */
             photoDeletesAt: string;
-            /** Format: int32 */
-            photoKeptDays: number;
             photoUploaded: boolean;
             photoUrl: string;
             service: string;
             /** @enum {string} */
             stage: "PHOTO_NEEDED" | "RECEIVED" | "MATCHING" | "READY" | "CLOSED";
             texture: string;
-        };
-        IntakeServiceSettings: {
-            /** Format: int64 */
-            maxPhotoBytes: number;
-            /** Format: int32 */
-            photoKeptDays: number;
         };
         InviteControllerAccepted: {
             /** Format: uuid */
@@ -393,6 +532,95 @@ export interface components {
             /** @enum {string} */
             role: "ADMIN" | "STYLIST";
         };
+        ReviewServiceEvidencePhoto: {
+            hairType: string;
+            /** Format: uuid */
+            id: string;
+            service: string;
+            /** Format: uri */
+            url: string;
+        };
+        ReviewServiceFairnessReport: {
+            market: string;
+            rows: components["schemas"]["CandidateQueriesFairnessRow"][];
+            /** Format: date-time */
+            since: string;
+        };
+        ReviewServiceMatchView: {
+            adminNote: string;
+            adminOverride: boolean;
+            evidence: components["schemas"]["ReviewServiceEvidencePhoto"][];
+            /** Format: int32 */
+            finalRank: number;
+            hidden: boolean;
+            /** Format: uuid */
+            id: string;
+            instagram: string;
+            locationName: string;
+            /** Format: uuid */
+            orgId: string;
+            reason: string;
+            /** Format: double */
+            score: number;
+            source: string;
+            stylistLive: boolean;
+            stylistName: string;
+            /** Format: int32 */
+            systemRank: number;
+        };
+        ReviewServiceQueueItem: {
+            /** Format: int32 */
+            candidates: number;
+            /** Format: date-time */
+            createdAt: string;
+            firstName: string;
+            /** @enum {string} */
+            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+            /** Format: uuid */
+            id: string;
+            length: string;
+            market: string;
+            service: string;
+            status: string;
+            statusReason: string;
+            texture: string;
+        };
+        ReviewServiceRequestView: {
+            /** Format: int32 */
+            budgetTier: number;
+            /** Format: date-time */
+            createdAt: string;
+            firstName: string;
+            /** @enum {string} */
+            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+            /** Format: uuid */
+            id: string;
+            inspirationDeleted: boolean;
+            length: string;
+            market: string;
+            neighborhood: string;
+            notes: string;
+            pastIssues: string[];
+            /** Format: date-time */
+            publishedAt: string;
+            service: string;
+            status: string;
+            statusReason: string;
+            texture: string;
+        };
+        ReviewServiceReview: {
+            /** Format: uri */
+            inspirationUrl: string;
+            matches: components["schemas"]["ReviewServiceMatchView"][];
+            request: components["schemas"]["ReviewServiceRequestView"];
+        };
+        ReviewServiceStylistOption: {
+            alreadyMatched: boolean;
+            displayName: string;
+            locationName: string;
+            /** Format: uuid */
+            orgId: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -402,6 +630,196 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    fairness: {
+        parameters: {
+            query?: {
+                market?: string;
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewServiceFairnessReport"];
+                };
+            };
+        };
+    };
+    queue: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewServiceQueueItem"][];
+                };
+            };
+        };
+    };
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewServiceReview"];
+                };
+            };
+        };
+    };
+    add: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminMatchControllerAddStylist"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewServiceReview"];
+                };
+            };
+        };
+    };
+    change: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                matchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminMatchControllerMatchChange"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewServiceReview"];
+                };
+            };
+        };
+    };
+    reorder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminMatchControllerOrder"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewServiceReview"];
+                };
+            };
+        };
+    };
+    publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewServiceReview"];
+                };
+            };
+        };
+    };
+    stylists: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ReviewServiceStylistOption"][];
+                };
+            };
+        };
+    };
     list: {
         parameters: {
             query?: never;
@@ -666,26 +1084,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ConsentControllerConsentStatus"];
-                };
-            };
-        };
-    };
-    settings: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["IntakeServiceSettings"];
                 };
             };
         };

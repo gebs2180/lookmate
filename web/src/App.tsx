@@ -5,6 +5,9 @@ import { HomePage } from './pages/HomePage'
 import { InvitePage } from './pages/InvitePage'
 import { PublicShell } from './pages/public/PublicShell'
 import { isPublicPath } from './pages/public/publicPaths'
+import { FairnessPage } from './pages/admin/FairnessPage'
+import { MatchQueuePage } from './pages/admin/MatchQueuePage'
+import { MatchReviewPage } from './pages/admin/MatchReviewPage'
 import { Loading, NotFound, RouteErrorBoundary } from './ui'
 import { useRouteFocus } from './useRouteFocus'
 
@@ -75,6 +78,9 @@ function App() {
                 <Route path="/admin/stylists" element={<AdminStylistsPage />} />
                 <Route path="/admin/locations" element={<AdminLocationsPage />} />
                 <Route path="/admin/demo" element={<AdminDemoPage />} />
+                <Route path="/admin/matches" element={<MatchQueuePage />} />
+                <Route path="/admin/matches/fairness" element={<FairnessPage />} />
+                <Route path="/admin/matches/:id" element={<MatchReviewPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

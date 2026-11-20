@@ -201,3 +201,78 @@ export async function publicApi<T>(method: string, path: string, body?: unknown)
   const text = await response.text()
   return (text ? JSON.parse(text) : undefined) as T
 }
+// Matching: the admin's review of a request's matches, and the fairness report (backend: matching module).
+
+export type HairType = 'STRAIGHT' | 'WAVY' | 'CURLY' | 'COILY'
+export type MatchRequestStatus = 'NEW' | 'MATCHING' | 'IN_REVIEW' | 'PUBLISHED' | 'CLOSED' | 'FAILED'
+
+export type MatchQueueItem = {
+  id: string
+  status: MatchRequestStatus
+  statusReason: string | null
+  market: string
+  service: string | null
+  hairType: HairType | null
+  texture: string | null
+  length: string | null
+  firstName: string | null
+  createdAt: string
+  candidates: number
+}
+
+export type MatchRequestView = {
+  id: string
+  status: MatchRequestStatus
+  statusReason: string | null
+  market: string
+  service: string | null
+  hairType: HairType | null
+  texture: string | null
+  length: string | null
+  budgetTier: number | null
+  neighborhood: string | null
+  pastIssues: string[]
+  notes: string | null
+  firstName: string | null
+  createdAt: string
+  publishedAt: string | null
+  inspirationDeleted: boolean
+}
+
+export type EvidencePhoto = { id: string; url: string; service: string | null; hairType: string | null }
+
+export type MatchView = {
+  id: string
+  orgId: string
+  stylistName: string | null
+  locationName: string | null
+  instagram: string | null
+  stylistLive: boolean
+  score: number
+  reason: string
+  systemRank: number
+  finalRank: number | null
+  hidden: boolean
+  adminOverride: boolean
+  adminNote: string | null
+  source: 'SYSTEM' | 'ADMIN'
+  evidence: EvidencePhoto[]
+}
+
+export type MatchReview = { request: MatchRequestView; inspirationUrl: string | null; matches: MatchView[] }
+export type StylistOption = { orgId: string; displayName: string; locationName: string | null; alreadyMatched: boolean }
+
+export type FairnessRow = {
+  hairType: HairType | 'UNKNOWN'
+  requests: number
+  failed: number
+  reviewed: number
+  published: number
+  noSystemMatches: number
+  withAdminChanges: number
+  shownMatches: number
+  clickedRequests: number
+  bookedRequests: number
+  meanTopScore: number | null
+}
+export type FairnessReport = { market: string; since: string; rows: FairnessRow[] }

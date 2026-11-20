@@ -21,7 +21,8 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
 
 ## Defaults to confirm (ask before changing; record the answer here)
 
-- Embedding provider and model (hosted image-embedding API vs. self-hosted SigLIP/CLIP).
+- ~~Embedding provider and model~~ **Decided 2026-11-20: Amazon Bedrock, Titan Multimodal Embeddings G1** (Zach). AWS
+  account in progress; threshold to set from the labelled set. See [docs/embedding-providers.md](docs/embedding-providers.md).
 - Inspiration-photo retention: 30 days (`lookmate.retention.inspiration-photo-days`).
 - Client contact retention: **decided 2026-11-20**: anonymised 365 days after the latest request by that email
   (`lookmate.retention.client-contact-days`). Client links expire after 90 days (`lookmate.intake.link-ttl`).
