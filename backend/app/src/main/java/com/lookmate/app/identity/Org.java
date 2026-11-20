@@ -1,0 +1,50 @@
+package com.lookmate.app.identity;
+
+import com.lookmate.app.persistence.AssignedIdEntity;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import java.time.Instant;
+import java.util.UUID;
+
+/** A stylist's business: the unit that owns a profile, a portfolio and a booking link. */
+@Entity
+@Table(name = "org")
+public class Org extends AssignedIdEntity<UUID> {
+
+    @Id
+    private UUID id;
+    private String name;
+    @Enumerated(EnumType.STRING)
+    private OrgType type;
+    private Instant createdAt;
+
+    protected Org() {
+    }
+
+    public Org(String name, OrgType type) {
+        this.id = UUID.randomUUID();
+        this.name = name;
+        this.type = type;
+        this.createdAt = Instant.now();
+    }
+
+    @Override
+    public UUID getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public OrgType getType() {
+        return type;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+}

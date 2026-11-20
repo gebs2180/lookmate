@@ -1,0 +1,67 @@
+import { screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it } from 'vitest'
+import { respond } from '../test/auth0'
+import { ProfilePage } from './ProfilePage'
+import { renderAt, stubApi } from './testing'
+
+const ORG = 'org-1'
+
+const HOME = {
+  orgId: ORG,
+  orgName: 'Curl Studio',
+  termsAccepted: true,
+  profile: null,
+  readyPhotos: 0,
+  taggedPhotos: 0,
+  minTaggedPhotos: 3,
+  maxPhotos: 60,
+  missing: ['PROFILE', 'TAGGED_PHOTOS'],
+}
+
+const LOCATIONS = [{ id: 'loc-1', brand: 'SALON_LOFTS', name: 'Short North', market: 'columbus-oh', address: null, city: 'Columbus', state: 'OH', zip: null, latitude: null, longitude: null }]
+
+describe('ProfilePage', () => {
+  it('saves the profile and goes back home', async () => {
+    const calls = stubApi({
+      [`GET /api/orgs/${ORG}/stylist`]: () => HOME,
+      'GET /api/locations': () => LOCATIONS,
+      [`PUT /api/orgs/${ORG}/stylist/profile`]: () => ({}),
+    })
+    renderAt(`/stylist/${ORG}/profile`, '/stylist/:orgId/profile', <ProfilePage />)
+
+    const name = await screen.findByLabelText('Name clients know you by')
+    expect(name).toHaveValue('Curl Studio')
+    await userEvent.selectOptions(screen.getByLabelText('Your location'), 'loc-1')
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Silk press' }))
+    await userEvent.type(screen.getByLabelText('Booking link'), 'https://booksy.com/ana')
+    await userEvent.type(screen.getByLabelText('Instagram'), '@curls.by.ana')
+    await userEvent.click(screen.getByRole('radio', { name: '$$' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Save profile' }))
+
+    expect(await screen.findByText('Elsewhere')).toBeInTheDocument()
+    expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({
+      displayName: 'Curl Studio',
+      locationId: 'loc-1',
+      bio: null,
+      specialties: ['SILK_PRESS'],
+      bookingUrl: 'https://booksy.com/ana',
+      instagram: '@curls.by.ana',
+      priceTier: 2,
+    })
+  })
+
+  it("shows the API's reason when the profile is refused", async () => {
+    stubApi({
+      [`GET /api/orgs/${ORG}/stylist`]: () => HOME,
+      'GET /api/locations': () => LOCATIONS,
+      [`PUT /api/orgs/${ORG}/stylist/profile`]: () =>
+        respond(400, { detail: 'The booking link must start with https://', code: 'INVALID_FIELD' }),
+    })
+    renderAt(`/stylist/${ORG}/profile`, '/stylist/:orgId/profile', <ProfilePage />)
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Save profile' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('The booking link must start with https://')
+  })
+})

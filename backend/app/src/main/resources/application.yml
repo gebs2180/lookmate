@@ -1,0 +1,174 @@
+# Defaults point at the local docker-compose services; production overrides everything via environment variables.
+spring:
+  application:
+    name: lookmate
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/lookmate}
+    username: ${DB_USERNAME:lookmate}
+    password: ${DB_PASSWORD:lookmate}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate # Flyway owns the schema (src/main/resources/db/migration)
+    properties:
+      hibernate.jdbc.batch_size: 50
+      hibernate.order_inserts: true
+  mvc:
+    problemdetails:
+      enabled: true
+  # OIDC: set SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI (e.g. https://<tenant>.us.auth0.com/)
+  # and SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES (the API identifier) in the environment.
+  # Without an issuer the API rejects every bearer token.
+
+# The OpenAPI description the web app's types are generated from (docs/api-types.md). Off here: the running app
+# serves no spec. OpenApiSpecTest turns it on to write web/openapi.json.
+springdoc:
+  api-docs:
+    enabled: false
+  writer-with-order-by-keys: true
+  override-with-generic-response: false
+
+lookmate:
+  # The market new stylists and clients belong to unless they say otherwise (CLAUDE.md: Columbus first).
+  default-market: columbus-oh
+  security:
+    # Custom claim the provider adds to access tokens with the user's roles. Only ADMIN is read from it;
+    # STYLIST comes from org membership in the database.
+    roles-claim: https://lookmate.app/roles
+    # Custom claim set to true by the provider's post-login Action when the login used MFA.
+    mfa-claim: https://lookmate.app/mfa
+    # ADMIN requires an MFA login (amr contains "mfa", or the MFA claim is true).
+    require-admin-mfa: true
+  invites:
+    ttl: 7d
+  storage:
+    endpoint: ${STORAGE_ENDPOINT:http://localhost:9000}
+    public-endpoint: ${STORAGE_PUBLIC_ENDPOINT:}
+    region: ${STORAGE_REGION:us-east-1}
+    access-key: ${STORAGE_ACCESS_KEY:lookmate}
+    secret-key: ${STORAGE_SECRET_KEY:lookmate-local}
+    path-style: true
+    photo-bucket: ${STORAGE_PHOTO_BUCKET:photos}
+    upload-url-ttl: 10m
+    max-upload-bytes: 26214400
+    # Local dev: create the versioned photo bucket on startup. Turn off in production.
+    auto-create-buckets: ${STORAGE_AUTO_CREATE_BUCKETS:true}
+  notify:
+    # Emails (matches ready, stylist invites) through Resend. Off until a key is set: with sending off, every
+    # email is still stored in email_message, as skipped.
+    email:
+      enabled: ${NOTIFY_EMAIL_ENABLED:false}
+      api-key: ${RESEND_API_KEY:}
+      from: ${NOTIFY_EMAIL_FROM:LookMate <notify@example.com>}
+      app-url: ${NOTIFY_APP_URL:http://localhost:5173}
+  intake:
+    # Client intake (docs/modules/intake.md). Clients have no account: a link token reaches their request.
+    link-ttl: 90d
+    # Requests one email address may have open (not yet matched) from the last 24 hours.
+    max-open-requests-per-email-per-day: 3
+    # A request claimed for matching but untouched this long is offered to the matching worker again.
+    matching-stuck-after: 15m
+    # Per IP, in memory: per instance. More than one app container needs a shared limit (Caddy or Postgres).
+    rate-limit:
+      creates-per-hour: 10
+      reads-per-minute: 60
+  retention:
+    # Personal data is kept only as long as it's needed (docs/data-retention.md). A daily job at 04:15 UTC.
+    # The periods are defaults to confirm.
+    enabled: ${RETENTION_ENABLED:true}
+    cron: ${RETENTION_CRON:0 15 4 * * *}
+    # A sent (or failed, skipped, cancelled) email loses its address, subject and bodies after this many days.
+    email-content-days: 90
+    # A client's inspiration photo is deleted from storage this many days after the request was made
+    # (CLAUDE.md, Privacy). The embedding and the match rows stay. Default to confirm.
+    inspiration-photo-days: 30
+    # A client's email, phone, first name, neighborhood and note are cleared this many days after the latest request
+    # made with that email address; the quiz codes stay for the fairness metrics (docs/data-retention.md).
+    client-contact-days: 365
+  stylists:
+    # A profile can go LIVE once it has this many READY portfolio photos tagged with a service and hair type
+    # (the brief asks for 10-20 photos; 3 lets a pilot stylist start while they add the rest).
+    min-tagged-photos-to-publish: 3
+  matching:
+    # The image-embedding model (docs/embedding-providers.md). Only "fake" exists until the team chooses one: a
+    # deterministic stand-in that matches identical images only.
+    provider: ${MATCHING_PROVIDER:fake}
+    worker:
+      # Embeds photos and ranks waiting requests. Safe on several instances (FOR UPDATE SKIP LOCKED).
+      enabled: ${MATCHING_WORKER_ENABLED:true}
+      poll-interval: 30s
+    ranking:
+      # Scoring.java. The threshold depends on the model: set it from the labelled set when the model is chosen.
+      similar-threshold: 0.8
+      adjacent-hair-type-weight: 0.5
+      keep: 5
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# Error reports. Off unless SENTRY_DSN is set (docs/hosting.md). ERROR log lines and unhandled exceptions are sent;
+# request bodies, headers, cookies and user IPs are not.
+sentry:
+  dsn: ${SENTRY_DSN:}
+  environment: ${SENTRY_ENVIRONMENT:local}
+  send-default-pii: false
+  max-request-body-size: none
+  logging:
+    minimum-event-level: error
+    minimum-breadcrumb-level: info
+
+---
+# Production (docs/hosting.md): SPRING_PROFILES_ACTIVE=prod. Nothing here has a local default, so the app
+# refuses to start with a variable missing instead of quietly using the docker-compose credentials.
+# Required: DB_URL, DB_USERNAME, DB_PASSWORD, SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI,
+# SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES, STORAGE_ENDPOINT, STORAGE_ACCESS_KEY, STORAGE_SECRET_KEY,
+# STORAGE_PHOTO_BUCKET. Optional: STORAGE_PUBLIC_ENDPOINT, STORAGE_REGION (default auto), SENTRY_DSN,
+# SENTRY_ENVIRONMENT, and the feature switches above.
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI}
+          audiences: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES}
+
+server:
+  # Behind Caddy, which terminates HTTPS and sets X-Forwarded-*.
+  forward-headers-strategy: framework
+  shutdown: graceful
+
+lookmate:
+  storage:
+    # Cloudflare R2: region "auto", path-style, and no aws-chunked uploads (R2 answers them with 403).
+    # R2 has no bucket versioning; the nightly backup copy (deploy/backup) stands in for it.
+    endpoint: ${STORAGE_ENDPOINT}
+    region: ${STORAGE_REGION:auto}
+    access-key: ${STORAGE_ACCESS_KEY}
+    secret-key: ${STORAGE_SECRET_KEY}
+    photo-bucket: ${STORAGE_PHOTO_BUCKET}
+    auto-create-buckets: false
+    chunked-encoding: false
+
+management:
+  endpoint:
+    health:
+      show-details: never
+
+# Appended by tracking (docs/tracking.md).
+lookmate.tracking:
+  # Days and weeks for the metrics, and "once a day" for VIEWED, are counted in this zone.
+  time-zone: ${TRACKING_TIME_ZONE:America/New_York}
+  # A second "Book" click on the same match within this long counts once.
+  click-dedupe-window: 30s
+  # At most this many clicks counted per client link per day; more still redirect.
+  max-clicks-per-request-per-day: 20

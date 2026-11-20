@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Testcontainers tests skip without Docker; in CI a skip means the runner broke, so fail instead.
+      LOOKMATE_REQUIRE_DOCKER: 'true'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          # v6's default (enhanced) caching is a proprietary component under Gradle's Terms of Use;
+          # the basic provider is MIT-licensed. It skips cache cleanup, which a build this size doesn't need.
+          cache-provider: basic
+      - name: Build and test
+        run: ./gradlew build --console=plain
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: backend-test-reports
+          path: backend/*/build/reports/tests/
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      # The API types must be generated from the committed openapi.json (docs/api-types.md); the backend job
+      # checks that openapi.json is the API as it is.
+      - name: API types are up to date
+        run: |
+          npm run api:types
+          git diff --exit-code -- src/api.gen.ts
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
