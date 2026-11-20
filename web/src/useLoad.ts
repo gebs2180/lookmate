@@ -39,11 +39,37 @@ export function useLoad<T>(loader: () => Promise<T>, deps: unknown[]) {
   return { data, error, reload }
 }
 
-/** Calls {@code reload} every {@code ms} while {@code active}, e.g. while background work is pending. */
-export function usePoll(active: boolean, reload: () => void, ms = 2000) {
+/**
+ * Gentle backoff for {@link usePoll}: the interval stays steady for {@code steadyMs}, then each wait is {@code factor}
+ * times the last, up to {@code maxMs}; polling stops after {@code giveUpMs}.
+ */
+export type Backoff = { factor: number; maxMs: number; steadyMs?: number; giveUpMs?: number }
+
+/**
+ * Calls {@code reload} every {@code ms} while {@code active}, e.g. while background work is pending. With a
+ * {@code backoff}, the waits grow after a steady start (up to maxMs) so a page left open doesn't keep hammering the API,
+ * and polling stops after giveUpMs; it starts over when {@code active} turns true again.
+ */
+export function usePoll(active: boolean, reload: () => void, ms = 2000, backoff?: Backoff) {
+  const factor = backoff?.factor ?? 1
+  const maxMs = backoff?.maxMs ?? ms
+  const giveUpMs = backoff?.giveUpMs
+  const steadyMs = backoff?.steadyMs ?? 0
   useEffect(() => {
     if (!active) return
-    const timer = setInterval(reload, ms)
-    return () => clearInterval(timer)
-  }, [active, reload, ms])
+    let wait = ms
+    let waited = 0
+    let timer: ReturnType<typeof setTimeout>
+    const next = () => {
+      if (giveUpMs !== undefined && waited + wait > giveUpMs) return
+      timer = setTimeout(() => {
+        waited += wait
+        reload()
+        if (waited >= steadyMs) wait = Math.min(maxMs, Math.round(wait * factor))
+        next()
+      }, wait)
+    }
+    next()
+    return () => clearTimeout(timer)
+  }, [active, reload, ms, factor, maxMs, steadyMs, giveUpMs])
 }

@@ -37,14 +37,24 @@ public class ClientEmails {
                 content, now);
     }
 
-    /** "Your matches are ready", with a fresh link. Sent once per request. */
-    public void matchesReady(UUID matchRequestId, String email, String firstName, String linkPath, Instant now) {
+    static final String VIEWED_FIRST = "the client opened their matches before it went";
+
+    /**
+     * "Your matches are ready", with a fresh link, due at {@code sendAt} (a few minutes after publishing, so a client
+     * still on their page isn't emailed). Sent once per request; {@link #cancelMatchesReady} stops it if it hasn't gone.
+     */
+    public void matchesReady(UUID matchRequestId, String email, String firstName, String linkPath, Instant sendAt, Instant now) {
         EmailContent content = EmailContent.of("Your stylist matches are ready",
                 List.of(greeting(firstName),
                         "We've picked stylists whose portfolios look like the style you want. Each one shows the photos that "
                                 + "earned the match. They're suggestions: you can book any stylist you like."),
                 "See your matches", properties.link(linkPath), FOOTER);
-        notifier.queueToAddress("matches-ready:" + matchRequestId, Template.MATCHES_READY, email, matchRequestId, content, now);
+        notifier.queueToAddress("matches-ready:" + matchRequestId, Template.MATCHES_READY, email, matchRequestId, content, sendAt, now);
+    }
+
+    /** The client has seen their matches: a "matches ready" email that hasn't gone yet is cancelled. Returns whether one was. */
+    public boolean cancelMatchesReady(UUID matchRequestId, Instant now) {
+        return notifier.cancelPending(matchRequestId, Template.MATCHES_READY, VIEWED_FIRST, now) > 0;
     }
 
     private static String greeting(String firstName) {

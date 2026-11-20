@@ -68,10 +68,15 @@ lookmate:
     max-open-requests-per-email-per-day: 3
     # A request claimed for matching but untouched this long is offered to the matching worker again.
     matching-stuck-after: 15m
+    # The "matches ready" email waits this long after publishing, and isn't sent if the client opens their list
+    # first (their page shows the results as soon as they're published).
+    matches-ready-email-delay: 5m
     # Per IP, in memory: per instance. More than one app container needs a shared limit (Caddy or Postgres).
     rate-limit:
       creates-per-hour: 10
       reads-per-minute: 60
+      # The public stylist directory and its Book links (/api/public/stylists, /api/public/book-stylist/**).
+      browse-per-minute: 60
   retention:
     # Personal data is kept only as long as it's needed (docs/data-retention.md). A daily job at 04:15 UTC.
     # The periods are defaults to confirm.
@@ -90,6 +95,9 @@ lookmate:
     # (the brief asks for 10-20 photos; 3 lets a pilot stylist start while they add the rest).
     min-tagged-photos-to-publish: 3
   matching:
+    # Off (decided 2026-11-20): lists publish to the client as soon as they're ranked and the admin monitors them
+    # afterwards. On: every list waits IN_REVIEW for the admin to publish it (the Phase 1 review queue).
+    review-before-publish: ${MATCHING_REVIEW_BEFORE_PUBLISH:false}
     # The image-embedding model (docs/embedding-providers.md). Only "fake" exists until the team chooses one: a
     # deterministic stand-in that matches identical images only.
     provider: ${MATCHING_PROVIDER:fake}

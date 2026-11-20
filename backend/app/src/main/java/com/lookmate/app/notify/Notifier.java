@@ -59,6 +59,12 @@ class Notifier {
      * while sending is off, like {@link #queue}. Returns whether it was queued; false if this dedupe key already was.
      */
     boolean queueToAddress(String dedupeKey, Template template, String email, UUID subjectId, EmailContent content, Instant now) {
+        return queueToAddress(dedupeKey, template, email, subjectId, content, now, now);
+    }
+
+    /** As {@link #queueToAddress(String, Template, String, UUID, EmailContent, Instant)}, due at {@code sendAt}. */
+    boolean queueToAddress(String dedupeKey, Template template, String email, UUID subjectId, EmailContent content, Instant sendAt,
+                           Instant now) {
         String address = blankToNull(email);
         Status status = Status.PENDING;
         String reason = null;
@@ -70,11 +76,20 @@ class Notifier {
             reason = SENDING_OFF;
         }
         boolean queued = outbox.queue(new EmailOutbox.New(dedupeKey, template, null, address, null, subjectId, content, status, reason,
-                now, now));
+                sendAt, now));
         if (queued) {
             log.info("Email {} {}{}", dedupeKey, status, reason == null ? "" : " (" + reason + ")");
         }
         return queued;
+    }
+
+    /** Cancels the emails of the template about {@code subjectId} that haven't gone yet. Returns how many. */
+    int cancelPending(UUID subjectId, Template template, String reason, Instant now) {
+        int cancelled = outbox.cancelPending(subjectId, template, reason, now);
+        if (cancelled > 0) {
+            log.info("Email {} about {} cancelled ({})", template, subjectId, reason);
+        }
+        return cancelled;
     }
 
     private static String blankToNull(String s) {

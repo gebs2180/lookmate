@@ -15,10 +15,12 @@ class MatchingJob {
 
     private final EmbeddingWorker worker;
     private final Ranker ranker;
+    private final ReviewService review;
 
-    MatchingJob(EmbeddingWorker worker, Ranker ranker) {
+    MatchingJob(EmbeddingWorker worker, Ranker ranker, ReviewService review) {
         this.worker = worker;
         this.ranker = ranker;
+        this.review = review;
     }
 
     void runOnce() {
@@ -26,6 +28,8 @@ class MatchingJob {
         // failed, so a provider outage on portfolio photos doesn't stop ranking against what's already embedded.
         stage("portfolio embedding", worker::portfolioBatch);
         stage("matching requests", () -> ranker.rankBatch(10));
+        // Review switched off while lists were waiting for it: publish them as they stand (does nothing with it on).
+        stage("publishing waiting reviews", () -> review.publishWaitingReviews(200));
     }
 
     private static void stage(String name, java.util.function.IntSupplier batch) {

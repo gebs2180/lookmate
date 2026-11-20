@@ -31,6 +31,8 @@ export function MatchReviewPage() {
   if (!current) return <Loading />
 
   const editable = current.request.status === 'IN_REVIEW'
+  // After publishing, the admin can still take a match off the client's list (or put it back) and keep notes.
+  const hideable = editable || current.request.status === 'PUBLISHED'
   const matches = current.matches
   const visible = matches.filter((m) => !m.hidden).length
 
@@ -76,7 +78,7 @@ export function MatchReviewPage() {
   return (
     <div className="review-page">
       <p className="back">
-        <Link to="/admin/matches">Match review</Link>
+        <Link to="/admin/matches">Matches</Link>
       </p>
       <h1>
         {r.firstName ?? 'Client'}: {r.service ? label(r.service) : 'any service'}
@@ -93,7 +95,7 @@ export function MatchReviewPage() {
       )}
       {published && (
         <p className="alert alert-success" role="status">
-          Published. The client is emailed a link to their matches.
+          Published. The client is emailed a link to their matches in a few minutes, unless they open them first.
         </p>
       )}
 
@@ -138,6 +140,7 @@ export function MatchReviewPage() {
                 position={i}
                 last={i === matches.length - 1}
                 editable={editable}
+                hideable={hideable}
                 busy={busy}
                 onMove={(by) => move(i, by)}
                 onChange={(hidden, note) => change(m, hidden, note)}
@@ -164,6 +167,7 @@ function Candidate({
   position,
   last,
   editable,
+  hideable,
   busy,
   onMove,
   onChange,
@@ -172,6 +176,7 @@ function Candidate({
   position: number
   last: boolean
   editable: boolean
+  hideable: boolean
   busy: boolean
   onMove: (by: number) => void
   onChange: (hidden: boolean, note: string | null) => void
@@ -206,16 +211,20 @@ function Candidate({
       ) : (
         <p className="muted small">No portfolio photos to show for this service.</p>
       )}
-      {editable ? (
+      {hideable ? (
         <div className="candidate-tools">
-          <button className="secondary" onClick={() => onMove(-1)} disabled={busy || position === 0} aria-label={`Move ${name} up`}>
-            Up
-          </button>
-          <button className="secondary" onClick={() => onMove(1)} disabled={busy || last} aria-label={`Move ${name} down`}>
-            Down
-          </button>
+          {editable && (
+            <>
+              <button className="secondary" onClick={() => onMove(-1)} disabled={busy || position === 0} aria-label={`Move ${name} up`}>
+                Up
+              </button>
+              <button className="secondary" onClick={() => onMove(1)} disabled={busy || last} aria-label={`Move ${name} down`}>
+                Down
+              </button>
+            </>
+          )}
           <button className="secondary" onClick={() => onChange(!m.hidden, note)} disabled={busy}>
-            {m.hidden ? 'Show' : 'Hide'}
+            {m.hidden ? 'Show' : editable ? 'Hide' : 'Hide from client'}
           </button>
           <Field label="Reviewer note (not shown to the client)">
             {(control) => <input {...control} value={note} maxLength={2000} onChange={(e) => setNote(e.target.value)} />}

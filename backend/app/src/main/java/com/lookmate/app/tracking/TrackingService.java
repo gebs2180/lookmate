@@ -1,6 +1,8 @@
 package com.lookmate.app.tracking;
 
 import com.lookmate.app.api.ApiException;
+import com.lookmate.app.intake.MatchRequests;
+import com.lookmate.app.stylists.Stylists;
 import com.lookmate.app.tracking.MatchEvents.Source;
 import com.lookmate.app.tracking.MatchEvents.Type;
 import java.net.URI;
@@ -11,7 +13,12 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HexFormat;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -33,15 +40,37 @@ public class TrackingService {
     record Recorded(UUID id, UUID matchId, Type type, Source source, Instant occurredAt, String note) {
     }
 
+    /** Clicks, bookings and rebooks on one match. */
+    public record MatchActivity(UUID matchId, long bookingClicks, long bookings, long rebooks) {
+    }
+
+    /**
+     * What a client did with a request, for the admin's monitor: when they first opened their list (null if never),
+     * per match, and on stylists they picked from the directory (no match).
+     */
+    public record RequestActivity(UUID requestId, Instant firstViewedAt, List<MatchActivity> matches, long directoryClicks,
+                                  long directoryBookings) {
+
+        public MatchActivity match(UUID matchId) {
+            return matches.stream().filter(m -> m.matchId().equals(matchId)).findFirst()
+                    .orElse(new MatchActivity(matchId, 0, 0, 0));
+        }
+    }
+
     private final TrackingQueries queries;
     private final MatchEvents events;
     private final TrackingProperties properties;
+    private final MatchRequests requests;
+    private final Stylists stylists;
     private final Clock clock;
 
-    TrackingService(TrackingQueries queries, MatchEvents events, TrackingProperties properties) {
+    TrackingService(TrackingQueries queries, MatchEvents events, TrackingProperties properties, MatchRequests requests,
+                    Stylists stylists) {
         this.queries = queries;
         this.events = events;
         this.properties = properties;
+        this.requests = requests;
+        this.stylists = stylists;
         this.clock = Clock.systemUTC();
     }
 
@@ -51,10 +80,11 @@ public class TrackingService {
      */
     @Transactional
     public Optional<URI> clickBook(String token, UUID matchId) {
-        if (!plausibleToken(token)) {
+        Optional<MatchRequests.Request> request = requests.forToken(token);
+        if (request.isEmpty()) {
             return Optional.empty();
         }
-        Optional<TrackingQueries.BookingTarget> found = queries.bookingTarget(hash(token), matchId);
+        Optional<TrackingQueries.BookingTarget> found = queries.bookingTarget(request.get().id(), matchId);
         if (found.isEmpty()) {
             return Optional.empty();
         }
@@ -74,23 +104,126 @@ public class TrackingService {
         return link;
     }
 
-    /** Records that the client opened their match list; once per request per day. False if the token isn't valid. */
+    /**
+     * The tagged booking link of a LIVE stylist the client picked from the directory, recording a CLICKED_BOOK with no
+     * match (attributed to the client's request). Empty (a 404) for a bad token, a stylist who isn't LIVE, or a booking
+     * link that isn't a safe https link: nothing is recorded then, and nothing redirects (no open redirect).
+     */
+    @Transactional
+    public Optional<URI> clickDirectory(String token, UUID orgId) {
+        Optional<MatchRequests.Request> request = requests.forToken(token);
+        if (request.isEmpty() || request.get().status() == MatchRequests.Status.CLOSED) {
+            return Optional.empty();
+        }
+        Optional<Stylists.LiveProfile> stylist = stylists.liveProfile(orgId);
+        if (stylist.isEmpty()) {
+            return Optional.empty();
+        }
+        Optional<URI> link = BookingLinks.tagged(stylist.get().bookingUrl(), stylist.get().market(), BookingLinks.DIRECTORY);
+        if (link.isEmpty()) {
+            return Optional.empty();
+        }
+        UUID requestId = request.get().id();
+        Instant now = clock.instant();
+        events.lock(requestId);
+        if (!events.directoryClickedSince(requestId, orgId, now.minus(properties.clickDedupeWindow()))
+                && events.clicksOnRequestSince(requestId, startOfDay(now)) < properties.maxClicksPerRequestPerDay()) {
+            events.append(new MatchEvents.New(null, requestId, orgId, Type.CLICKED_BOOK, Source.CLIENT, null, null, now));
+        }
+        return link;
+    }
+
+    /**
+     * Records that the client opened their published match list, once per request per day, and tells intake, which
+     * then doesn't send the "matches ready" email if it hasn't gone yet. False if the token isn't valid or the list
+     * isn't published.
+     */
     @Transactional
     public boolean viewed(String token) {
-        if (!plausibleToken(token)) {
-            return false;
-        }
-        Optional<UUID> request = queries.publishedRequestId(hash(token));
+        Optional<MatchRequests.Request> request = requests.forToken(token)
+                .filter(r -> r.status() == MatchRequests.Status.PUBLISHED);
         if (request.isEmpty()) {
             return false;
         }
+        UUID requestId = request.get().id();
         Instant now = clock.instant();
         Instant startOfDay = startOfDay(now);
-        events.lock(request.get());
-        if (!events.viewedSince(request.get(), startOfDay)) {
-            events.append(new MatchEvents.New(null, request.get(), null, Type.VIEWED, Source.CLIENT, null, null, now));
+        events.lock(requestId);
+        if (!events.viewedSince(requestId, startOfDay)) {
+            events.append(new MatchEvents.New(null, requestId, null, Type.VIEWED, Source.CLIENT, null, null, now));
         }
+        requests.clientViewedMatches(requestId);
         return true;
+    }
+
+    /** Views, clicks and bookings for each of these requests (the admin's monitor). Voided events count nowhere. */
+    @Transactional(readOnly = true)
+    public Map<UUID, RequestActivity> activity(Collection<UUID> requestIds) {
+        Map<UUID, Instant> viewed = new HashMap<>();
+        Map<UUID, Map<UUID, long[]>> perMatch = new HashMap<>();
+        Map<UUID, long[]> directory = new HashMap<>();
+        for (TrackingQueries.EventCount c : queries.eventCounts(requestIds)) {
+            if (c.type().equals("VIEWED")) {
+                viewed.merge(c.requestId(), c.first(), (a, b) -> a.isBefore(b) ? a : b);
+                continue;
+            }
+            int slot = switch (c.type()) {
+                case "CLICKED_BOOK" -> 0;
+                case "BOOKED" -> 1;
+                default -> 2;
+            };
+            long[] counts = c.matchId() == null
+                    ? directory.computeIfAbsent(c.requestId(), k -> new long[3])
+                    : perMatch.computeIfAbsent(c.requestId(), k -> new HashMap<>()).computeIfAbsent(c.matchId(), k -> new long[3]);
+            counts[slot] += c.n();
+        }
+        Map<UUID, RequestActivity> out = new HashMap<>();
+        for (UUID id : requestIds) {
+            List<MatchActivity> matches = new ArrayList<>();
+            perMatch.getOrDefault(id, Map.of()).forEach((matchId, n) -> matches.add(new MatchActivity(matchId, n[0], n[1], n[2])));
+            long[] d = directory.getOrDefault(id, new long[3]);
+            out.put(id, new RequestActivity(id, viewed.get(id), matches, d[0], d[1]));
+        }
+        return out;
+    }
+
+    /**
+     * A BOOKED or REBOOKED with a stylist the client picked from the directory (no match), entered by the admin. The
+     * request needn't be published: the directory is open to any client with a link.
+     */
+    @Transactional
+    Recorded recordDirectoryBooking(UUID requestId, UUID orgId, Type type, UUID recordedBy, String note, Instant occurredAt) {
+        if (type != Type.BOOKED && type != Type.REBOOKED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only BOOKED and REBOOKED can be entered by hand");
+        }
+        TrackingQueries.EntryTarget target = queries.directoryEntryTarget(requestId, orgId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Request or stylist not found"));
+        Instant when = checkedTime(occurredAt, target);
+        events.lock(requestId);
+        if (type == Type.BOOKED && events.directoryExists(requestId, orgId, Type.BOOKED)) {
+            throw new ApiException(HttpStatus.CONFLICT, Code.ALREADY_BOOKED,
+                    "A booking with this stylist is already recorded for this request. Record a later visit as a rebook.");
+        }
+        if (type == Type.REBOOKED && !queries.bookedBefore(target.clientId(), orgId, when)) {
+            throw new ApiException(HttpStatus.CONFLICT, Code.REBOOK_WITHOUT_BOOKING,
+                    "There's no earlier booking with this stylist for this client. Record a booking first.");
+        }
+        String cleanNote = note == null || note.isBlank() ? null : note.strip();
+        UUID id = events.append(new MatchEvents.New(null, requestId, orgId, type, Source.ADMIN, recordedBy, cleanNote, when));
+        return new Recorded(id, null, type, Source.ADMIN, when, cleanNote);
+    }
+
+    private Instant checkedTime(Instant occurredAt, TrackingQueries.EntryTarget target) {
+        Instant now = clock.instant();
+        Instant when = occurredAt == null ? now : occurredAt;
+        if (when.isAfter(now.plus(FUTURE_SLACK))) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, Code.OCCURRED_IN_FUTURE, "The booking date can't be in the future.");
+        }
+        if (when.isBefore(target.requestCreatedAt())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, Code.OCCURRED_BEFORE_REQUEST,
+                    "The booking date is before the client asked for a match.");
+        }
+        return when;
     }
 
     /**
@@ -107,15 +240,7 @@ public class TrackingService {
                 .filter(t -> orgId == null || t.orgId().equals(orgId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
 
-        Instant now = clock.instant();
-        Instant when = occurredAt == null ? now : occurredAt;
-        if (when.isAfter(now.plus(FUTURE_SLACK))) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, Code.OCCURRED_IN_FUTURE, "The booking date can't be in the future.");
-        }
-        if (when.isBefore(target.requestCreatedAt())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, Code.OCCURRED_BEFORE_REQUEST,
-                    "The booking date is before the client asked for a match.");
-        }
+        Instant when = checkedTime(occurredAt, target);
 
         events.lock(target.matchId());
         if (type == Type.BOOKED && events.exists(target.matchId(), Type.BOOKED)) {
@@ -165,7 +290,7 @@ public class TrackingService {
             throw new ApiException(HttpStatus.CONFLICT, Code.ALREADY_VOIDED, "This event was already voided.");
         }
         if (target.type() == Type.BOOKED) {
-            UUID clientId = queries.entryTarget(target.matchId()).orElseThrow().clientId();
+            UUID clientId = queries.clientOf(target.matchRequestId()).orElseThrow();
             if (queries.rebooksDependOn(clientId, target.orgId(), target.id())) {
                 throw new ApiException(HttpStatus.CONFLICT, Code.BOOKING_HAS_REBOOKS,
                         "A rebook with this stylist counts on this booking. Void the rebook first.");
@@ -178,11 +303,6 @@ public class TrackingService {
 
     private Instant startOfDay(Instant now) {
         return LocalDate.ofInstant(now, properties.timeZone()).atStartOfDay(properties.timeZone()).toInstant();
-    }
-
-    /** A link token is a short random string; something very long can't match and isn't worth hashing. */
-    private static boolean plausibleToken(String token) {
-        return token != null && !token.isBlank() && token.length() <= 512;
     }
 
     /** Lower-case hex SHA-256 of the UTF-8 token, as stored in {@code match_request.access_token_hash}. */

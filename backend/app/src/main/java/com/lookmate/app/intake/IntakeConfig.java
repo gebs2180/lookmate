@@ -17,6 +17,9 @@ class IntakeConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(rateLimit).addPathPatterns("/api/public/match-requests", "/api/public/match-requests/**", "/api/public/intake/**");
+        // The directory (stylists) and its Book links (tracking) share this limiter: one per-IP limit for the public API.
+        registry.addInterceptor(rateLimit)
+                .addPathPatterns("/api/public/match-requests", "/api/public/match-requests/**", "/api/public/intake/**")
+                .addPathPatterns(PublicRateLimit.BROWSE_PATHS);
     }
 }

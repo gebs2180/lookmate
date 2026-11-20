@@ -17,10 +17,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-/** The public intake endpoints trip a per-IP limit: 429 with Retry-After, and other addresses carry on. */
+/** The public endpoints (intake, the stylist directory) trip a per-IP limit: 429 with Retry-After, and other addresses carry on. */
 @SpringBootTest(properties = {
         "lookmate.intake.rate-limit.creates-per-hour=2",
         "lookmate.intake.rate-limit.reads-per-minute=3",
+        "lookmate.intake.rate-limit.browse-per-minute=3",
         "lookmate.intake.max-open-requests-per-email-per-day=100",
         "lookmate.retention.enabled=false"})
 @AutoConfigureMockMvc
@@ -62,5 +63,22 @@ class IntakeRateLimitTest {
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().exists("Retry-After"));
         mvc.perform(get("/api/public/match-requests/" + LinkTokens.newToken()).with(from("198.51.100.5"))).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void browsingTheDirectoryFromOneAddressIsLimitedOnItsOwn() throws Exception {
+        // The directory and its Book links share one bucket, separate from intake's.
+        mvc.perform(get("/api/public/match-requests/" + LinkTokens.newToken()).with(from("192.0.2.9"))).andExpect(status().isNotFound());
+        mvc.perform(get("/api/public/stylists").with(from("192.0.2.9"))).andExpect(status().isOk());
+        mvc.perform(get("/api/public/stylists?page=1").with(from("192.0.2.9"))).andExpect(status().isOk());
+        mvc.perform(get("/api/public/book-stylist/" + LinkTokens.newToken() + "/" + java.util.UUID.randomUUID()).with(from("192.0.2.9")))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/public/stylists").with(from("192.0.2.9")))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("RATE_LIMITED"))
+                .andExpect(header().exists("Retry-After"));
+        mvc.perform(get("/api/public/book-stylist/" + LinkTokens.newToken() + "/" + java.util.UUID.randomUUID()).with(from("192.0.2.9")))
+                .andExpect(status().isTooManyRequests());
+        mvc.perform(get("/api/public/stylists").with(from("192.0.2.10"))).andExpect(status().isOk());
     }
 }

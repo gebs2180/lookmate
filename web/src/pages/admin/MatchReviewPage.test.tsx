@@ -105,10 +105,19 @@ describe('MatchReviewPage', () => {
     expect(screen.queryByRole('button', { name: 'Publish to client' })).not.toBeInTheDocument()
   })
 
-  it('shows a published request read-only', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(respond(200, review([match('a', 'Ana', 1, { adminNote: 'Great fit' })], 'PUBLISHED'))))
+  it('lets the admin hide a match after publishing, but not reorder, add or publish again', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(respond(200, review([match('a', 'Ana', 1, { adminNote: 'Great fit' })], 'PUBLISHED')))
+      .mockResolvedValueOnce(respond(200, review([match('a', 'Ana', 1, { hidden: true, finalRank: 1 })], 'PUBLISHED')))
+    vi.stubGlobal('fetch', fetch)
     show()
-    expect(await screen.findByText('Note: Great fit')).toBeInTheDocument()
+    expect(await screen.findByDisplayValue('Great fit')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Move/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Publish to client' })).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Hide from client' }))
+    expect(fetch.mock.calls[1][0]).toBe('/api/admin/match-requests/req-1/matches/a')
+    expect(JSON.parse(fetch.mock.calls[1][1].body)).toEqual({ hidden: true, note: 'Great fit' })
+    expect(await screen.findByRole('button', { name: 'Show' })).toBeInTheDocument()
   })
 })

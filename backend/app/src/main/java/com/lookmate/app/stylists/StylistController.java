@@ -129,6 +129,12 @@ class StylistController {
         return profiles.markDemo(orgId);
     }
 
+    /** Admin: takes one stylist out of every client's results (recommendations and the directory) by hiding the profile. */
+    @PostMapping("/api/admin/stylists/{orgId}/hide")
+    ProfileService.ProfileView adminHide(@PathVariable UUID orgId) {
+        return profiles.hide(orgId);
+    }
+
     /** Admin: hides every live demo stylist at once. */
     @PostMapping("/api/admin/stylists/demo/hide")
     DemosHidden hideDemos() {

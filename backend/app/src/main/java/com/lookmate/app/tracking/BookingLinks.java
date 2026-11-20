@@ -21,6 +21,8 @@ final class BookingLinks {
 
     static final String SOURCE = "lookmate";
     static final String MEDIUM = "referral";
+    /** {@code utm_content} of a Book click from the stylist directory, which has no match. */
+    static final String DIRECTORY = "directory";
 
     private BookingLinks() {
     }
@@ -31,6 +33,11 @@ final class BookingLinks {
      * {@code utm_content} already there is replaced by ours, so the platform sees one value for each.
      */
     static Optional<URI> tagged(String bookingUrl, String market, UUID matchId) {
+        return tagged(bookingUrl, market, matchId.toString());
+    }
+
+    /** As above, with {@code utm_content} set to {@code content} ({@link #DIRECTORY} for a stylist picked from the directory). */
+    static Optional<URI> tagged(String bookingUrl, String market, String content) {
         if (bookingUrl == null || bookingUrl.isBlank() || bookingUrl.length() > 2048) {
             return Optional.empty();
         }
@@ -49,7 +56,7 @@ final class BookingLinks {
         ours.put("utm_source", SOURCE);
         ours.put("utm_medium", MEDIUM);
         ours.put("utm_campaign", market);
-        ours.put("utm_content", matchId.toString());
+        ours.put("utm_content", content);
 
         List<String> params = new ArrayList<>();
         if (uri.getRawQuery() != null && !uri.getRawQuery().isEmpty()) {

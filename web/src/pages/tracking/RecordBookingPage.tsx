@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { useParams } from 'react-router'
-import { apiPath, useApi, type MatchEventView, type RecentMatch, type RecordedEvent, type StylistMatch } from '../../api'
+import { apiPath, useApi, type DirectoryClick, type MatchEventView, type RecentMatch, type RecordedEvent, type StylistMatch } from '../../api'
 import { label, message } from '../../format'
 import { Loading, PageError } from '../../ui'
 import { useLoad } from '../../useLoad'
@@ -35,7 +35,112 @@ function orgPaths(orgId: string): Paths {
 
 /** The admin enters a booking or rebook a stylist reported, and voids one entered by mistake. */
 export function RecordBookingPage() {
-  return <BookingEntry paths={ADMIN} admin />
+  return (
+    <>
+      <BookingEntry paths={ADMIN} admin />
+      <DirectoryBookings />
+    </>
+  )
+}
+
+/**
+ * Bookings with a stylist the client picked from the directory (a Book click with no match). Admin only for now: a
+ * stylist's own bookings page lists their matches.
+ */
+function DirectoryBookings() {
+  const api = useApi()
+  const { data: clicks, error, reload } = useLoad(() => api<DirectoryClick[]>('GET', '/api/admin/tracking/directory-clicks'), [api])
+  const [busy, setBusy] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [saved, setSaved] = useState<string | null>(null)
+
+  async function record(c: DirectoryClick, type: 'BOOKED' | 'REBOOKED') {
+    setBusy(true)
+    setActionError(null)
+    setSaved(null)
+    try {
+      await api<RecordedEvent>('POST', apiPath`/api/admin/match-requests/${c.requestId}/stylists/${c.orgId}/events`, { type })
+      setSaved(`Recorded a ${label(type)} for ${c.clientFirstName ?? 'the client'} with ${c.stylistName ?? 'the stylist'}.`)
+      reload()
+    } catch (err) {
+      setActionError(message(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function voidBooking(c: DirectoryClick) {
+    const reason = window.prompt('Why is this booking being voided?')
+    if (!reason?.trim() || !c.bookedEventId) return
+    setBusy(true)
+    setActionError(null)
+    try {
+      await api('POST', apiPath`/api/admin/events/${c.bookedEventId}/void`, { reason: reason.trim() })
+      reload()
+    } catch (err) {
+      setActionError(message(err))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="metric-section" aria-labelledby="rb-directory-title">
+      <h2 id="rb-directory-title">Picked from the directory</h2>
+      <p className="muted">Clients who clicked Book on a stylist they found in the directory, newest first. Record a booking here when one came of it.</p>
+      {error && <PageError message={error} />}
+      {actionError && <p className="error" role="alert">{actionError}</p>}
+      {saved && <p className="tracking-saved" role="status">{saved}</p>}
+      {!error && !clicks && <Loading />}
+      {clicks && clicks.length === 0 && <p>No directory clicks yet.</p>}
+      {clicks && clicks.length > 0 && (
+        <div className="scroll">
+          <table className="table">
+            <thead>
+              <tr>
+                <th scope="col">Client</th>
+                <th scope="col">Stylist</th>
+                <th scope="col">Last click</th>
+                <th scope="col">Booking</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clicks.map((c) => (
+                <tr key={`${c.requestId}-${c.orgId}`}>
+                  <td>
+                    {c.clientFirstName ?? '–'}
+                    {c.clientEmail && <div className="muted">{c.clientEmail}</div>}
+                  </td>
+                  <td>
+                    {c.stylistName ?? '–'}
+                    {c.recommended && <div className="muted">also on their list</div>}
+                  </td>
+                  <td>{new Date(c.lastClickedAt).toLocaleDateString()}</td>
+                  <td>
+                    {c.bookedEventId ? (
+                      <>
+                        Booked{' '}
+                        <button className="link" onClick={() => record(c, 'REBOOKED')} disabled={busy}>
+                          Record a rebook
+                        </button>{' '}
+                        <button className="link" onClick={() => voidBooking(c)} disabled={busy}>
+                          Void
+                        </button>
+                      </>
+                    ) : (
+                      <button className="secondary" onClick={() => record(c, 'BOOKED')} disabled={busy}>
+                        Record booking
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  )
 }
 
 /** The same for a stylist, on their own matches: clients appear by first name only. */

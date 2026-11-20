@@ -32,11 +32,27 @@ class PublicTrackingController {
     @GetMapping("/api/public/book/{token}/{matchId}")
     ResponseEntity<Void> book(@PathVariable String token, @PathVariable UUID matchId) {
         return tracking.clickBook(token, matchId)
-                .map(link -> ResponseEntity.status(HttpStatus.FOUND)
-                        .location(link)
-                        .cacheControl(CacheControl.noStore())
-                        .header("Referrer-Policy", "no-referrer")
-                        .<Void>build())
+                .map(PublicTrackingController::redirect)
+                .orElseThrow(PublicTrackingController::notFound);
+    }
+
+    private static ResponseEntity<Void> redirect(java.net.URI link) {
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(link)
+                .cacheControl(CacheControl.noStore())
+                .header("Referrer-Policy", "no-referrer")
+                .build();
+    }
+
+    /**
+     * "Book" on a stylist from the directory: records a click with no match, attributed to the client's request through
+     * their link token, then the same redirect as above ({@code utm_content=directory}). Without a valid token there is
+     * no redirect at all: the directory only offers Book to clients with a link (docs/tracking.md).
+     */
+    @GetMapping("/api/public/book-stylist/{token}/{orgId}")
+    ResponseEntity<Void> bookStylist(@PathVariable String token, @PathVariable UUID orgId) {
+        return tracking.clickDirectory(token, orgId)
+                .map(PublicTrackingController::redirect)
                 .orElseThrow(PublicTrackingController::notFound);
     }
 

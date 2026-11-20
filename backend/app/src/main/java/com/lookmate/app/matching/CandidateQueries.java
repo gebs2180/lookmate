@@ -31,7 +31,7 @@ class CandidateQueries {
     record PendingImage(UUID id, String objectKey, String contentType) {
     }
 
-    record Stylist(UUID orgId, String displayName, String locationName, String market, String status, String instagram) {
+    record Stylist(UUID orgId, String displayName, String locationName, String market, String status, String instagram, boolean demo) {
     }
 
     record Photo(UUID id, UUID orgId, String objectKey, String service, String hairType, String status) {
@@ -133,7 +133,7 @@ class CandidateQueries {
     }
 
     private static final String STYLIST = """
-            select s.org_id, s.display_name, l.name as location_name, s.market, s.status, s.instagram
+            select s.org_id, s.display_name, l.name as location_name, s.market, s.status, s.instagram, s.demo
             from stylist_profile s left join salon_location l on l.id = s.location_id
             """;
 
@@ -183,7 +183,7 @@ class CandidateQueries {
 
     private static Stylist stylist(ResultSet rs, int n) throws SQLException {
         return new Stylist(rs.getObject("org_id", UUID.class), rs.getString("display_name"), rs.getString("location_name"),
-                rs.getString("market"), rs.getString("status"), rs.getString("instagram"));
+                rs.getString("market"), rs.getString("status"), rs.getString("instagram"), rs.getBoolean("demo"));
     }
 
 }
