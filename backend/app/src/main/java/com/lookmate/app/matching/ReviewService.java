@@ -89,11 +89,12 @@ class ReviewService {
     private final BlobStore blobs;
     private final StorageProperties storage;
     private final TrackingService tracking;
+    private final org.springframework.transaction.support.TransactionTemplate tx;
     private final Clock clock;
 
     ReviewService(CandidateQueries queries, MatchStore matches, MatchRequests requests, EmbeddingProvider provider,
                   MatchingProperties properties, BlobStore blobs, StorageProperties storage, TrackingService tracking,
-                  Optional<Clock> clock) {
+                  org.springframework.transaction.support.TransactionTemplate tx, Optional<Clock> clock) {
         this.queries = queries;
         this.matches = matches;
         this.requests = requests;
@@ -102,6 +103,7 @@ class ReviewService {
         this.blobs = blobs;
         this.storage = storage;
         this.tracking = tracking;
+        this.tx = tx;
         this.clock = clock.orElse(Clock.systemUTC());
     }
 
@@ -223,11 +225,45 @@ class ReviewService {
     @Transactional
     Review publish(UUID requestId, UUID reviewer) {
         lockInReview(requestId);
-        Instant now = clock.instant();
-        List<MatchRow> rows = matches.forRequest(requestId);
-        if (rows.stream().noneMatch(MatchRow::visible)) {
+        if (matches.forRequest(requestId).stream().noneMatch(MatchRow::visible)) {
             throw new ApiException(HttpStatus.CONFLICT, Code.NO_VISIBLE_MATCHES, "Show or add at least one stylist before publishing.");
         }
+        finalizeAndPublish(requestId, reviewer);
+        return view(request(requestId));
+    }
+
+    /**
+     * With review switched off, publishes up to {@code limit} requests still waiting IN_REVIEW (from while the switch was
+     * on), each with its current list: the reviewer's order, hides and additions kept. A request with no visible match
+     * (nothing found, or everything hidden) stays for the admin. Each request in its own transaction; returns how many
+     * were published.
+     */
+    int publishWaitingReviews(int limit) {
+        if (properties.reviewBeforePublish()) {
+            return 0;
+        }
+        int published = 0;
+        for (MatchRequests.Request r : requests.list(MatchRequests.Status.IN_REVIEW, limit).reversed()) {
+            Boolean done = tx.execute(s -> {
+                // The admin may be publishing it right now: take the lock and look again.
+                if (!"IN_REVIEW".equals(queries.lockStatus(r.id()).orElse(null))
+                        || matches.forRequest(r.id()).stream().noneMatch(MatchRow::visible)) {
+                    return false;
+                }
+                finalizeAndPublish(r.id(), null);
+                return true;
+            });
+            if (Boolean.TRUE.equals(done)) {
+                published++;
+            }
+        }
+        return published;
+    }
+
+    /** Final ranks 1..n over the visible matches in the current order, then intake publishes. Caller holds the row lock. */
+    private void finalizeAndPublish(UUID requestId, UUID reviewer) {
+        Instant now = clock.instant();
+        List<MatchRow> rows = matches.forRequest(requestId);
         int rank = 0;
         for (MatchRow row : rows) {
             Integer finalRank = row.visible() ? ++rank : null;
@@ -236,7 +272,6 @@ class ReviewService {
             }
         }
         requests.publish(requestId, reviewer);
-        return view(request(requestId));
     }
 
     @Transactional(readOnly = true)

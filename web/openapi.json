@@ -2294,7 +2294,7 @@
     },
     "/api/admin/match-requests/{id}/stylists" : {
       "get" : {
-        "operationId" : "stylists_1",
+        "operationId" : "stylists_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3772,6 +3772,59 @@
           }
         },
         "tags" : [ "intake-controller" ]
+      }
+    },
+    "/api/public/match-requests/{token}/stylists" : {
+      "get" : {
+        "operationId" : "stylists_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "service",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "hairType",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "page",
+          "required" : false,
+          "schema" : {
+            "default" : 0,
+            "format" : "int32",
+            "maximum" : 1000,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StylistDirectoryDirectoryPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "client-directory-controller" ]
       }
     },
     "/api/public/match-requests/{token}/viewed" : {

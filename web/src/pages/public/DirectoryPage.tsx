@@ -25,8 +25,10 @@ export function DirectoryPage() {
     if (hairType) query.set('hairType', hairType)
     if (page > 0) query.set('page', String(page))
     const q = query.toString()
-    return publicApi<Page>('GET', `/api/public/stylists${q ? `?${q}` : ''}`)
-  }, [service, hairType, page])
+    // With the client's link, the directory is scoped to their request (its market); signed out, the open listing.
+    const base = token ? apiPath`/api/public/match-requests/${token}/stylists` : '/api/public/stylists'
+    return publicApi<Page>('GET', `${base}${q ? `?${q}` : ''}`)
+  }, [token, service, hairType, page])
 
   // On the client's own page, mark the stylists they were recommended.
   const { data: mine } = useLoad(

@@ -143,6 +143,50 @@ class StylistDirectoryTest {
         browse("&page=2").andExpect(jsonPath("$.stylists").isEmpty()).andExpect(jsonPath("$.total").value(13));
     }
 
+    @Test
+    void aClientsLinkScopesTheDirectoryToTheirMarket() throws Exception {
+        stylist("Ana", "LIVE", false, "{CUT}");
+        stylist("Cy Draft", "DRAFT", false, "{CUT}");
+        String token = token();
+        UUID client = UUID.randomUUID();
+        jdbc.sql("insert into client (id, email, hair_type, market, created_at) values (?, 'c@example.com', 'CURLY', ?, now())")
+                .params(client, market).update();
+        UUID request = UUID.randomUUID();
+        jdbc.sql("""
+                        insert into match_request (id, client_id, market, service, access_token_hash, status, created_at, updated_at)
+                        values (?, ?, ?, 'CUT', ?, 'MATCHING', now(), now())
+                        """).params(request, client, market, sha256(token)).update();
+        jdbc.sql("""
+                        insert into match_request_link (token_hash, match_request_id, purpose, created_at, expires_at)
+                        values (?, ?, 'CREATED', now(), now() + interval '1 day')
+                        """).params(sha256(token), request).update();
+
+        mvc.perform(get("/api/public/match-requests/" + token + "/stylists?service=CUT").with(r -> {
+                    r.setRemoteAddr(ip);
+                    return r;
+                }))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.market").value(market))
+                .andExpect(jsonPath("$.stylists[*].displayName").value(Matchers.contains("Ana")))
+                .andExpect(jsonPath("$..bookingUrl").isEmpty());
+        mvc.perform(get("/api/public/match-requests/" + token() + "/stylists").with(r -> {
+            r.setRemoteAddr(ip);
+            return r;
+        })).andExpect(status().isNotFound());
+    }
+
+    private static String token() {
+        byte[] b = new byte[32];
+        new java.security.SecureRandom().nextBytes(b);
+        return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(b);
+    }
+
+    private static String sha256(String s) throws Exception {
+        return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                .digest(s.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+    }
+
     private ResultActions browse(String query) throws Exception {
         return mvc.perform(get("/api/public/stylists?market=" + market + query).with(r -> {
             r.setRemoteAddr(ip);

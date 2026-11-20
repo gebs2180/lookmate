@@ -111,7 +111,8 @@ Public (no sign-in, rate-limited per IP with intake's limiter, `rate-limit.brows
 
 | Method | Path | What |
 |---|---|---|
-| GET | `/api/public/stylists?market=&service=&hairType=&page=` | The directory: LIVE stylists only, 12 a page from 0, real stylists before sample ones, then by name |
+| GET | `/api/public/stylists?market=&service=&hairType=&page=` | The open directory, for visitors without a request (`/stylists`, from `/find`): LIVE stylists only, 12 a page from 0, real stylists before sample ones, then by name |
+| GET | `/api/public/match-requests/{token}/stylists?service=&hairType=&page=` | The same page scoped to a client's link (served by intake with `StylistDirectory`): the request's market, a bad token is 404. The client page (`/m/:token/stylists`) uses this one |
 
 Stylist (`/api/orgs/{orgId}/...`, member of the STYLIST org or ADMIN; anyone else gets 404):
 
@@ -144,6 +145,9 @@ internal id. Responses are `Cache-Control: no-store` (the photo links expire).
 
 - **Filters:** `service` and `hairType` (the enums above). A stylist matches with a READY photo tagged with both (or
   whichever is given); a `service` alone also matches the stylist's specialties.
+- **Why both endpoints:** the UX design (`docs/ux/flows.md`) scopes browsing to the client's link, which ties it to
+  the request; the decision of 2026-11-20 also wants the directory reachable from `/find` before any request exists.
+  The open listing only shows what LIVE stylists publish for clients, offers no Book, and is rate-limited.
 - **Book:** not in the JSON. From the client's own page (`/m/:token/stylists`) the web app links to tracking's
   `/api/public/book-stylist/{token}/{orgId}`, which records the click against the client's request and redirects.
   Signed out (`/stylists`, reached from `/find`) there is no Book: the card says "Start a request to book". We chose

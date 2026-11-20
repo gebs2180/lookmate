@@ -17,20 +17,21 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * The public stylist directory: every LIVE stylist in a market, for clients to browse and pick from whatever they were
  * recommended (CLAUDE.md: recommendations are suggestions). Only what a client may see: no email, booking link or
- * internal id but the org id; photos are short-lived signed links, never public URLs.
+ * internal id but the org id; photos are short-lived signed links, never public URLs. Public for intake, which serves
+ * the same page scoped to a client's link ({@code /api/public/match-requests/{token}/stylists}).
  */
 @Service
-class StylistDirectory {
+public class StylistDirectory {
 
     static final int PAGE_SIZE = 12;
     static final int PHOTOS_PER_STYLIST = 3;
 
     /** {@code demo}: a made-up stylist (proof of concept), labelled "Sample stylist" wherever clients see it. */
-    record DirectoryStylist(UUID orgId, String displayName, String locationName, String city, List<ServiceType> specialties,
+    public record DirectoryStylist(UUID orgId, String displayName, String locationName, String city, List<ServiceType> specialties,
                             List<String> photoUrls, boolean demo, String instagram) {
     }
 
-    record DirectoryPage(String market, ServiceType service, HairType hairType, int page, int pageSize, long total,
+    public record DirectoryPage(String market, ServiceType service, HairType hairType, int page, int pageSize, long total,
                          List<DirectoryStylist> stylists) {
     }
 
@@ -65,7 +66,7 @@ class StylistDirectory {
 
     /** One page (from 0) of LIVE stylists, real ones before sample ones, then by name. */
     @Transactional(readOnly = true)
-    DirectoryPage page(String market, ServiceType service, HairType hairType, int page) {
+    public DirectoryPage page(String market, ServiceType service, HairType hairType, int page) {
         String s = service == null ? null : service.name();
         String h = hairType == null ? null : hairType.name();
         long total = jdbc.sql("select count(*) " + WHERE).param("market", market).param("service", s).param("hair", h)

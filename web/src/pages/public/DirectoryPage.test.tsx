@@ -34,7 +34,9 @@ function json(body: unknown) {
 }
 
 function show(path: string, mine?: Partial<ClientView>) {
-  const fetch = vi.fn(async (url: string) => (url.startsWith('/api/public/stylists') ? json(PAGE) : json({ matches: [], ...mine })))
+  const fetch = vi.fn(async (url: string) =>
+    url.startsWith('/api/public/stylists') || url.includes('/stylists') ? json(PAGE) : json({ matches: [], ...mine }),
+  )
   vi.stubGlobal('fetch', fetch)
   render(
     <MemoryRouter initialEntries={[path]}>
@@ -49,8 +51,10 @@ function show(path: string, mine?: Partial<ClientView>) {
 
 describe('DirectoryPage', () => {
   it("offers a tracked Book for every stylist from the client's own link, and marks their recommendations", async () => {
-    show(`/m/${TOKEN}/stylists`, { matches: [{ matchId: 'm1', orgId: 'org-ana' } as ClientView['matches'][number]] })
+    const fetch = show(`/m/${TOKEN}/stylists`, { matches: [{ matchId: 'm1', orgId: 'org-ana' } as ClientView['matches'][number]] })
     const ana = (await screen.findByRole('heading', { name: 'Ana' })).closest('li')!
+    // Scoped to the client's request, not the open listing.
+    expect(fetch).toHaveBeenCalledWith(`/api/public/match-requests/${TOKEN}/stylists`, expect.anything())
     expect(within(ana).getByText('Short North, Columbus')).toBeInTheDocument()
     expect(within(ana).getByText('Cut · Silk press')).toBeInTheDocument()
     expect(await within(ana).findByText('On your list')).toBeInTheDocument()

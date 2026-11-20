@@ -12,6 +12,11 @@ and 5). Design: [architecture.md](../architecture.md), "Matching v1".
 - **Switch on** (`lookmate.matching.review-before-publish: true`, env `MATCHING_REVIEW_BEFORE_PUBLISH`): every ranked
   request goes to IN_REVIEW and waits for the admin to publish, exactly as in Phase 1. The web app's `/admin/matches`
   shows the review queue again.
+- **Switching review off while lists wait (decided 2026-11-20):** each worker pass (`MatchingJob`, after ranking)
+  publishes requests still IN_REVIEW as they stand: the reviewer's order, hides and additions kept, final ranks 1..n
+  over the visible matches, `reviewed_by` null (`ReviewService.publishWaitingReviews`, under the request's row lock, so
+  an admin publishing at the same moment wins cleanly). A request with nothing visible (no candidates, or all hidden)
+  stays IN_REVIEW for the admin. With the switch on, this step does nothing. Tested in `AutoPublishFlowTest`.
 - **After the fact, either way:** on a PUBLISHED request the admin can hide a match (`PUT .../matches/{matchId}`, it
   leaves the client's list and its Book link at once) or show it again (it goes last if it was hidden at publishing),
   and edit notes. Reordering, adding and publishing stay IN_REVIEW only. To take a stylist out of every result, the

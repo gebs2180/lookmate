@@ -97,7 +97,7 @@ describe('MatchStatusPage', () => {
     expect(screen.getByRole('link', { name: 'Start a new request' })).toHaveAttribute('href', '/find')
   })
 
-  it('checks back by itself while matching, gently, and shows the list in place once published', async () => {
+  it('checks back every 1.5s while matching, and shows the list in place once published', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const ready = {
       ...BASE,
@@ -134,11 +134,11 @@ describe('MatchStatusPage', () => {
     const gets = () => fetch.mock.calls.filter(([url]) => url === `/api/public/match-requests/${TOKEN}`).length
     expect(gets()).toBe(1)
 
-    await act(() => vi.advanceTimersByTimeAsync(3000)) // first check: still matching
+    await act(() => vi.advanceTimersByTimeAsync(1500)) // first check, after 1.5s: still matching
     expect(gets()).toBe(2)
-    await act(() => vi.advanceTimersByTimeAsync(3000)) // the next wait is longer (4.5s): nothing yet
+    await act(() => vi.advanceTimersByTimeAsync(1000)) // the steady pace: nothing before 1.5s more
     expect(gets()).toBe(2)
-    await act(() => vi.advanceTimersByTimeAsync(1500)) // published: the list shows in place
+    await act(() => vi.advanceTimersByTimeAsync(500)) // published: the list shows in place
     expect(gets()).toBe(3)
     expect(await screen.findByRole('link', { name: 'Book with Curl Studio' })).toBeInTheDocument()
     expect(screen.queryByText(/This page updates by itself/)).not.toBeInTheDocument()

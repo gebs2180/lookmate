@@ -242,6 +242,42 @@ class AutoPublishFlowTest {
         mvc.perform(get("/api/public/stylists?market=" + market)).andExpect(jsonPath("$.total").value(1));
     }
 
+    @Test
+    void listsLeftInReviewWhenTheSwitchWasOnArePublishedAsTheyStandOnTheNextPass() throws Exception {
+        UUID a = stylist("Ana", "LIVE");
+        UUID b = stylist("Bo", "LIVE");
+        UUID c = stylist("Cy", "LIVE");
+        String token = token();
+        UUID request = request("WAVY", "CUT", token, "wait@example.com");
+        jdbc.sql("update match_request set status = 'IN_REVIEW' where id = ?").params(request).update();
+        // The admin's edits while the switch was on: Bo moved up, Ana hidden, Cy added by hand.
+        match(request, a, 1, null, true, "SYSTEM");
+        match(request, b, 2, 1, false, "SYSTEM");
+        match(request, c, 3, 2, false, "ADMIN");
+        UUID empty = request("WAVY", "CUT", token(), "empty@example.com");
+        jdbc.sql("update match_request set status = 'IN_REVIEW' where id = ?").params(empty).update();
+
+        job.runOnce();
+
+        assertThat(statusOf(request)).isEqualTo("PUBLISHED");
+        assertThat(jdbc.sql("select reviewed_by is null from match_request where id = ?").params(request).query(Boolean.class).single())
+                .isTrue();
+        mvc.perform(get("/api/public/match-requests/" + token))
+                .andExpect(jsonPath("$.matches[*].stylistName").value(Matchers.contains("Bo", "Cy")));
+        assertThat(matchesReadyEmail(request).get("status")).isEqualTo("PENDING");
+        // Nothing visible to publish: it stays for the admin.
+        assertThat(statusOf(empty)).isEqualTo("IN_REVIEW");
+    }
+
+    private void match(UUID request, UUID org, int systemRank, Integer finalRank, boolean hidden, String source) {
+        jdbc.sql("""
+                        insert into match (id, match_request_id, org_id, score, reason, system_rank, final_rank, hidden, admin_override,
+                          source, created_at, updated_at)
+                        values (?, ?, ?, 0.9, 'similar cuts', ?, ?, ?, true, ?, now(), now())
+                        """)
+                .params(UUID.randomUUID(), request, org, systemRank, finalRank, hidden, source).update();
+    }
+
     private Map<String, Object> matchesReadyEmail(UUID request) {
         return jdbc.sql("""
                         select status, status_reason, next_attempt_at, text_body from email_message

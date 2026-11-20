@@ -93,6 +93,7 @@ is empty. `photoUrls` must be short-lived presigned links. The `/m/:token` page 
 | `POST /api/public/match-requests/{token}/inspiration` | A fresh upload slot (the first expired or failed). 409 once a photo is confirmed. |
 | `POST /api/public/match-requests/{token}/inspiration/confirm` | Checks the upload (`ImageGuard`: JPEG/PNG within size), strips location and device metadata, stores its SHA-256. 422 `IMAGE_REJECTED` (the upload is deleted; ask for a new slot), 409 `NOT_UPLOADED`. Idempotent. |
 | `GET /api/public/match-requests/{token}` | The client's view: stage, quiz summary, photo state (with a short-lived link, and `photoKeptDays`) and, once published, the matches. |
+| `GET /api/public/match-requests/{token}/stylists` | The stylist directory scoped to the request's market (`ClientDirectoryController`, using the stylists module's `StylistDirectory`); rate-limited in the browse bucket |
 | `GET /api/public/intake/settings` | `{photoKeptDays, maxPhotoBytes}`, so the quiz states the real retention period before anything is sent. |
 
 A wrong or expired token is 404, the same for every case. 429 `RATE_LIMITED` carries `Retry-After`.
@@ -154,8 +155,8 @@ the matching module should not email clients itself.
 
 `/find` (the quiz, one question per screen, then the photo and an email) and `/m/:token` (the client's request: stage,
 photo, matches once published; it can also take the photo if the first upload failed). While the request is NEW or
-being matched, `/m/:token` checks back by itself (`usePoll` with a gentle backoff: 3s, ×1.5, at most every 30s, for 20
-minutes) and shows the list in place once published. `/m/:token/stylists` and `/stylists` are the directory (below the
+being matched, `/m/:token` checks back by itself (`usePoll`: every 1.5s for the first 30s, then ×1.5 up to every 30s,
+for 20 minutes) and shows the list in place once published. `/m/:token/stylists` and `/stylists` are the directory (below the
 recommendations, never instead of them; see [stylists.md](stylists.md)). Both render in
 `web/src/pages/public/PublicShell.tsx`, outside the signed-in shell. The browser re-encodes the photo as a JPEG of at
 most 2048 px before upload (which also drops its metadata and turns HEIC into JPEG where the browser can decode it);

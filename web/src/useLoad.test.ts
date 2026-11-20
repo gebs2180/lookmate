@@ -84,4 +84,18 @@ describe('usePoll', () => {
     unmount()
     vi.useRealTimers()
   })
+
+  it('keeps a steady pace before backing off', () => {
+    vi.useFakeTimers()
+    const reload = vi.fn()
+    const { unmount } = renderHook(() => usePoll(true, reload, 1500, { factor: 2, maxMs: 6000, steadyMs: 3000 }))
+    vi.advanceTimersByTime(3000) // 1.5s, 3s: steady
+    expect(reload).toHaveBeenCalledTimes(2)
+    vi.advanceTimersByTime(3000) // then 3s
+    expect(reload).toHaveBeenCalledTimes(3)
+    vi.advanceTimersByTime(6000) // then 6s (the ceiling)
+    expect(reload).toHaveBeenCalledTimes(4)
+    unmount()
+    vi.useRealTimers()
+  })
 })

@@ -187,7 +187,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["stylists_1"];
+        get: operations["stylists_2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -846,6 +846,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["confirm"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/match-requests/{token}/stylists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stylists_1"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1932,7 +1948,7 @@ export interface operations {
             };
         };
     };
-    stylists_1: {
+    stylists_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -3029,6 +3045,32 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["IntakeServiceClientView"];
+                };
+            };
+        };
+    };
+    stylists_1: {
+        parameters: {
+            query?: {
+                service?: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
+                hairType?: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+                page?: number;
+            };
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylistDirectoryDirectoryPage"];
                 };
             };
         };

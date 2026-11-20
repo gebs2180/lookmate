@@ -39,7 +39,10 @@ class PublicRateLimit implements HandlerInterceptor {
         }
     }
 
-    /** The public stylist directory (stylists module) and its tracked Book links (tracking): their own per-minute bucket. */
+    /**
+     * The public stylist directory (stylists module; also {@code /api/public/match-requests/{token}/stylists}, under
+     * intake's paths) and its tracked Book links (tracking): their own per-minute bucket.
+     */
     static final String[] BROWSE_PATHS = {"/api/public/stylists", "/api/public/stylists/**", "/api/public/book-stylist/**"};
 
     private record Bucket(double tokens, long at) {
@@ -60,7 +63,8 @@ class PublicRateLimit implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         String uri = request.getRequestURI().replaceAll("/+$", "");
         boolean create = "POST".equals(request.getMethod()) && uri.endsWith("/api/public/match-requests");
-        boolean browse = uri.contains("/api/public/stylists") || uri.contains("/api/public/book-stylist/");
+        boolean browse = uri.contains("/api/public/stylists") || uri.contains("/api/public/book-stylist/")
+                || (uri.contains("/api/public/match-requests/") && uri.endsWith("/stylists"));
         String ip = request.getRemoteAddr();
         long wait = create
                 ? take("create:" + ip, limits.createsPerHour(), Duration.ofHours(1), System.nanoTime())

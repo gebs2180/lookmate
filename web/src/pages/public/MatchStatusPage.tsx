@@ -16,9 +16,12 @@ const STAGES: { stage: ClientView['stage']; label: string }[] = [
   { stage: 'READY', label: 'Your matches are ready' },
 ]
 
-/** While matching, check again after 3s, then a little less often each time (up to every 30s), for 20 minutes. */
-const POLL_START_MS = 3000
-const POLL_BACKOFF: Backoff = { factor: 1.5, maxMs: 30_000, giveUpMs: 20 * 60_000 }
+/**
+ * While matching, check every 1.5s for the first 30s (ranking usually finishes within a worker pass), then a little
+ * less often each time (up to every 30s), for 20 minutes.
+ */
+const POLL_START_MS = 1500
+const POLL_BACKOFF: Backoff = { factor: 1.5, maxMs: 30_000, steadyMs: 30_000, giveUpMs: 20 * 60_000 }
 
 /**
  * The client's own request, reached by the private link in their email (/m/:token). No account. Book links and images
