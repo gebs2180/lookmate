@@ -7,7 +7,7 @@ infrastructure, so a Combpatible deploy or outage can never touch Rawmark.
 | Service | Shared account? | New for Combpatible |
 |---|---|---|
 | Hetzner | Same project | A new CX23 server (`lookmate-pilot`), its own firewall |
-| Cloudflare R2 | Same account | Buckets `combpatible-photos`, `combpatible-backups`; tokens scoped to those buckets only |
+| Cloudflare R2 | Same account | Buckets `combpatible-photos`, `combpatible-backup`; tokens scoped to those buckets only |
 | Sentry | Same org | Project `lookmate` (Spring Boot), its own DSN |
 | GHCR / Actions | Same owner | Images `lookmate-backend`, `lookmate-web`, `lookmate-backup` from this repo |
 | healthchecks.io / UptimeRobot | Same accounts | Three checks (backup, backup check, restore test) and one monitor |
@@ -126,17 +126,17 @@ You need about an hour, a personal card, and an SSH key (`ssh-keygen -t ed25519`
 
 ### 3. R2 buckets and tokens
 
-1. R2 → Create bucket `combpatible-photos` and bucket `combpatible-backups`. Leave both private, with no public access and no r2.dev URL.
+1. R2 → Create bucket `combpatible-photos` and bucket `combpatible-backup`. Leave both private, with no public access and no r2.dev URL.
 2. `combpatible-photos` → Settings → CORS policy: paste `deploy/r2-cors.json` with `https://<site address>` in `AllowedOrigins`.
 3. R2 → Manage API tokens → Create three **Account API tokens**, each limited to specific buckets:
    - `lookmate-app`: Object Read & Write, `combpatible-photos` only;
    - `lookmate-backup-read`: Object Read only, `combpatible-photos` only;
-   - `lookmate-backup-write`: Object Read & Write, `combpatible-backups` only.
+   - `lookmate-backup-write`: Object Read & Write, `combpatible-backup` only.
    Copy each Access Key ID and Secret Access Key (they're shown once), plus the S3 endpoint `https://<account-id>.r2.cloudflarestorage.com`.
 
-4. `combpatible-backups` → Settings → **Bucket lock rules** → Add rule: name `keep-30-days`, no prefix (the whole bucket), retention **30 days**. No one can delete or overwrite a backup in its first 30 days, whoever holds a token.
-5. `combpatible-backups` → Settings → **Object lifecycle rules** → Add rule: name `expire-dumps`, prefix `postgres/`, delete objects **35 days** after upload. Photos in the backup are never expired.
-6. A fourth token for the restore test on your own machine: `lookmate-backup-restore`, Object Read only, `combpatible-backups` only. It goes in your local `restore-test.env` (step 7), never on the server.
+4. `combpatible-backup` → Settings → **Bucket lock rules** → Add rule: name `keep-30-days`, no prefix (the whole bucket), retention **30 days**. No one can delete or overwrite a backup in its first 30 days, whoever holds a token.
+5. `combpatible-backup` → Settings → **Object lifecycle rules** → Add rule: name `expire-dumps`, prefix `postgres/`, delete objects **35 days** after upload. Photos in the backup are never expired.
+6. A fourth token for the restore test on your own machine: `lookmate-backup-restore`, Object Read only, `combpatible-backup` only. It goes in your local `restore-test.env` (step 7), never on the server.
 
 The backup can read photos but not delete them, and the app can't touch the backups. R2 has no write-only token, so the backup's write token could still delete a backup; the lock rule is what stops it, for 30 days. The backup job itself never deletes: old dumps go by the lifecycle rule. A copy outside this Cloudflare account comes later (review D1).
 
@@ -195,7 +195,7 @@ docker compose -f compose.prod.yml run --rm backup bash -c "backup.sh && backup-
 The server can't decrypt, so the real restore test runs on your machine, with the private key from Bitwarden. It needs Docker Desktop and a `restore-test.env` file kept outside the repo (e.g. `~\lookmate\restore-test.env`; it holds a read-only key, not the age key):
 
 ```
-BACKUP_BUCKET=combpatible-backups
+BACKUP_BUCKET=combpatible-backup
 RCLONE_CONFIG_BACKUPS_TYPE=s3
 RCLONE_CONFIG_BACKUPS_PROVIDER=Cloudflare
 RCLONE_CONFIG_BACKUPS_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
