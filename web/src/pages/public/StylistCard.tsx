@@ -8,7 +8,8 @@ import { BookLink, InstagramLink, Portfolio, type StylistView } from './Portfoli
  * links send no referrer: the client's link token is in the page's URL.
  */
 export function StylistCard({ index = 0, badge, ...stylist }: StylistView & { index?: number; badge?: ReactNode }) {
-  const [open, setOpen] = useState(false)
+  // The photo the portfolio opens at, or null while it's closed.
+  const [open, setOpen] = useState<number | null>(null)
   const { name, location, demo, specialties, photoUrls } = stylist
   return (
     <li style={{ '--i': index } as CSSProperties}>
@@ -22,22 +23,23 @@ export function StylistCard({ index = 0, badge, ...stylist }: StylistView & { in
       {photoUrls.length > 0 && (
         <div className="thumbs">
           {photoUrls.slice(0, 4).map((url, i) => (
-            <div key={url} className="frame">
+            // Named by its photo: the button opens the whole portfolio at that photo.
+            <button key={url} type="button" className="frame" onClick={() => setOpen(i)}>
               <img src={url} alt={`${name}'s work, photo ${i + 1}`} referrerPolicy="no-referrer" loading="lazy" />
-            </div>
+            </button>
           ))}
         </div>
       )}
       <div className="actions">
         <BookLink stylist={stylist} className="button" />
         {photoUrls.length > 0 && (
-          <button className="secondary" onClick={() => setOpen(true)}>
+          <button className="secondary" onClick={() => setOpen(0)}>
             See {photoUrls.length === 1 ? 'the photo' : `all ${photoUrls.length} photos`}
           </button>
         )}
         <InstagramLink handle={stylist.instagram} />
       </div>
-      {open && <Portfolio stylist={stylist} onClose={() => setOpen(false)} />}
+      {open !== null && <Portfolio stylist={stylist} startAt={open} onClose={() => setOpen(null)} />}
     </li>
   )
 }

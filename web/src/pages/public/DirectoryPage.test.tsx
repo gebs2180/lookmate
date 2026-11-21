@@ -69,6 +69,13 @@ describe('DirectoryPage', () => {
     expect(screen.getByRole('link', { name: 'Back to your matches' })).toHaveAttribute('href', `/m/${TOKEN}`)
   })
 
+  it("opens a stylist's photos from a thumbnail", async () => {
+    show('/stylists')
+    const ana = (await screen.findByRole('heading', { name: 'Ana' })).closest('li')!
+    await userEvent.setup().click(within(ana).getByRole('button', { name: "Ana's work, photo 1" }))
+    expect(screen.getByRole('dialog', { name: 'Ana' })).toBeInTheDocument()
+  })
+
   it('without a client link, Book means starting a request: no booking link reaches the page', async () => {
     const fetch = show('/stylists')
     await screen.findByRole('heading', { name: 'Ana' })

@@ -36,9 +36,9 @@ export function InstagramLink({ handle }: { handle: string | null }) {
 /**
  * A stylist's work as a spread: the first photo full width, the rest two across, Book pinned to the bottom. Built from
  * the photos the page already has (there is no per-stylist endpoint), in a modal dialog so the page under it keeps its
- * place. Escape or Back closes it.
+ * place. Escape or Back closes it. startAt scrolls to a photo the client tapped.
  */
-export function Portfolio({ stylist, onClose }: { stylist: StylistView; onClose: () => void }) {
+export function Portfolio({ stylist, startAt = 0, onClose }: { stylist: StylistView; startAt?: number; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   useEffect(() => {
@@ -46,7 +46,10 @@ export function Portfolio({ stylist, onClose }: { stylist: StylistView; onClose:
     if (!dialog) return
     if (typeof dialog.showModal === 'function') dialog.showModal()
     else dialog.setAttribute('open', '')
+    if (startAt > 0) dialog.querySelectorAll('.frame')[startAt]?.scrollIntoView?.({ block: 'center' })
     return () => dialog.close?.()
+    // Only on opening: startAt is where the spread starts, not something to follow.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const [first, ...rest] = stylist.photoUrls
