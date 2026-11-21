@@ -65,7 +65,7 @@ agrees. `claude/tender-hawking-c4yoo8` wasn't created by the old orchestrator: a
 3. **Infrastructure** ([hosting.md](hosting.md), Option A): a Hetzner server, R2 buckets, a Sentry project, a production
    Auth0 tenant (a third account or a paid plan, and decide on admin MFA there), health checks, and the GitHub
    repository variables for Auth0.
-4. **Domain:** decided 2026-11-20, `combpatible.app` plus `combpatible.com` (redirects), bought by Zach at Cloudflare
+4. **Domain:** decided 2026-11-20, `combpatible.app` only (not `.com`), bought by Zach at Cloudflare
    Registrar. No trademark on "Combpatible" turned up in a web search; a USPTO search or the lawyer should confirm.
 5. **A lawyer reviews the stylist terms** (`backend/app/src/main/resources/terms/`, still a draft).
 

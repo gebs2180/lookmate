@@ -15,9 +15,9 @@ infrastructure, so a Combpatible deploy or outage can never touch Rawmark.
 | **Auth0** | **No: its own tenant** | Combpatible's dev tenant for now (Zach, 2026-11-20); a separate prod tenant before real stylists join ([auth.md](auth.md)) |
 | Postgres | **No** | Its own database in its own Compose stack (pgvector image) |
 
-**Domain (Zach, 2026-11-20): `combpatible.app`**, bought with `combpatible.com` at Cloudflare Registrar. The site is the
-bare `combpatible.app`; `www.combpatible.app`, `combpatible.com` and `www.combpatible.com` redirect to it at Cloudflare
-(step 3), so the server only serves one name.
+**Domain (Zach, 2026-11-20): `combpatible.app`**, at Cloudflare Registrar. The site is the bare `combpatible.app`;
+`www.combpatible.app` redirects to it at Cloudflare (step 3), so the server only serves one name. `combpatible.com` was
+unregistered on 2026-11-20 but isn't bought; if it is later, it gets the same redirect.
 
 The rest of this file is pokemans' runbook with the names changed: the steps are the same.
 
@@ -104,11 +104,10 @@ You need about an hour, a personal card, and an SSH key (`ssh-keygen -t ed25519`
    - `combpatible.app` → DNS → Add record: **A**, name `@`, the server's IPv4, proxy status **DNS only** (grey cloud). Caddy
      gets the certificate itself, so Cloudflare's proxy stays off for the site.
    - `SITE_ADDRESS=combpatible.app` in `.env` (step 5), without `https://`. `.app` domains only work over HTTPS, which Caddy provides.
-   - Redirects, all at Cloudflare and none on the server: add a **proxied** (orange cloud) A record `www` → `192.0.2.1`
-     on `combpatible.app`, and `@` and `www` → `192.0.2.1` on `combpatible.com` (the address is a placeholder; the proxy
-     answers first). Then on each domain, Rules → Redirect Rules → Create: *All incoming requests*, dynamic,
-     `concat("https://combpatible.app", http.request.uri.path)`, status **301**, preserve query string. On
-     `combpatible.app` limit it to hostname `www.combpatible.app`, or it would redirect the site to itself.
+   - `www` redirects at Cloudflare, not on the server: add a **proxied** (orange cloud) A record `www` → `192.0.2.1` (a
+     placeholder address; the proxy answers first). Then Rules → Redirect Rules → Create: *Custom filter*, hostname
+     equals `www.combpatible.app` (not all requests, or it would redirect the site to itself), dynamic,
+     `concat("https://combpatible.app", http.request.uri.path)`, status **301**, preserve query string.
    - Before DNS is ready you can test on `<ip-with-dashes>.sslip.io` (e.g. `203-0-113-7.sslip.io`), which resolves to that IP and gets a certificate too.
 4. SSH in and set up the box:
    ```bash
@@ -315,7 +314,7 @@ At most a day of data is lost (the last nightly backup), plus whatever Hetzner's
 | Hetzner backups (optional) | +20%, ~€0.90 |
 | Cloudflare R2 | $0 up to 10 GB. The beta is likely 5–15 GB counting the backup copy (photos are 3–8 MB; 40 stylists × 20 photos plus client inspiration photos, deleted after 30 days), so $0–0.10; requests stay inside the free tier |
 | Sentry Developer, healthchecks.io, UptimeRobot | $0 |
-| Domains | `combpatible.app` and `combpatible.com` at Cloudflare Registrar (at cost), about $2.50 a month together, billed yearly |
+| Domain | `combpatible.app` at Cloudflare Registrar (at cost), about $1.25 a month, billed yearly |
 | **Total** | **~$5–7 a month**, about $10 for the whole 6-week beta |
 
 The embedding provider, once chosen, is billed per use on its own account and is not counted here.
