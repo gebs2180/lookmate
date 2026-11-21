@@ -70,6 +70,9 @@ export function FindPage() {
   const set = <K extends keyof Answers>(key: K, value: Answers[K]) => setAnswers((a) => ({ ...a, [key]: value }))
   const current: Step = STEPS[step]
 
+  // Browsers sometimes autofill the email into the name field; we'd greet the client by their address.
+  const nameLooksLikeEmail = answers.firstName.includes('@')
+
   function canContinue(): boolean {
     switch (current) {
       case 'service':
@@ -85,7 +88,7 @@ export function FindPage() {
       case 'photo':
         return answers.photo !== null
       case 'contact':
-        return /^\S+@\S+\.\S+$/.test(answers.email.trim())
+        return /^\S+@\S+\.\S+$/.test(answers.email.trim()) && !nameLooksLikeEmail
       default:
         return true
     }
@@ -271,8 +274,20 @@ export function FindPage() {
             </label>
             <label className="field">
               <span className="field-label">First name (optional)</span>
-              <input autoComplete="given-name" maxLength={40} value={answers.firstName} onChange={(e) => set('firstName', e.target.value)} />
+              <input
+                autoComplete="given-name"
+                maxLength={40}
+                value={answers.firstName}
+                aria-invalid={nameLooksLikeEmail || undefined}
+                aria-describedby={nameLooksLikeEmail ? 'first-name-error' : undefined}
+                onChange={(e) => set('firstName', e.target.value)}
+              />
             </label>
+            {nameLooksLikeEmail && (
+              <p id="first-name-error" className="error" role="alert">
+                That looks like an email address. Put just your first name here, or leave it blank.
+              </p>
+            )}
           </Question>
         )}
 

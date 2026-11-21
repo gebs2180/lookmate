@@ -34,7 +34,7 @@ function stubApi(confirm: () => Response = () => json(200, { stage: 'RECEIVED' }
   return calls
 }
 
-async function answerEverything() {
+async function answerEverything(firstName = 'Ada') {
   const user = userEvent.setup()
   render(
     <MemoryRouter>
@@ -62,12 +62,26 @@ async function answerEverything() {
   await user.upload(screen.getByLabelText('Choose from your photos'), new File(['jpeg-bytes'], 'look.jpg', { type: 'image/jpeg' }))
   await next()
   await user.type(screen.getByLabelText('Email'), 'ada@example.com')
-  await user.type(screen.getByLabelText('First name (optional)'), 'Ada')
+  await user.type(screen.getByLabelText('First name (optional)'), firstName)
+  if (firstName.includes('@')) return user
   await user.click(screen.getByRole('button', { name: 'Find my stylists' }))
   return user
 }
 
 describe('FindPage', () => {
+  it("won't send an email address as the first name", async () => {
+    const calls = stubApi()
+    const user = await answerEverything('ada@example.com')
+
+    expect(screen.getByRole('alert')).toHaveTextContent('That looks like an email address')
+    expect(screen.getByRole('button', { name: 'Find my stylists' })).toBeDisabled()
+    expect(calls.some((c) => c.url === '/api/public/match-requests')).toBe(false)
+
+    await user.clear(screen.getByLabelText('First name (optional)'))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Find my stylists' })).toBeEnabled()
+  })
+
   it('says the photo is deleted on a schedule, without a number, until the setting loads', () => {
     render(<PrivacyNote keptDays={null} />)
     expect(screen.getByText(/we delete it on a set schedule/)).toBeInTheDocument()
