@@ -85,7 +85,7 @@ Voided events count nowhere. Range: `from`..`to` are inclusive dates in `lookmat
 | Stylists live | `stylist_profile.status = 'LIVE'` in the market. A snapshot of now, not range-filtered |
 | **Stylists active** | Live stylists with at least one `READY` portfolio photo. Snapshot of now |
 | Requests published | `match_request` rows with `published_at` in the range (whatever their status since) |
-| **Clients matched** | Distinct `client_id` over those requests |
+| **Clients matched** | Distinct `client_id` over those requests. One `client` row per request and the email is optional, so this counts requests, not people |
 | **Booking clicks** | `CLICKED_BOOK` events with `occurred_at` in the range (already deduped at write); plus distinct clients |
 | **Confirmed bookings** | `BOOKED` events in the range; "clients who booked" is the distinct clients (the brief's "matched clients who book", target 100+) |
 | **Rebooks** | `REBOOKED` events in the range; plus distinct clients |
@@ -122,4 +122,4 @@ every query is a small scan. What supports them:
   intake's `/api/public/match-requests/**` limit and the directory's `/book-stylist/**` under its browse limit. The click dedupe and the
   daily cap keep repeated clicks from skewing the metrics. Plan (agreed 2026-11-20): after the Phase 1 branches merge,
   one in-memory per-IP limiter on `/api/public/**` (429 with Retry-After): "Book" 60/min, viewed 30/min, intake create
-  5/hour plus 20/day per email; Postgres-backed counters when there is a second app instance.
+  10/hour plus 20/day per IP (the per-email limits went with the optional email, 2026-11-20); Postgres-backed counters when there is a second app instance.

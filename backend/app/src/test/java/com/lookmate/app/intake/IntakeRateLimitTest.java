@@ -20,9 +20,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /** The public endpoints (intake, the stylist directory) trip a per-IP limit: 429 with Retry-After, and other addresses carry on. */
 @SpringBootTest(properties = {
         "lookmate.intake.rate-limit.creates-per-hour=2",
+        "lookmate.intake.rate-limit.emails-per-hour=2",
         "lookmate.intake.rate-limit.reads-per-minute=3",
         "lookmate.intake.rate-limit.browse-per-minute=3",
-        "lookmate.intake.max-open-requests-per-email-per-day=100",
         "lookmate.retention.enabled=false"})
 @AutoConfigureMockMvc
 @Import({TestcontainersConfiguration.class, IntakeFlowTest.Fakes.class})
@@ -41,7 +41,7 @@ class IntakeRateLimitTest {
 
     @Test
     void creatingTooOftenFromOneAddressIsRefused() throws Exception {
-        String quiz = IntakeFlowTest.quiz("nia@example.com", "Nia");
+        String quiz = IntakeFlowTest.quiz(null, "Nia");
         for (int i = 0; i < 2; i++) {
             mvc.perform(post("/api/public/match-requests").with(from("203.0.113.7")).contentType(MediaType.APPLICATION_JSON).content(quiz))
                     .andExpect(status().isCreated());
@@ -52,6 +52,25 @@ class IntakeRateLimitTest {
                 .andExpect(header().string("Retry-After", "1800"));
         mvc.perform(post("/api/public/match-requests").with(from("203.0.113.8")).contentType(MediaType.APPLICATION_JSON).content(quiz))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void addingEmailsTooOftenFromOneAddressIsRefused() throws Exception {
+        String token = com.jayway.jsonpath.JsonPath.read(mvc.perform(post("/api/public/match-requests").with(from("203.0.113.20"))
+                        .contentType(MediaType.APPLICATION_JSON).content(IntakeFlowTest.quiz(null, "Oz")))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.token");
+        String path = "/api/public/match-requests/" + token + "/email";
+        for (int i = 0; i < 2; i++) {
+            mvc.perform(post(path).with(from("203.0.113.21")).contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"email\":\"oz%d@example.com\"}".formatted(i)))
+                    .andExpect(status().isOk());
+        }
+        mvc.perform(post(path).with(from("203.0.113.21")).contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"oz9@example.com\"}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("RATE_LIMITED"))
+                .andExpect(header().string("Retry-After", "1800"));
+        // Its own bucket: reading the page from that address still works.
+        mvc.perform(get("/api/public/match-requests/" + token).with(from("203.0.113.21"))).andExpect(status().isOk());
     }
 
     @Test

@@ -99,7 +99,7 @@ describe('MatchReviewPage', () => {
     show()
     expect(await screen.findByRole('heading', { name: 'Stylists (1 shown)' })).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Publish to client' }))
-    expect(window.confirm).toHaveBeenCalledWith("Publish 1 stylist to the client? They'll be emailed a link.")
+    expect(window.confirm).toHaveBeenCalledWith("Publish 1 stylist to the client? If they gave an email, they'll get a link.")
     expect(fetch.mock.calls[1][0]).toBe('/api/admin/match-requests/req-1/publish')
     expect(await screen.findByRole('status')).toHaveTextContent('Published')
     expect(screen.queryByRole('button', { name: 'Publish to client' })).not.toBeInTheDocument()

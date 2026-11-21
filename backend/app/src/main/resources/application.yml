@@ -64,8 +64,10 @@ lookmate:
   intake:
     # Client intake (docs/modules/intake.md). Clients have no account: a link token reaches their request.
     link-ttl: 90d
-    # Requests one email address may have open (not yet matched) from the last 24 hours.
-    max-open-requests-per-email-per-day: 3
+    # The client's email is optional and asked after the reveal (CLAUDE.md, 2026-11-20). They may set or correct it
+    # this many times per request (then 409), and one address may be set on this many requests a day (then 429).
+    max-email-changes-per-request: 3
+    max-link-emails-per-address-per-day: 5
     # A request claimed for matching but untouched this long is offered to the matching worker again.
     matching-stuck-after: 15m
     # The "matches ready" email waits this long after publishing, and isn't sent if the client opens their list
@@ -74,6 +76,9 @@ lookmate:
     # Per IP, in memory: per instance. More than one app container needs a shared limit (Caddy or Postgres).
     rate-limit:
       creates-per-hour: 10
+      creates-per-day: 20
+      # POST /api/public/match-requests/{token}/email: emails added to requests.
+      emails-per-hour: 5
       reads-per-minute: 60
       # The public stylist directory and its Book links (/api/public/stylists, /api/public/book-stylist/**).
       browse-per-minute: 60

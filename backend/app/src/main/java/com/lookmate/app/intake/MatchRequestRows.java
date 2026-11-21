@@ -16,11 +16,11 @@ import org.springframework.stereotype.Repository;
 @Repository
 class MatchRequestRows {
 
-    /** A request with its client's quiz answers and contact. */
+    /** A request with its client's quiz answers and contact. {@code email} is null until the client gives one (it's optional). */
     record Row(UUID id, UUID clientId, String market, String status, String statusReason, String service, String objectKey,
                String contentType, Long sizeBytes, String sha256, Instant inspirationDeletedAt, Instant createdAt, Instant updatedAt,
                Instant publishedAt, String email, String firstName, String hairType, String texture, String length, Integer budgetTier,
-               String neighborhood, List<String> pastIssues, String notes) {
+               String neighborhood, List<String> pastIssues, String notes, int emailChanges) {
 
         boolean inspirationReady() {
             return sha256 != null && inspirationDeletedAt == null;
@@ -36,7 +36,7 @@ class MatchRequestRows {
             select r.id, r.client_id, r.market, r.status, r.status_reason, r.service, r.inspiration_object_key,
                    r.inspiration_content_type, r.inspiration_size_bytes, r.inspiration_sha256, r.inspiration_deleted_at,
                    r.created_at, r.updated_at, r.published_at, c.email, c.first_name, c.hair_type, c.texture, c.length,
-                   c.budget_tier, c.neighborhood, c.past_issues, c.notes
+                   c.budget_tier, c.neighborhood, c.past_issues, c.notes, c.email_changes
             from match_request r join client c on c.id = r.client_id
             """;
 
@@ -49,9 +49,9 @@ class MatchRequestRows {
     void insert(NewRequest n) {
         jdbc.sql("""
                         insert into client (id, email, first_name, hair_type, texture, length, budget_tier, neighborhood, market,
-                          past_issues, notes, created_at)
+                          past_issues, notes, created_at, email_set_at, email_changes)
                         values (:id, :email, :firstName, :hairType, :texture, :length, :budget, :neighborhood, :market,
-                          string_to_array(:issues, ','), :notes, :now)""")
+                          string_to_array(:issues, ','), :notes, :now, :emailSetAt, :emailChanges)""")
                 .param("id", n.clientId())
                 .param("email", n.email())
                 .param("firstName", n.firstName())
@@ -64,6 +64,8 @@ class MatchRequestRows {
                 .param("issues", String.join(",", n.pastIssues()))
                 .param("notes", n.notes())
                 .param("now", ts(n.now()))
+                .param("emailSetAt", n.email() == null ? null : ts(n.now()))
+                .param("emailChanges", n.email() == null ? 0 : 1)
                 .update();
         jdbc.sql("""
                         insert into match_request (id, client_id, market, service, inspiration_object_key, inspiration_content_type,
@@ -135,19 +137,30 @@ class MatchRequestRows {
                 .list();
     }
 
-    /** Serialises creates for one address (the abuse guard), until the transaction ends. */
+    /** Serialises setting one address on requests (the per-address cap), until the transaction ends. */
     void lockEmail(String email) {
         jdbc.sql("select pg_advisory_xact_lock(hashtext(lower(:email)))").param("email", email).query().listOfRows();
     }
 
-    int openRequestsSince(String email, Instant since) {
+    /** Requests other than {@code except} that had this address set since {@code since}. */
+    int emailsSetSince(String email, UUID exceptClient, Instant since) {
         return jdbc.sql("""
-                        select count(*) from match_request r join client c on c.id = r.client_id
-                        where lower(c.email) = lower(:email) and r.created_at > :since and r.status in ('NEW', 'MATCHING', 'IN_REVIEW')""")
+                        select count(*) from client
+                        where email is not null and lower(email) = lower(:email) and email_set_at > :since and id <> :except""")
                 .param("email", email)
+                .param("except", exceptClient)
                 .param("since", ts(since))
                 .query(Integer.class)
                 .single();
+    }
+
+    /** Sets (or replaces) the client's email and counts the change. */
+    void setEmail(UUID clientId, String email, Instant now) {
+        jdbc.sql("update client set email = :email, email_set_at = :now, email_changes = email_changes + 1 where id = :id")
+                .param("id", clientId)
+                .param("email", email)
+                .param("now", ts(now))
+                .update();
     }
 
     /** Claims due requests: NEW with a confirmed photo, or MATCHING and stuck. Returns their ids, oldest first. */
@@ -236,7 +249,7 @@ class MatchRequestRows {
                 instant(rs, "inspiration_deleted_at"), instant(rs, "created_at"), instant(rs, "updated_at"), instant(rs, "published_at"),
                 rs.getString("email"), rs.getString("first_name"), rs.getString("hair_type"), rs.getString("texture"), rs.getString("length"),
                 (Integer) rs.getObject("budget_tier", Integer.class), rs.getString("neighborhood"), strings(rs.getArray("past_issues")),
-                rs.getString("notes"));
+                rs.getString("notes"), rs.getInt("email_changes"));
     }
 
     private static List<String> strings(Array array) throws SQLException {

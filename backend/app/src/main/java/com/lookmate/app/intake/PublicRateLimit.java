@@ -11,8 +11,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
- * Per-IP limits on the public endpoints: new requests per hour, the stylist directory and its Book links per minute,
- * and everything else per minute. Token buckets in
+ * Per-IP limits on the public endpoints: new requests per hour and per day, emails added to requests per hour, the
+ * stylist directory and its Book links per minute, and everything else per minute. Clients don't have to give an email,
+ * so creation is limited by address, not by email (CLAUDE.md, 2026-11-20). Token buckets in
  * memory, so this is per instance: with more than one app container, move the limit to Caddy or Postgres
  * (docs/modules/intake.md). The IP is the request's remote address, which behind Caddy is the client's
  * ({@code server.forward-headers-strategy: framework}; Caddy ignores an X-Forwarded-For the client sends).
@@ -65,12 +66,17 @@ class PublicRateLimit implements HandlerInterceptor {
         boolean create = "POST".equals(request.getMethod()) && uri.endsWith("/api/public/match-requests");
         boolean browse = uri.contains("/api/public/stylists") || uri.contains("/api/public/book-stylist/")
                 || (uri.contains("/api/public/match-requests/") && uri.endsWith("/stylists"));
+        boolean email = "POST".equals(request.getMethod()) && uri.contains("/api/public/match-requests/") && uri.endsWith("/email");
         String ip = request.getRemoteAddr();
+        long now = System.nanoTime();
         long wait = create
-                ? take("create:" + ip, limits.createsPerHour(), Duration.ofHours(1), System.nanoTime())
+                ? Math.max(take("create-day:" + ip, limits.createsPerDay(), Duration.ofDays(1), now),
+                        take("create:" + ip, limits.createsPerHour(), Duration.ofHours(1), now))
+                : email
+                ? take("email:" + ip, limits.emailsPerHour(), Duration.ofHours(1), now)
                 : browse
-                ? take("browse:" + ip, limits.browsePerMinute(), Duration.ofMinutes(1), System.nanoTime())
-                : take("read:" + ip, limits.readsPerMinute(), Duration.ofMinutes(1), System.nanoTime());
+                ? take("browse:" + ip, limits.browsePerMinute(), Duration.ofMinutes(1), now)
+                : take("read:" + ip, limits.readsPerMinute(), Duration.ofMinutes(1), now);
         if (wait > 0) {
             throw new RateLimited(wait);
         }

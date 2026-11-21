@@ -30,7 +30,8 @@ class IntakeController {
     record PhotoFile(@NotBlank String contentType, @Positive long sizeBytes) {
     }
 
-    record CreateRequest(@NotBlank @Email @Size(max = 254) String email,
+    /** {@code email} is optional and no longer asked by the quiz: clients add it after the reveal ({@link EmailBody}). */
+    record CreateRequest(@Email @Size(max = 254) String email,
                          @Size(max = 40) String firstName,
                          @NotNull Quiz.HairType hairType,
                          Quiz.Texture texture,
@@ -41,6 +42,9 @@ class IntakeController {
                          @Size(max = 10) List<Quiz.@NotNull PastIssue> pastIssues,
                          @Size(max = 500) String pastIssuesNote,
                          @NotNull @Valid PhotoFile inspiration) {
+    }
+
+    record EmailBody(@NotBlank @Email(regexp = ".+@.+\\..+") @Size(max = 254) String email) {
     }
 
     record UploadSlot(String url, String method, Map<String, String> headers, Instant expiresAt) {
@@ -77,6 +81,15 @@ class IntakeController {
     @GetMapping(BASE + "/{token}")
     IntakeService.ClientView view(@PathVariable String token) {
         return intake.view(token);
+    }
+
+    /**
+     * The client's email, given on their results page: sets it (or replaces it, a few times at most) and sends the link.
+     * 409 {@code EMAIL_CHANGE_LIMIT} past the per-request cap, 429 {@code TOO_MANY_FOR_ADDRESS} past the per-address one.
+     */
+    @PostMapping(BASE + "/{token}/email")
+    IntakeService.ClientView email(@PathVariable String token, @Valid @RequestBody EmailBody body) {
+        return intake.setEmail(token, body.email());
     }
 
     @PostMapping(BASE + "/{token}/inspiration")

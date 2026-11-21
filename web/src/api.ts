@@ -165,8 +165,13 @@ export async function uploadToStorage(slot: UploadSlot, file: Blob): Promise<voi
 
 export type MatchRequestCreate = components['schemas']['IntakeControllerCreateRequest']
 export type MatchRequestCreated = components['schemas']['IntakeControllerCreated']
-export type ClientView = Omit<components['schemas']['IntakeServiceClientView'], 'photoUrl' | 'photoDeletesAt' | 'firstName' | 'texture' | 'length'> & {
+export type ClientView = Omit<
+  components['schemas']['IntakeServiceClientView'],
+  'photoUrl' | 'photoDeletesAt' | 'firstName' | 'texture' | 'length' | 'emailHint'
+> & {
   photoUrl: string | null
+  /** A masked hint of the client's email ("a•••@example.com"), or null when they haven't given one. */
+  emailHint: string | null
   photoDeletesAt: string | null
   firstName: string | null
   texture: string | null

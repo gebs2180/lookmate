@@ -27,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 class IntakeService {
 
-    enum Code { TOO_MANY_OPEN_REQUESTS, NOT_UPLOADED, IMAGE_REJECTED, PHOTO_ALREADY_CONFIRMED, PHOTO_DELETED, UNSUPPORTED_PHOTO }
+    enum Code { EMAIL_CHANGE_LIMIT, TOO_MANY_FOR_ADDRESS, NOT_UPLOADED, IMAGE_REJECTED, PHOTO_ALREADY_CONFIRMED, PHOTO_DELETED, UNSUPPORTED_PHOTO }
 
     /** Where the client is, in their words: the page shows one of these. */
     enum Stage { PHOTO_NEEDED, RECEIVED, MATCHING, READY, CLOSED }
@@ -42,7 +42,7 @@ class IntakeService {
 
     record ClientView(Stage stage, String firstName, String service, String hairType, String texture, String length, Instant createdAt,
                       boolean photoUploaded, boolean photoDeleted, Instant photoDeletesAt, int photoKeptDays, String photoUrl,
-                      List<ClientMatch> matches) {
+                      String emailHint, boolean emailChangeAllowed, List<ClientMatch> matches) {
     }
 
     /** What the quiz tells clients before they send anything: how long their photo is kept, how large it may be. */
@@ -80,15 +80,19 @@ class IntakeService {
         return new Settings(photoDays, storage.maxUploadBytes());
     }
 
+    /**
+     * The quiz. The email is optional (CLAUDE.md, 2026-11-20): the quiz doesn't ask it, and the client may add it on their
+     * results page ({@link #setEmail}). One given here (older clients of the API) is treated the same way: capped per
+     * address, and the link is emailed. Abuse is limited per IP ({@link PublicRateLimit}).
+     */
     @Transactional
     Created create(NewRequest q) {
         requirePhotoFile(q.contentType(), q.sizeBytes());
-        String email = q.email().strip();
+        String email = blankToNull(q.email());
         Instant now = Instant.now();
-        rows.lockEmail(email);
-        if (rows.openRequestsSince(email, now.minus(Duration.ofDays(1))) >= properties.maxOpenRequestsPerEmailPerDay()) {
-            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, Code.TOO_MANY_OPEN_REQUESTS,
-                    "You already have requests in progress. Check your email for their links, or try again tomorrow.");
+        if (email != null) {
+            rows.lockEmail(email);
+            requireAddressUnderCap(email, null, now);
         }
         UUID requestId = UUID.randomUUID();
         String token = LinkTokens.newToken();
@@ -98,8 +102,10 @@ class IntakeService {
                 q.hairType().name(), name(q.texture()), name(q.length()), q.budgetTier(), blankToNull(q.neighborhood()), issues,
                 blankToNull(q.pastIssuesNote()), q.service().name(), key, q.contentType(), q.sizeBytes(), LinkTokens.hash(token),
                 now.plus(properties.linkTtl()), now));
-        emails.requestReceived(requestId, email, blankToNull(q.firstName()), LinkTokens.path(token), photoDays, now);
-        log.info("Match request {} created", requestId);
+        if (email != null) {
+            emails.listLink(requestId, email, blankToNull(q.firstName()), LinkTokens.path(token), ClientEmails.ListState.WAITING, 1, now);
+        }
+        log.info("Match request {} created{}", requestId, email == null ? "" : " with an email");
         return new Created(token, LinkTokens.path(token), presign(key, q.contentType(), q.sizeBytes()));
     }
 
@@ -150,6 +156,43 @@ class IntakeService {
         return view(rows.find(row.id()).orElseThrow());
     }
 
+    /**
+     * The client gives (or corrects) their email on their request page, after the reveal, and is sent the link to the
+     * page they're on. Setting it again replaces it and sends the link again, up to
+     * {@code lookmate.intake.max-email-changes-per-request} times (then 409 {@code EMAIL_CHANGE_LIMIT}). One address may
+     * be set on {@code lookmate.intake.max-link-emails-per-address-per-day} requests a day (then 429
+     * {@code TOO_MANY_FOR_ADDRESS}), so this can't flood someone's inbox. The "matches ready" email and the "picks added"
+     * one go only to clients who gave an email.
+     */
+    @Transactional
+    ClientView setEmail(String token, String email) {
+        UUID id = requestId(token);
+        String address = email.strip();
+        Instant now = Instant.now();
+        rows.lockEmail(address);
+        MatchRequestRows.Row row = rows.findLocked(id).orElseThrow(IntakeService::notFound);
+        if (row.emailChanges() >= properties.maxEmailChangesPerRequest()) {
+            throw new ApiException(HttpStatus.CONFLICT, Code.EMAIL_CHANGE_LIMIT,
+                    "You've changed the email for this request a few times already. Bookmark this page to keep your link.");
+        }
+        requireAddressUnderCap(address, row.clientId(), now);
+        rows.setEmail(row.clientId(), address, now);
+        ClientView view = view(rows.find(id).orElseThrow());
+        ClientEmails.ListState state = view.stage() != Stage.READY ? ClientEmails.ListState.WAITING
+                : view.matches().isEmpty() ? ClientEmails.ListState.NO_CLOSE_MATCH : ClientEmails.ListState.READY;
+        emails.listLink(id, address, row.firstName(), LinkTokens.path(token), state, row.emailChanges() + 1, now);
+        log.info("Match request {}: the client gave an email ({})", id, state);
+        return view;
+    }
+
+    private void requireAddressUnderCap(String email, UUID exceptClient, Instant now) {
+        if (rows.emailsSetSince(email, exceptClient == null ? new UUID(0, 0) : exceptClient, now.minus(Duration.ofDays(1)))
+                >= properties.maxLinkEmailsPerAddressPerDay()) {
+            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, Code.TOO_MANY_FOR_ADDRESS,
+                    "We've sent that address a few links today already. Bookmark this page instead, or try again tomorrow.");
+        }
+    }
+
     @Transactional(readOnly = true)
     ClientView view(String token) {
         return view(rows.find(requestId(token)).orElseThrow(IntakeService::notFound));
@@ -172,7 +215,23 @@ class IntakeService {
             matches = provider == null ? List.of() : List.copyOf(provider.forClient(row.id()));
         }
         return new ClientView(stage, row.firstName(), row.service(), row.hairType(), row.texture(), row.length(), row.createdAt(), uploaded,
-                deleted, deleted ? null : row.createdAt().plus(photoDays, ChronoUnit.DAYS), photoDays, photoUrl, matches);
+                deleted, deleted ? null : row.createdAt().plus(photoDays, ChronoUnit.DAYS), photoDays, photoUrl, emailHint(row.email()),
+                row.emailChanges() < properties.maxEmailChangesPerRequest(), matches);
+    }
+
+    /**
+     * The address the client gave, partly hidden ({@code a•••@example.com}): enough to recognise it on their page, not to
+     * read it off a shared screen. Null when they haven't given one.
+     */
+    static String emailHint(String email) {
+        if (email == null) {
+            return null;
+        }
+        int at = email.lastIndexOf('@');
+        if (at <= 0) {
+            return "•••";
+        }
+        return email.substring(0, 1) + "•••" + email.substring(at);
     }
 
     /** The request a token opens. Every failure is the same 404, so a guess learns nothing. */

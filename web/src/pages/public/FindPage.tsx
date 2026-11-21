@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { publicApi, type IntakeSettings, type MatchRequestCreate, type MatchRequestCreated } from '../../api'
 import { Strand, type StrandShape } from '../../strand/Strand'
 import { useLoad } from '../../useLoad'
@@ -31,7 +31,6 @@ type Answers = {
   pastIssues: PastIssue[]
   pastIssuesNote: string
   photo: Blob | null
-  email: string
   firstName: string
 }
 
@@ -45,32 +44,36 @@ const EMPTY: Answers = {
   pastIssues: [],
   pastIssuesNote: '',
   photo: null,
-  email: '',
   firstName: '',
 }
 
 const NOT_SURE: Option<'UNSURE'> = { value: 'UNSURE', label: 'Not sure' }
 
-const STEPS = ['service', 'hairType', 'texture', 'length', 'budget', 'neighborhood', 'pastIssues', 'photo', 'contact'] as const
+const STEPS = ['service', 'hairType', 'texture', 'length', 'budget', 'neighborhood', 'pastIssues', 'photo', 'name'] as const
 type Step = (typeof STEPS)[number]
 
-/** Sent: the token, and whether the photo still has to go up (the upload or its check failed). */
-type Sent = { token: string; statusPath: string; photoSent: boolean }
+/** Created: the token and where its page is, kept so a failed photo upload can be retried without a second request. */
+type Sent = { token: string; statusPath: string }
 
-/** The client's quiz, one question per screen, then the inspiration photo and an email for the link. No account. */
+/**
+ * The client's quiz, one question per screen, then the inspiration photo and an optional first name. No account and no
+ * email: the client lands on their request's own page (/m/:token), which is their link, and can add an email there
+ * after the reveal (CLAUDE.md, 2026-11-20).
+ */
 export function FindPage() {
   const [answers, setAnswers] = useState<Answers>(EMPTY)
   const [step, setStep] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState<Sent | null>(null)
+  const navigate = useNavigate()
   const { data: settings } = useLoad(() => publicApi<IntakeSettings>('GET', '/api/public/intake/settings'), [])
   const keptDays = settings?.photoKeptDays ?? null
 
   const set = <K extends keyof Answers>(key: K, value: Answers[K]) => setAnswers((a) => ({ ...a, [key]: value }))
   const current: Step = STEPS[step]
 
-  // Browsers sometimes autofill the email into the name field; we'd greet the client by their address.
+  // Browsers sometimes autofill an email into the name field; we'd greet the client by their address.
   const nameLooksLikeEmail = answers.firstName.includes('@')
 
   function canContinue(): boolean {
@@ -87,8 +90,8 @@ export function FindPage() {
         return answers.budget !== null
       case 'photo':
         return answers.photo !== null
-      case 'contact':
-        return /^\S+@\S+\.\S+$/.test(answers.email.trim()) && !nameLooksLikeEmail
+      case 'name':
+        return !nameLooksLikeEmail
       default:
         return true
     }
@@ -100,7 +103,6 @@ export function FindPage() {
     setBusy(true)
     setError(null)
     const body: MatchRequestCreate = {
-      email: answers.email.trim(),
       firstName: answers.firstName.trim() || undefined,
       hairType: answers.hairType,
       texture: answers.texture === 'UNSURE' ? undefined : (answers.texture ?? undefined),
@@ -117,12 +119,13 @@ export function FindPage() {
       let slot: MatchRequestCreated['upload'] | undefined
       if (!request) {
         const created = await publicApi<MatchRequestCreated>('POST', '/api/public/match-requests', body)
-        request = { token: created.token, statusPath: created.statusPath, photoSent: false }
+        request = { token: created.token, statusPath: created.statusPath }
         slot = created.upload
         setSent(request)
       }
       await sendPhoto(request.token, photo, slot)
-      setSent({ ...request, photoSent: true })
+      // Straight to the request's own page: the matching moment, then the reveal.
+      navigate(request.statusPath)
     } catch (e) {
       setError(message(e))
     } finally {
@@ -138,36 +141,6 @@ export function FindPage() {
     } else {
       setStep(step + 1)
     }
-  }
-
-  if (sent?.photoSent) {
-    return (
-      <section className="find">
-        <h1 className="display">Request sent</h1>
-        {answers.hairType && (
-          <div className="sent-strand" aria-hidden="true">
-            <Strand shape={answers.hairType as StrandShape} horizontal width={240} height={56} bend={0.5} strokeWidth={3} />
-          </div>
-        )}
-        <p>
-          Thanks{answers.firstName.trim() ? `, ${answers.firstName.trim()}` : ''}. We're finding the stylists whose own work looks like your
-          photo, on hair like yours. Your matches are usually ready in a few minutes, and we'll email{' '}
-          <strong>{answers.email.trim()}</strong> when they are.
-        </p>
-        <p>We've also emailed you a link to this request. Keep it to yourself: anyone with it can see your request.</p>
-        <div className="actions">
-          <Link className="button" to={sent.statusPath}>
-            See your request
-          </Link>
-          <Link className="button secondary" to={`${sent.statusPath}/stylists`}>
-            Browse all stylists
-          </Link>
-        </div>
-        <p className="muted small">
-          Your photo is private{keptDays ? ` and deleted after ${keptDays} days` : ''}.
-        </p>
-      </section>
-    )
   }
 
   return (
@@ -258,20 +231,8 @@ export function FindPage() {
             <PrivacyNote keptDays={keptDays} />
           </Question>
         )}
-        {current === 'contact' && (
-          <Question legend="Where should we send your matches?" hint="We email you a private link. No account, no password.">
-            <label className="field">
-              <span className="field-label">Email</span>
-              <input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                required
-                maxLength={254}
-                value={answers.email}
-                onChange={(e) => set('email', e.target.value)}
-              />
-            </label>
+        {current === 'name' && (
+          <Question legend="What should we call you?" hint="Optional. We use it to say hello on your results page.">
             <label className="field">
               <span className="field-label">First name (optional)</span>
               <input
@@ -288,6 +249,9 @@ export function FindPage() {
                 That looks like an email address. Put just your first name here, or leave it blank.
               </p>
             )}
+            <p className="muted small">
+              No email needed: your results open on their own page. Bookmark that page, or email it to yourself from there.
+            </p>
           </Question>
         )}
 

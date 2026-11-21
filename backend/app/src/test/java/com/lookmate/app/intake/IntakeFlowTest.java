@@ -18,6 +18,7 @@ import java.io.ByteArrayInputStream;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  */
 @SpringBootTest(properties = {
         "lookmate.intake.rate-limit.creates-per-hour=1000",
+        "lookmate.intake.rate-limit.creates-per-day=1000",
+        "lookmate.intake.rate-limit.emails-per-hour=1000",
         "lookmate.intake.rate-limit.reads-per-minute=1000",
         "lookmate.retention.enabled=false"})
 @AutoConfigureMockMvc
@@ -83,12 +86,13 @@ class IntakeFlowTest {
     @Autowired
     private ClientContactRetention contactRetention;
 
+    /** The quiz's answers; {@code email} null leaves it out, as the quiz does now. */
     static String quiz(String email, String firstName) {
         return """
-                {"email":"%s","firstName":"%s","hairType":"CURLY","texture":"THICK","length":"MEDIUM","budgetTier":2,
+                {%s"firstName":"%s","hairType":"CURLY","texture":"THICK","length":"MEDIUM","budgetTier":2,
                  "neighborhood":"Clintonville","service":"CUT","pastIssues":["DIDNT_LISTEN","NO_EXPERIENCE_WITH_MY_HAIR_TYPE"],
                  "pastIssuesNote":"They thinned it out without asking","inspiration":{"contentType":"image/jpeg","sizeBytes":5000}}"""
-                .formatted(email, firstName);
+                .formatted(email == null ? "" : "\"email\":\"%s\",".formatted(email), firstName);
     }
 
     private ResultActions create(String json) throws Exception {
@@ -97,6 +101,16 @@ class IntakeFlowTest {
 
     private String newRequest(String email, String firstName) throws Exception {
         return TestApi.read(create(quiz(email, firstName)).andExpect(status().isCreated()), "$.token");
+    }
+
+    private ResultActions setEmail(String token, String email) throws Exception {
+        return mvc.perform(post("/api/public/match-requests/" + token + "/email").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"%s\"}".formatted(email)));
+    }
+
+    private List<Map<String, Object>> emailsFor(UUID id) {
+        return jdbc.sql("select template, recipient_email, text_body from email_message where subject_id = :id order by created_at")
+                .param("id", id).query().listOfRows();
     }
 
     private UUID idOf(String token) {
@@ -117,8 +131,8 @@ class IntakeFlowTest {
     }
 
     @Test
-    void theQuizCreatesARequestWithAnUploadSlotAndEmailsTheLink() throws Exception {
-        ResultActions created = create(quiz("ada@example.com", "Ada")).andExpect(status().isCreated())
+    void theQuizCreatesARequestWithoutAnEmail() throws Exception {
+        ResultActions created = create(quiz(null, "Ada")).andExpect(status().isCreated())
                 .andExpect(jsonPath("$.upload.method").value("PUT"))
                 .andExpect(jsonPath("$.upload.headers.If-None-Match").value("*"));
         String token = TestApi.read(created, "$.token");
@@ -126,21 +140,19 @@ class IntakeFlowTest {
         assertThat(TestApi.read(created, "$.statusPath")).isEqualTo("/m/" + token);
         assertThat(TestApi.read(created, "$.upload.url")).contains("intake/" + id + "/inspiration");
 
-        var row = jdbc.sql("select r.status, r.market, r.service, r.access_token_hash, c.hair_type, c.past_issues::text as issues, c.notes "
-                + "from match_request r join client c on c.id = r.client_id where r.id = :id").param("id", id).query().singleRow();
+        var row = jdbc.sql("select r.status, r.market, r.service, r.access_token_hash, c.email, c.email_changes, c.hair_type, "
+                + "c.past_issues::text as issues, c.notes from match_request r join client c on c.id = r.client_id where r.id = :id")
+                .param("id", id).query().singleRow();
         assertThat(row.get("status")).isEqualTo("NEW");
         assertThat(row.get("market")).isEqualTo("columbus-oh");
         assertThat(row.get("service")).isEqualTo("CUT");
+        assertThat(row.get("email")).isNull();
+        assertThat(((Number) row.get("email_changes")).intValue()).isZero();
         assertThat(row.get("hair_type")).isEqualTo("CURLY");
         assertThat(row.get("issues")).isEqualTo("{DIDNT_LISTEN,NO_EXPERIENCE_WITH_MY_HAIR_TYPE}");
         assertThat(row.get("notes")).isEqualTo("They thinned it out without asking");
         assertThat(row.get("access_token_hash")).as("only the hash is stored").isEqualTo(LinkTokens.hash(token)).isNotEqualTo(token);
-
-        var email = jdbc.sql("select template, recipient_email, text_body from email_message where subject_id = :id").param("id", id)
-                .query().singleRow();
-        assertThat(email.get("template")).isEqualTo("MATCH_REQUEST_RECEIVED");
-        assertThat(email.get("recipient_email")).isEqualTo("ada@example.com");
-        assertThat((String) email.get("text_body")).contains("/m/" + token).contains("Hi Ada");
+        assertThat(emailsFor(id)).as("no address, so nothing is queued").isEmpty();
 
         view(token).andExpect(status().isOk())
                 .andExpect(jsonPath("$.stage").value("PHOTO_NEEDED"))
@@ -148,7 +160,79 @@ class IntakeFlowTest {
                 .andExpect(jsonPath("$.photoUploaded").value(false))
                 .andExpect(jsonPath("$.photoKeptDays").value(30))
                 .andExpect(jsonPath("$.matches").isEmpty())
+                .andExpect(jsonPath("$.emailHint").value(nullValue()))
+                .andExpect(jsonPath("$.emailChangeAllowed").value(true))
                 .andExpect(jsonPath("$.email").doesNotExist());
+        // No name either.
+        create(quiz(null, "").replace("\"firstName\":\"\",", "")).andExpect(status().isCreated());
+    }
+
+    @Test
+    void anEmailGivenWithTheQuizStillGetsTheLink() throws Exception {
+        String token = newRequest("ada@example.com", "Ada");
+        var emails = emailsFor(idOf(token));
+        assertThat(emails).hasSize(1);
+        assertThat(emails.getFirst().get("template")).isEqualTo("MATCH_LIST_LINK");
+        assertThat(emails.getFirst().get("recipient_email")).isEqualTo("ada@example.com");
+        assertThat((String) emails.getFirst().get("text_body")).contains("/m/" + token).contains("Hi Ada");
+        view(token).andExpect(jsonPath("$.emailHint").value("a\u2022\u2022\u2022@example.com"));
+    }
+
+    @Test
+    void theClientAddsAnEmailOnTheirPageAndGetsTheLink() throws Exception {
+        String token = newRequest(null, "Bea");
+        UUID id = idOf(token);
+
+        setEmail(token, "bea@example.com").andExpect(status().isOk())
+                .andExpect(jsonPath("$.emailHint").value("b\u2022\u2022\u2022@example.com"))
+                .andExpect(jsonPath("$.emailChangeAllowed").value(true))
+                .andExpect(jsonPath("$.email").doesNotExist());
+        var emails = emailsFor(id);
+        assertThat(emails).hasSize(1);
+        assertThat(emails.getFirst().get("template")).isEqualTo("MATCH_LIST_LINK");
+        assertThat(emails.getFirst().get("recipient_email")).isEqualTo("bea@example.com");
+        assertThat((String) emails.getFirst().get("text_body")).contains("/m/" + token).contains("Hi Bea");
+        view(token).andExpect(jsonPath("$.emailHint").value("b\u2022\u2022\u2022@example.com"));
+
+        // Correcting a typo replaces it and sends the link to the new address, up to the per-request cap; then 409.
+        setEmail(token, "bea2@example.com").andExpect(status().isOk());
+        setEmail(token, "bea3@example.com").andExpect(status().isOk()).andExpect(jsonPath("$.emailChangeAllowed").value(false));
+        setEmail(token, "bea4@example.com").andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("EMAIL_CHANGE_LIMIT"));
+        assertThat(emailsFor(id)).extracting(e -> e.get("recipient_email"))
+                .containsExactly("bea@example.com", "bea2@example.com", "bea3@example.com");
+        assertThat(jdbc.sql("select c.email from client c join match_request r on r.client_id = c.id where r.id = :id").param("id", id)
+                .query(String.class).single()).isEqualTo("bea3@example.com");
+
+        setEmail(token, "not-an-email").andExpect(status().isBadRequest());
+        setEmail(LinkTokens.newToken(), "bea@example.com").andExpect(status().isNotFound());
+    }
+
+    @Test
+    void oneAddressCantBeGivenToManyRequestsADay() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            setEmail(newRequest(null, "Gus"), i % 2 == 0 ? "gus@example.com" : "Gus@Example.com").andExpect(status().isOk());
+        }
+        setEmail(newRequest(null, "Gus"), "GUS@example.com").andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("TOO_MANY_FOR_ADDRESS"));
+        create(quiz("gUs@example.COM", "Gus")).andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("TOO_MANY_FOR_ADDRESS"));
+        setEmail(newRequest(null, "Hal"), "someone-else@example.com").andExpect(status().isOk());
+    }
+
+    @Test
+    void anEmailAddedAfterPublishingLinksToTheList() throws Exception {
+        String token = newRequest(null, "Ivy");
+        upload(token, TestPhotos.jpegWithGps());
+        confirm(token).andExpect(status().isOk());
+        UUID id = idOf(token);
+        requests.claimNew(50);
+        requests.publish(id, null);
+        assertThat(emailsFor(id)).as("no address when it was published: nothing queued").isEmpty();
+
+        setEmail(token, "ivy@example.com").andExpect(status().isOk());
+        var emails = emailsFor(id);
+        assertThat(emails).hasSize(1);
+        assertThat((String) emails.getFirst().get("text_body")).contains("/m/" + token).contains("We may ask how your appointment went.");
     }
 
     @Test
@@ -225,16 +309,6 @@ class IntakeFlowTest {
         mvc.perform(post("/api/public/match-requests/" + token + "/inspiration").contentType(MediaType.APPLICATION_JSON)
                         .content("{\"contentType\":\"image/png\",\"sizeBytes\":1234}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.method").value("PUT"));
-    }
-
-    @Test
-    void oneAddressMayHaveOnlyAFewOpenRequestsADay() throws Exception {
-        newRequest("gus@example.com", "Gus");
-        newRequest("Gus@Example.com", "Gus");
-        newRequest("gUs@example.COM", "Gus");
-        create(quiz("GUS@example.com", "Gus")).andExpect(status().isTooManyRequests())
-                .andExpect(jsonPath("$.code").value("TOO_MANY_OPEN_REQUESTS"));
-        newRequest("someone-else@example.com", "Hal");
     }
 
     @Test
@@ -319,12 +393,15 @@ class IntakeFlowTest {
         String old = newRequest("pam@example.com", "Pam");
         String oldButReturning = newRequest("quin@example.com", "Quin");
         String returning = newRequest("Quin@example.com", "Quin");
-        jdbc.sql("update match_request set created_at = now() - interval '400 days' where id in (:ids)")
-                .param("ids", List.of(idOf(old), idOf(oldButReturning))).update();
+        // No email: the request's own age decides.
+        String anonymous = newRequest(null, "Rae");
+        String anonymousRecent = newRequest(null, "Sol");
+        List<UUID> aged = List.of(idOf(old), idOf(oldButReturning), idOf(anonymous));
+        jdbc.sql("update match_request set created_at = now() - interval '400 days' where id in (:ids)").param("ids", aged).update();
         jdbc.sql("update client set created_at = now() - interval '400 days' where id in "
-                + "(select client_id from match_request where id in (:ids))").param("ids", List.of(idOf(old), idOf(oldButReturning))).update();
+                + "(select client_id from match_request where id in (:ids))").param("ids", aged).update();
 
-        assertThat(contactRetention.run(Instant.now())).isEqualTo(1);
+        assertThat(contactRetention.run(Instant.now())).isEqualTo(2);
 
         var pam = jdbc.sql("select c.email, c.first_name, c.neighborhood, c.notes, c.hair_type, c.anonymised_at from client c "
                 + "join match_request r on r.client_id = c.id where r.id = :id").param("id", idOf(old)).query().singleRow();
@@ -337,6 +414,8 @@ class IntakeFlowTest {
         view(old).andExpect(jsonPath("$.firstName").value(nullValue()));
         view(oldButReturning).andExpect(jsonPath("$.firstName").value("Quin"));
         view(returning).andExpect(jsonPath("$.firstName").value("Quin"));
+        view(anonymous).andExpect(jsonPath("$.firstName").value(nullValue()));
+        view(anonymousRecent).andExpect(jsonPath("$.firstName").value("Sol"));
         assertThat(contactRetention.run(Instant.now())).as("nothing left to do").isZero();
     }
 }

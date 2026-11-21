@@ -61,7 +61,7 @@ export function MatchReviewPage() {
   }
 
   async function publish() {
-    if (!window.confirm(`Publish ${visible} stylist${visible === 1 ? '' : 's'} to the client? They'll be emailed a link.`)) return
+    if (!window.confirm(`Publish ${visible} stylist${visible === 1 ? '' : 's'} to the client? If they gave an email, they'll get a link.`)) return
     setActionError(null)
     setBusy(true)
     try {
@@ -95,7 +95,7 @@ export function MatchReviewPage() {
       )}
       {published && (
         <p className="alert alert-success" role="status">
-          Published. The client is emailed a link to their matches in a few minutes, unless they open them first.
+          Published. If the client gave an email, they're sent a link in a few minutes, unless they open their matches first.
         </p>
       )}
 

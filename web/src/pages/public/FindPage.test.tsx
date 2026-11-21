@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, Route, Routes } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 import { FindPage } from './FindPage'
 import { PrivacyNote } from './PhotoPicker'
@@ -37,8 +37,11 @@ function stubApi(confirm: () => Response = () => json(200, { stage: 'RECEIVED' }
 async function answerEverything(firstName = 'Ada') {
   const user = userEvent.setup()
   render(
-    <MemoryRouter>
-      <FindPage />
+    <MemoryRouter initialEntries={['/find']}>
+      <Routes>
+        <Route path="/find" element={<FindPage />} />
+        <Route path="/m/:token" element={<h1>Results page</h1>} />
+      </Routes>
     </MemoryRouter>,
   )
   expect(screen.getByText('Question 1 of 9')).toBeInTheDocument()
@@ -61,8 +64,9 @@ async function answerEverything(firstName = 'Ada') {
   expect(screen.getByText(/never public, and we delete it 21 days after your request/)).toBeInTheDocument()
   await user.upload(screen.getByLabelText('Choose from your photos'), new File(['jpeg-bytes'], 'look.jpg', { type: 'image/jpeg' }))
   await next()
-  await user.type(screen.getByLabelText('Email'), 'ada@example.com')
-  await user.type(screen.getByLabelText('First name (optional)'), firstName)
+  expect(screen.getByRole('heading', { name: 'What should we call you?' })).toBeInTheDocument()
+  expect(screen.queryByLabelText(/Email/)).not.toBeInTheDocument()
+  if (firstName) await user.type(screen.getByLabelText('First name (optional)'), firstName)
   if (firstName.includes('@')) return user
   await user.click(screen.getByRole('button', { name: 'Find my stylists' }))
   return user
@@ -87,15 +91,14 @@ describe('FindPage', () => {
     expect(screen.getByText(/we delete it on a set schedule/)).toBeInTheDocument()
   })
 
-  it('asks one question per screen, then sends the quiz, uploads the photo and confirms it', async () => {
+  it('asks one question per screen, then sends the quiz without an email, uploads the photo and opens the results page', async () => {
     const calls = stubApi()
     await answerEverything()
 
-    expect(await screen.findByRole('heading', { name: 'Request sent' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'See your request' })).toHaveAttribute('href', `/m/${TOKEN}`)
+    // No "Request sent" page: straight to the request's own page, where matching runs and the picks appear.
+    expect(await screen.findByRole('heading', { name: 'Results page' })).toBeInTheDocument()
     const create = calls.find((c) => c.url === '/api/public/match-requests')!
     expect(create.body).toEqual({
-      email: 'ada@example.com',
       firstName: 'Ada',
       hairType: 'CURLY',
       texture: 'THICK',
@@ -105,7 +108,6 @@ describe('FindPage', () => {
       pastIssues: ['DIDNT_LISTEN'],
       inspiration: { contentType: 'image/jpeg', sizeBytes: 10 },
     })
-    expect(screen.getByText('Your photo is private and deleted after 21 days.')).toBeInTheDocument()
     expect(calls.map((c) => `${c.method} ${c.url}`)).toEqual([
       'GET /api/public/intake/settings',
       'POST /api/public/match-requests',
@@ -123,16 +125,23 @@ describe('FindPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Try the photo again' })).toBeEnabled())
   })
 
-  it('says why when the address already has requests open', async () => {
+  it('sends no first name when it is left blank', async () => {
+    const calls = stubApi()
+    await answerEverything('')
+    expect(await screen.findByRole('heading', { name: 'Results page' })).toBeInTheDocument()
+    expect(calls.find((c) => c.url === '/api/public/match-requests')!.body).not.toHaveProperty('firstName')
+  })
+
+  it('says why when the connection has made too many requests', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url: string) =>
         url === '/api/public/intake/settings'
           ? json(200, { photoKeptDays: 21, maxPhotoBytes: 26214400 })
-          : json(429, { detail: 'You already have requests in progress.', code: 'TOO_MANY_OPEN_REQUESTS' }),
+          : json(429, { detail: 'Too many tries from your connection. Wait a little and try again.', code: 'RATE_LIMITED' }),
       ),
     )
     await answerEverything()
-    expect(await screen.findByRole('alert')).toHaveTextContent('You already have requests in progress.')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Too many tries from your connection.')
   })
 })
