@@ -196,11 +196,37 @@ function Matches({
     })
   }, [token, matches.length])
 
+  const listRef = useRef<HTMLOListElement>(null)
+  const last = matches.length - 1
+  const shown = Math.min(at, last)
+
   // The dots under the covers follow the scroll.
   function onScroll(event: UIEvent<HTMLOListElement>) {
     const list = event.currentTarget
-    const first = list.firstElementChild as HTMLElement | null
-    if (first) setAt(Math.round(list.scrollLeft / (first.offsetWidth + 12)))
+    const cards = [...list.children] as HTMLElement[]
+    if (cards.length === 0) return
+    // On a wide screen the row can't scroll a whole card, so its end counts as the last card.
+    if (list.scrollLeft >= list.scrollWidth - list.clientWidth - 2) {
+      setAt(cards.length - 1)
+      return
+    }
+    const left = list.scrollLeft + cards[0].offsetLeft
+    let nearest = 0
+    cards.forEach((card, i) => {
+      if (Math.abs(card.offsetLeft - left) < Math.abs(cards[nearest].offsetLeft - left)) nearest = i
+    })
+    setAt(nearest)
+  }
+
+  // Swiping works on phones; a mouse can't scroll the row sideways, so the arrows and dots move it too.
+  function goTo(index: number) {
+    const list = listRef.current
+    const target = list?.children[index] as HTMLElement | undefined
+    const first = list?.firstElementChild as HTMLElement | null
+    if (!list || !target || !first) return
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    list.scrollTo?.({ left: target.offsetLeft - first.offsetLeft, behavior: reduce ? 'auto' : 'smooth' })
+    setAt(index)
   }
 
   return (
@@ -213,16 +239,31 @@ function Matches({
           <Link to={directory}>All stylists</Link>
         </li>
       </ul>
-      <ol className="covers" onScroll={onScroll} aria-label="Stylists for your look">
+      <ol className="covers" ref={listRef} onScroll={onScroll} aria-label="Stylists for your look">
         {matches.map((m, i) => (
           <Cover key={m.matchId} index={i} match={m} hairType={hairType} book={{ href: apiPath`/api/public/book/${token}/${m.matchId}` }} />
         ))}
       </ol>
       {matches.length > 1 && (
-        <div className="dots" aria-hidden="true">
-          {matches.map((m, i) => (
-            <i key={m.matchId} className={i === Math.min(at, matches.length - 1) ? 'on' : undefined} />
-          ))}
+        <div className="cover-nav">
+          <button type="button" className="cover-arrow" onClick={() => goTo(shown - 1)} disabled={shown === 0} aria-label="Previous stylist">
+            ←
+          </button>
+          <div className="dots">
+            {matches.map((m, i) => (
+              <button
+                type="button"
+                key={m.matchId}
+                className={i === shown ? 'on' : undefined}
+                onClick={() => goTo(i)}
+                aria-label={`Stylist ${i + 1}: ${m.stylistName}`}
+                aria-current={i === shown || undefined}
+              />
+            ))}
+          </div>
+          <button type="button" className="cover-arrow" onClick={() => goTo(shown + 1)} disabled={shown === last} aria-label="Next stylist">
+            →
+          </button>
         </div>
       )}
       <div className="anyone">

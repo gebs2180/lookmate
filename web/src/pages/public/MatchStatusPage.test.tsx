@@ -73,6 +73,22 @@ function show(status: number, body: unknown) {
 }
 
 describe('MatchStatusPage', () => {
+  it('moves between the picks with arrows and dots, not only by swiping', async () => {
+    const two = [MATCH, { ...MATCH, matchId: 'm2', orgId: 'org-2', rank: 2, stylistName: 'Coil Room' }]
+    showWithEmail({ ...BASE, stage: 'READY', matches: two } as unknown as ClientView, () => new Response(null, { status: 204 }))
+    const user = userEvent.setup()
+
+    const previous = await screen.findByRole('button', { name: 'Previous stylist' })
+    const next = screen.getByRole('button', { name: 'Next stylist' })
+    expect(previous).toBeDisabled()
+    await user.click(next)
+    expect(next).toBeDisabled()
+    expect(previous).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Stylist 2: Coil Room' })).toHaveAttribute('aria-current', 'true')
+    await user.click(screen.getByRole('button', { name: 'Stylist 1: Curl Studio' }))
+    expect(previous).toBeDisabled()
+  })
+
   it('shows where the request is and when the photo goes', async () => {
     const fetch = show(200, BASE)
     expect(await screen.findByRole('heading', { name: "Ada, here's your request" })).toBeInTheDocument()
