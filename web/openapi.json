@@ -284,10 +284,10 @@
           },
           "pastIssues" : {
             "items" : {
-              "enum" : [ "DIDNT_LISTEN", "NOT_THE_LOOK_I_ASKED_FOR", "CUT_TOO_SHORT", "COLOR_CAME_OUT_WRONG", "DAMAGED_MY_HAIR", "NO_EXPERIENCE_WITH_MY_HAIR_TYPE", "RUSHED", "PRICE_SURPRISE", "HARD_TO_BOOK", "OTHER" ],
+              "enum" : [ "DIDNT_LISTEN", "NOT_THE_LOOK_I_ASKED_FOR", "CUT_TOO_SHORT", "COLOR_CAME_OUT_WRONG", "DAMAGED_MY_HAIR", "NO_EXPERIENCE_WITH_MY_HAIR_TYPE", "RUSHED", "PRICE_SURPRISE", "HARD_TO_BOOK", "OTHER", "QUIET_APPOINTMENT", "HONEST_ADVICE" ],
               "type" : "string"
             },
-            "maxItems" : 10,
+            "maxItems" : 12,
             "minItems" : 0,
             "type" : "array"
           },
@@ -369,6 +369,13 @@
       },
       "IntakeServiceClientView" : {
         "properties" : {
+          "asks" : {
+            "items" : {
+              "enum" : [ "DIDNT_LISTEN", "NOT_THE_LOOK_I_ASKED_FOR", "CUT_TOO_SHORT", "COLOR_CAME_OUT_WRONG", "DAMAGED_MY_HAIR", "NO_EXPERIENCE_WITH_MY_HAIR_TYPE", "RUSHED", "PRICE_SURPRISE", "HARD_TO_BOOK", "OTHER", "QUIET_APPOINTMENT", "HONEST_ADVICE" ],
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "createdAt" : {
             "format" : "date-time",
             "type" : "string"
@@ -422,7 +429,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "createdAt", "emailChangeAllowed", "emailHint", "firstName", "hairType", "length", "matches", "photoDeleted", "photoDeletesAt", "photoKeptDays", "photoUploaded", "photoUrl", "service", "stage", "texture" ]
+        "required" : [ "asks", "createdAt", "emailChangeAllowed", "emailHint", "firstName", "hairType", "length", "matches", "photoDeleted", "photoDeletesAt", "photoKeptDays", "photoUploaded", "photoUrl", "service", "stage", "texture" ]
       },
       "IntakeServiceSettings" : {
         "properties" : {

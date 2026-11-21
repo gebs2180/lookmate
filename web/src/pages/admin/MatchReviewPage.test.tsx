@@ -40,7 +40,7 @@ function review(matches: MatchView[], status: MatchReview['request']['status'] =
       length: 'MEDIUM',
       budgetTier: 2,
       neighborhood: 'Clintonville',
-      pastIssues: ['DIDNT_LISTEN'],
+      pastIssues: ['DIDNT_LISTEN', 'QUIET_APPOINTMENT'],
       notes: null,
       firstName: 'Sam',
       createdAt: '2026-11-19T12:00:00Z',
@@ -68,6 +68,9 @@ describe('MatchReviewPage', () => {
     show()
     expect(await screen.findByRole('heading', { name: 'Sam: cut' })).toBeInTheDocument()
     expect(screen.getByAltText("The client's inspiration photo")).toHaveAttribute('src', 'https://photos.example/look.jpg')
+    // The asks are shown apart from what went wrong.
+    expect(screen.getByText('Went wrong before').nextElementSibling).toHaveTextContent(/^Didnt listen$/i)
+    expect(screen.getByText('Asked for').nextElementSibling).toHaveTextContent('A quiet appointment')
     const items = screen.getAllByRole('listitem')
     expect(within(items[0]).getByRole('heading', { name: 'Ana' })).toBeInTheDocument()
     expect(within(items[0]).getByAltText("Ana's portfolio photo: cut on wavy")).toBeInTheDocument()

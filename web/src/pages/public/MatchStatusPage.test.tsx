@@ -22,6 +22,7 @@ const BASE: ClientView = {
   photoUrl: 'https://storage.test/view',
   emailHint: null,
   emailChangeAllowed: true,
+  asks: [],
   matches: [],
 }
 
@@ -130,6 +131,33 @@ describe('MatchStatusPage', () => {
     await waitFor(() =>
       expect(fetch).toHaveBeenCalledWith(`/api/public/match-requests/${TOKEN}/viewed`, expect.objectContaining({ method: 'POST' })),
     )
+  })
+
+  it('suggests a booking note with a copy button when the client asked for a quiet appointment or honest advice', async () => {
+    const user = userEvent.setup()
+    // After setup(), which installs its own clipboard.
+    const writeText = vi.spyOn(navigator.clipboard, 'writeText')
+    show(200, { ...BASE, stage: 'READY', asks: ['QUIET_APPOINTMENT', 'HONEST_ADVICE'], matches: [MATCH] })
+    const note = "Quiet appointment, please. I'd like honest advice about what my hair can do."
+    expect(await screen.findByText(note)).toBeInTheDocument()
+    expect(screen.getByText(/add this to your booking notes/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Copy note' }))
+    expect(writeText).toHaveBeenCalledWith(note)
+    expect(await screen.findByText('Note copied.')).toBeInTheDocument()
+    // Book is still right there.
+    expect(screen.getByRole('link', { name: 'Book with Curl Studio' })).toBeInTheDocument()
+  })
+
+  it('suggests just the quiet line when only that was asked', async () => {
+    show(200, { ...BASE, stage: 'READY', asks: ['QUIET_APPOINTMENT'], matches: [MATCH] })
+    expect(await screen.findByText('Quiet appointment, please.')).toBeInTheDocument()
+  })
+
+  it('shows no booking note when the client asked for neither', async () => {
+    show(200, { ...BASE, stage: 'READY', matches: [MATCH] })
+    expect(await screen.findByText(MATCH.reason)).toBeInTheDocument()
+    expect(screen.queryByText(/booking notes/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Copy note' })).not.toBeInTheDocument()
   })
 
   it('says plainly when no stylist was a close match, points at every stylist, and stops checking back', async () => {

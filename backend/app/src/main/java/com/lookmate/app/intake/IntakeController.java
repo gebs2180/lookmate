@@ -30,7 +30,12 @@ class IntakeController {
     record PhotoFile(@NotBlank String contentType, @Positive long sizeBytes) {
     }
 
-    /** {@code email} is optional and no longer asked by the quiz: clients add it after the reveal ({@link EmailBody}). */
+    /**
+     * {@code email} is optional and no longer asked by the quiz: clients add it after the reveal ({@link EmailBody}).
+     * {@code firstName} is legacy: the quiz stopped asking for it on 2026-11-20, but it's still accepted (and stored) so a
+     * quiz page loaded before then can still send. {@code pastIssues} also carries the client's asks for the next
+     * appointment (QUIET_APPOINTMENT, HONEST_ADVICE); none of them affects ranking.
+     */
     record CreateRequest(@Email @Size(max = 254) String email,
                          @Size(max = 40) String firstName,
                          @NotNull Quiz.HairType hairType,
@@ -39,7 +44,7 @@ class IntakeController {
                          @Min(1) @Max(4) Integer budgetTier,
                          @Size(max = 80) String neighborhood,
                          @NotNull Quiz.Service service,
-                         @Size(max = 10) List<Quiz.@NotNull PastIssue> pastIssues,
+                         @Size(max = 12) List<Quiz.@NotNull PastIssue> pastIssues,
                          @Size(max = 500) String pastIssuesNote,
                          @NotNull @Valid PhotoFile inspiration) {
     }

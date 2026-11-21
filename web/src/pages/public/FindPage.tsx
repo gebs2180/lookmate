@@ -7,6 +7,7 @@ import { message } from '../../format'
 import { PhotoPicker, PrivacyNote } from './PhotoPicker'
 import { sendPhoto } from './photo'
 import {
+  ASKS,
   BUDGETS,
   HAIR_TYPES,
   LENGTHS,
@@ -31,7 +32,6 @@ type Answers = {
   pastIssues: PastIssue[]
   pastIssuesNote: string
   photo: Blob | null
-  firstName: string
 }
 
 const EMPTY: Answers = {
@@ -44,21 +44,20 @@ const EMPTY: Answers = {
   pastIssues: [],
   pastIssuesNote: '',
   photo: null,
-  firstName: '',
 }
 
 const NOT_SURE: Option<'UNSURE'> = { value: 'UNSURE', label: 'Not sure' }
 
-const STEPS = ['service', 'hairType', 'texture', 'length', 'budget', 'neighborhood', 'pastIssues', 'photo', 'name'] as const
+const STEPS = ['service', 'hairType', 'texture', 'length', 'budget', 'neighborhood', 'pastIssues', 'photo'] as const
 type Step = (typeof STEPS)[number]
 
 /** Created: the token and where its page is, kept so a failed photo upload can be retried without a second request. */
 type Sent = { token: string; statusPath: string }
 
 /**
- * The client's quiz, one question per screen, then the inspiration photo and an optional first name. No account and no
- * email: the client lands on their request's own page (/m/:token), which is their link, and can add an email there
- * after the reveal (CLAUDE.md, 2026-11-20).
+ * The client's quiz, one question per screen, ending with the inspiration photo, which sends it. No account, no name
+ * and no email: the client lands on their request's own page (/m/:token), which is their link, and can add an email
+ * there after the reveal (CLAUDE.md, 2026-11-20).
  */
 export function FindPage() {
   const [answers, setAnswers] = useState<Answers>(EMPTY)
@@ -72,9 +71,6 @@ export function FindPage() {
 
   const set = <K extends keyof Answers>(key: K, value: Answers[K]) => setAnswers((a) => ({ ...a, [key]: value }))
   const current: Step = STEPS[step]
-
-  // Browsers sometimes autofill an email into the name field; we'd greet the client by their address.
-  const nameLooksLikeEmail = answers.firstName.includes('@')
 
   function canContinue(): boolean {
     switch (current) {
@@ -90,8 +86,6 @@ export function FindPage() {
         return answers.budget !== null
       case 'photo':
         return answers.photo !== null
-      case 'name':
-        return !nameLooksLikeEmail
       default:
         return true
     }
@@ -103,7 +97,6 @@ export function FindPage() {
     setBusy(true)
     setError(null)
     const body: MatchRequestCreate = {
-      firstName: answers.firstName.trim() || undefined,
       hairType: answers.hairType,
       texture: answers.texture === 'UNSURE' ? undefined : (answers.texture ?? undefined),
       length: answers.length === 'UNSURE' ? undefined : (answers.length ?? undefined),
@@ -219,6 +212,25 @@ export function FindPage() {
                 </label>
               ))}
             </div>
+            <div className="asks" role="group" aria-labelledby="asks-label">
+              <p id="asks-label" className="field-label">
+                And next time, would you like…
+              </p>
+              <div className="choices">
+                {ASKS.map((o) => (
+                  <label key={o.value} className="choice">
+                    <input
+                      type="checkbox"
+                      checked={answers.pastIssues.includes(o.value)}
+                      onChange={(e) =>
+                        set('pastIssues', e.target.checked ? [...answers.pastIssues, o.value] : answers.pastIssues.filter((p) => p !== o.value))
+                      }
+                    />
+                    <span>{o.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
             <label className="field">
               <span className="field-label">Anything else? (optional)</span>
               <textarea value={answers.pastIssuesNote} maxLength={500} rows={3} onChange={(e) => set('pastIssuesNote', e.target.value)} />
@@ -229,32 +241,11 @@ export function FindPage() {
           <Question legend="Show us the look you want" hint="One photo of the style: a screenshot, a saved post, or a photo you took.">
             <PhotoPicker photo={answers.photo} onChange={(p) => set('photo', p)} />
             <PrivacyNote keptDays={keptDays} />
-          </Question>
-        )}
-        {current === 'name' && (
-          <Question legend="What should we call you?" hint="Optional. We use it to say hello on your results page.">
-            <label className="field">
-              <span className="field-label">First name (optional)</span>
-              <input
-                autoComplete="given-name"
-                maxLength={40}
-                value={answers.firstName}
-                aria-invalid={nameLooksLikeEmail || undefined}
-                aria-describedby={nameLooksLikeEmail ? 'first-name-error' : undefined}
-                onChange={(e) => set('firstName', e.target.value)}
-              />
-            </label>
-            {nameLooksLikeEmail && (
-              <p id="first-name-error" className="error" role="alert">
-                That looks like an email address. Put just your first name here, or leave it blank.
-              </p>
-            )}
             <p className="muted small">
               No email needed: your results open on their own page. Bookmark that page, or email it to yourself from there.
             </p>
           </Question>
         )}
-
         {error && (
           <div className="alert alert-danger" role="alert">
             <p>{error}</p>

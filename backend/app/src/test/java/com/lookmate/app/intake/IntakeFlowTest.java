@@ -168,6 +168,27 @@ class IntakeFlowTest {
     }
 
     @Test
+    void theQuietAndHonestAdviceChipsAreKeptAndEchoedAsAsks() throws Exception {
+        String withAsks = quiz(null, "").replace("\"firstName\":\"\",", "")
+                .replace("[\"DIDNT_LISTEN\",\"NO_EXPERIENCE_WITH_MY_HAIR_TYPE\"]", "[\"HONEST_ADVICE\",\"DIDNT_LISTEN\",\"QUIET_APPOINTMENT\"]");
+        String token = TestApi.read(create(withAsks).andExpect(status().isCreated()), "$.token");
+        String issues = jdbc.sql("select c.past_issues::text from client c join match_request r on r.client_id = c.id where r.id = :id")
+                .param("id", idOf(token)).query(String.class).single();
+        assertThat(issues).isEqualTo("{HONEST_ADVICE,DIDNT_LISTEN,QUIET_APPOINTMENT}");
+        view(token).andExpect(jsonPath("$.firstName").value(nullValue()))
+                .andExpect(jsonPath("$.asks[0]").value("QUIET_APPOINTMENT"))
+                .andExpect(jsonPath("$.asks[1]").value("HONEST_ADVICE"))
+                .andExpect(jsonPath("$.asks.length()").value(2));
+        // Without either chip there's nothing to ask; an unknown code is refused.
+        view(newRequest(null, "Ada")).andExpect(jsonPath("$.asks").isEmpty());
+        create(withAsks.replace("QUIET_APPOINTMENT", "SILENT_PLEASE")).andExpect(status().isBadRequest());
+
+        // No name: the email still reads well.
+        setEmail(token, "nona@example.com").andExpect(status().isOk());
+        assertThat((String) emailsFor(idOf(token)).getFirst().get("text_body")).contains("Hi there,");
+    }
+
+    @Test
     void anEmailGivenWithTheQuizStillGetsTheLink() throws Exception {
         String token = newRequest("ada@example.com", "Ada");
         var emails = emailsFor(idOf(token));

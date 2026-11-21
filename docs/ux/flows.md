@@ -9,7 +9,7 @@ exist yet.
 ```
 Public (no sign-in, PublicShell)
 ├── /                     Landing (today: the signed-out welcome inside the app shell)        [screen 1]
-├── /find                 Style quiz: 7 questions → photo → optional first name (no email)     [screens 2, 3]
+├── /find                 Style quiz: 7 questions → photo (no name, no email)               [screens 2, 3]
 │                         └── sends, then goes straight to /m/:token
 ├── /m/:token             The client's page: a few seconds' wait that turns into the results    [screen 4]
 │   ├── For you           Recommendations (3–5), reasons, evidence photos, Book
@@ -53,14 +53,13 @@ four-tab bar; the admin gets a sidebar.
 | 5 | Length now | Four options | Shrinkage hint for curls and coils. |
 | 6 | Budget | Four tiers or not sure | Show dollar ranges, not only $ signs (open question: confirm ranges with the stylist on the team). |
 | 7 | Area | Optional | Quick chips for common Columbus areas plus free text. Skip is visible. |
-| 8 | What should your next stylist get right? | Optional, multi | Positive chips + "In your own words". Skip is visible. |
-| 9 | Inspiration photo | Which photo? | Privacy note under the picker; preview with "Change photo". |
-| 10 | First name (optional) | Do I have to sign up? | No email here (decided 2026-11-20): "No email needed: your results open on their own page. Bookmark that page, or email it to yourself from there." |
-| 11 | The wait (seconds) | none | Same page, no navigation: "Thanks, Jordan. Here's what we heard." (the echo), their photo with a scan line, three steps ticking off, tiles filling with stylists' photos. The page polls `GET /api/public/match-requests/{token}` about every 1.5 s while the stage is RECEIVED or MATCHING. |
-| 12 | Results, in place | Which stylist? | "Found in 4 seconds." Tabs: **For you · 3** and **See all stylists**. Cards: reason first, evidence photos, "Why Priya?", "Book on Vagaro ↗". "Not feeling these? See all 23 stylists" at the end. |
-| 13 | See all stylists (optional) | Anyone else? | Filters start from their answers (service, hair type); recommended stylists sort first with a "For you" label; each card shows work counts per hair type and three photos. |
-| 14 | Book | Leave for the stylist's site | Opens in a new tab through tracking's redirect; no referrer. |
-| 15 | Keep this list (optional) | How do I come back? | A box on the results page: "This page is your link. Bookmark this page, or email it to yourself." Field "Email (optional)", "We may ask how your appointment went." Once given, the masked address replaces the box ("Use a different email" fixes a typo). On "No close matches yet" it reads "Tell me when picks are added". Nothing is emailed to a client who gives no email. |
+| 8 | What should your next stylist get right? | Optional, multi | Positive chips + "In your own words". Skip is visible. Two more chips under "And next time, would you like…": **A quiet appointment** and **Honest advice about what my hair can do** (codes `QUIET_APPOINTMENT`, `HONEST_ADVICE`; they don't change ranking). The live step's legend is still "Has a stylist let you down before?"; the positive rewording is open. |
+| 9 | Inspiration photo | Which photo? Do I have to sign up? | Privacy note under the picker; preview with "Change photo". The last step: "Find my stylists" sends the quiz. No name and no email here (decided 2026-11-20; the first-name step was removed): "No email needed: your results open on their own page. Bookmark that page, or email it to yourself from there." |
+| 10 | The wait (seconds) | none | Same page, no navigation: "Here's what we heard." (the echo), their photo with a scan line, three steps ticking off, tiles filling with stylists' photos. The page polls `GET /api/public/match-requests/{token}` about every 1.5 s while the stage is RECEIVED or MATCHING. |
+| 11 | Results, in place | Which stylist? | "Found in 4 seconds." Tabs: **For you · 3** and **See all stylists**. Cards: reason first, evidence photos, "Why Priya?", "Book on Vagaro ↗". "Not feeling these? See all 23 stylists" at the end. If the client picked a quiet appointment or honest advice, a tip sits above the list: "When you book, add this to your booking notes: 'Quiet appointment, please.'" (both sentences when both were picked) with a "Copy note" button. It never blocks Book. |
+| 12 | See all stylists (optional) | Anyone else? | Filters start from their answers (service, hair type); recommended stylists sort first with a "For you" label; each card shows work counts per hair type and three photos. |
+| 13 | Book | Leave for the stylist's site | Opens in a new tab through tracking's redirect; no referrer. |
+| 14 | Keep this list (optional) | How do I come back? | A box on the results page: "This page is your link. Bookmark this page, or email it to yourself." Field "Email (optional)", "We may ask how your appointment went." Once given, the masked address replaces the box ("Use a different email" fixes a typo). On "No close matches yet" it reads "Tell me when picks are added". Nothing is emailed to a client who gives no email. |
 
 **Friction to remove (from today's `/find`):**
 
@@ -78,7 +77,7 @@ four-tab bar; the admin gets a sidebar.
 
 | Where | State | Copy and action |
 |---|---|---|
-| `/m/:token`, RECEIVED/MATCHING | Ranking under way | The wait (step 11). |
+| `/m/:token`, RECEIVED/MATCHING | Ranking under way | The wait (step 10). |
 | Ranking slow (> 20 s) | Worker busy or the embedding provider slow | Keep the wait, change the line: "This is taking longer than usual. Stay here, or bookmark this page and come back." Keep polling (back off to every 10 s). |
 | Ranking failed (FAILED) | Provider outage, unreadable photo | "We couldn't match your photo just now. We'll try again and email you. Meanwhile, here's everyone who does curly cuts." with See all stylists pre-filtered. |
 | No close match | Ranking returned 0 stylists for the hair type and service | Honest headline: "We couldn't find stylists with work close to your photo on curly hair yet." Show See all stylists filtered to the hair type. Never pad the list with poor matches. |
