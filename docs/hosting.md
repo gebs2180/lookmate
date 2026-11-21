@@ -7,7 +7,7 @@ infrastructure, so a Combpatible deploy or outage can never touch Rawmark.
 | Service | Shared account? | New for Combpatible |
 |---|---|---|
 | Hetzner | Same project | A new CX23 server (`lookmate-pilot`), its own firewall |
-| Cloudflare R2 | Same account | Buckets `lookmate-photos`, `lookmate-backups`; tokens scoped to those buckets only |
+| Cloudflare R2 | Same account | Buckets `combpatible-photos`, `combpatible-backups`; tokens scoped to those buckets only |
 | Sentry | Same org | Project `lookmate` (Spring Boot), its own DSN |
 | GHCR / Actions | Same owner | Images `lookmate-backend`, `lookmate-web`, `lookmate-backup` from this repo |
 | healthchecks.io / UptimeRobot | Same accounts | Three checks (backup, backup check, restore test) and one monitor |
@@ -76,7 +76,7 @@ Compose sets these from `deploy/.env`; another host would set them directly.
 | `SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES` | yes | The API identifier, e.g. `https://api.combpatible.app` |
 | `STORAGE_ENDPOINT` | yes | `https://<account-id>.r2.cloudflarestorage.com` |
 | `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY` | yes | R2 token: Object Read & Write on the photo bucket only |
-| `STORAGE_PHOTO_BUCKET` | yes | e.g. `lookmate-photos` |
+| `STORAGE_PHOTO_BUCKET` | yes | e.g. `combpatible-photos` |
 | `STORAGE_PUBLIC_ENDPOINT` | no | Only if browsers must use a different endpoint than the app. Then set the Caddy container's `PHOTO_ORIGIN` to it too, or the Content-Security-Policy blocks photos |
 | `STORAGE_REGION` | no | Default `auto` (R2) |
 | `SENTRY_DSN`, `SENTRY_ENVIRONMENT` | no | Without a DSN, Sentry is off |
@@ -126,17 +126,17 @@ You need about an hour, a personal card, and an SSH key (`ssh-keygen -t ed25519`
 
 ### 3. R2 buckets and tokens
 
-1. R2 → Create bucket `lookmate-photos` and bucket `lookmate-backups`. Leave both private, with no public access and no r2.dev URL.
-2. `lookmate-photos` → Settings → CORS policy: paste `deploy/r2-cors.json` with `https://<site address>` in `AllowedOrigins`.
+1. R2 → Create bucket `combpatible-photos` and bucket `combpatible-backups`. Leave both private, with no public access and no r2.dev URL.
+2. `combpatible-photos` → Settings → CORS policy: paste `deploy/r2-cors.json` with `https://<site address>` in `AllowedOrigins`.
 3. R2 → Manage API tokens → Create three **Account API tokens**, each limited to specific buckets:
-   - `lookmate-app`: Object Read & Write, `lookmate-photos` only;
-   - `lookmate-backup-read`: Object Read only, `lookmate-photos` only;
-   - `lookmate-backup-write`: Object Read & Write, `lookmate-backups` only.
+   - `lookmate-app`: Object Read & Write, `combpatible-photos` only;
+   - `lookmate-backup-read`: Object Read only, `combpatible-photos` only;
+   - `lookmate-backup-write`: Object Read & Write, `combpatible-backups` only.
    Copy each Access Key ID and Secret Access Key (they're shown once), plus the S3 endpoint `https://<account-id>.r2.cloudflarestorage.com`.
 
-4. `lookmate-backups` → Settings → **Bucket lock rules** → Add rule: name `keep-30-days`, no prefix (the whole bucket), retention **30 days**. No one can delete or overwrite a backup in its first 30 days, whoever holds a token.
-5. `lookmate-backups` → Settings → **Object lifecycle rules** → Add rule: name `expire-dumps`, prefix `postgres/`, delete objects **35 days** after upload. Photos in the backup are never expired.
-6. A fourth token for the restore test on your own machine: `lookmate-backup-restore`, Object Read only, `lookmate-backups` only. It goes in your local `restore-test.env` (step 7), never on the server.
+4. `combpatible-backups` → Settings → **Bucket lock rules** → Add rule: name `keep-30-days`, no prefix (the whole bucket), retention **30 days**. No one can delete or overwrite a backup in its first 30 days, whoever holds a token.
+5. `combpatible-backups` → Settings → **Object lifecycle rules** → Add rule: name `expire-dumps`, prefix `postgres/`, delete objects **35 days** after upload. Photos in the backup are never expired.
+6. A fourth token for the restore test on your own machine: `lookmate-backup-restore`, Object Read only, `combpatible-backups` only. It goes in your local `restore-test.env` (step 7), never on the server.
 
 The backup can read photos but not delete them, and the app can't touch the backups. R2 has no write-only token, so the backup's write token could still delete a backup; the lock rule is what stops it, for 30 days. The backup job itself never deletes: old dumps go by the lifecycle rule. A copy outside this Cloudflare account comes later (review D1).
 
@@ -195,7 +195,7 @@ docker compose -f compose.prod.yml run --rm backup bash -c "backup.sh && backup-
 The server can't decrypt, so the real restore test runs on your machine, with the private key from Bitwarden. It needs Docker Desktop and a `restore-test.env` file kept outside the repo (e.g. `~\lookmate\restore-test.env`; it holds a read-only key, not the age key):
 
 ```
-BACKUP_BUCKET=lookmate-backups
+BACKUP_BUCKET=combpatible-backups
 RCLONE_CONFIG_BACKUPS_TYPE=s3
 RCLONE_CONFIG_BACKUPS_PROVIDER=Cloudflare
 RCLONE_CONFIG_BACKUPS_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
@@ -288,7 +288,7 @@ ssh deploy@combpatible.app 'bash -s' < deploy/prod-check.sh
    ```
 3. Lost photos: decrypt them back into the photo bucket, also on your machine. Copy `restore-test.env` to `restore-photos.env` and add the photo bucket with the app token, which can write to it (the backup read tokens can't):
    ```
-   PHOTO_BUCKET=lookmate-photos
+   PHOTO_BUCKET=combpatible-photos
    RCLONE_CONFIG_PHOTOS_TYPE=s3
    RCLONE_CONFIG_PHOTOS_PROVIDER=Cloudflare
    RCLONE_CONFIG_PHOTOS_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
