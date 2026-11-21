@@ -16,7 +16,11 @@ export type DemoPhoto = {
   beforeOfNext?: boolean
 }
 
-export type DemoStylist = Omit<ProfileRequest, 'locationId' | 'specialties' | 'bookingUrl'> & { slug: string; photos: DemoPhoto[] }
+/** Practice (labels, prices) is drawn at random when seeding: see randomPractice in demoSeed.ts. */
+export type DemoStylist = Omit<ProfileRequest, 'locationId' | 'specialties' | 'bookingUrl' | 'practice'> & {
+  slug: string
+  photos: DemoPhoto[]
+}
 
 const p = (file: string, caption: string, service: ServiceType, hairType: HairType, texture: Texture, length: HairLength, beforeOfNext = false): DemoPhoto => ({
   file,

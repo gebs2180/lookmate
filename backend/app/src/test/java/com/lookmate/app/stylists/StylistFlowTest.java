@@ -2,6 +2,7 @@ package com.lookmate.app.stylists;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -360,6 +361,67 @@ class StylistFlowTest {
         api.postJson("/api/admin/stylists/demo/hide", "{}", api.admin()).andExpect(status().isOk()).andExpect(jsonPath("$.hidden").value(1));
         assertThat(stylists.liveProfile(UUID.fromString(orgId))).isEmpty();
         api.get("/api/admin/stylists", api.admin()).andExpect(jsonPath("$[?(@.orgId == '" + orgId + "')].demo").value(org.hamcrest.Matchers.contains(true)));
+    }
+
+    @Test
+    void practiceLabelsAndFromPricesAreOptionalAndShownOnlyForLiveProfiles() throws Exception {
+        String loc = location("Clintonville", "practice-oh");
+        String orgId = api.stylistOrg("Rae's Suite", "auth0|rae");
+        String home = "/api/orgs/" + orgId + "/stylist";
+        String profile = "{\"displayName\":\"Rae\",\"locationId\":\"" + loc + "\",\"specialties\":[\"CUT\",\"COLOR\"],"
+                + "\"bookingUrl\":\"https://vagaro.com/rae\",\"priceTier\":2,\"practice\":%s}";
+
+        // A price outside $1 to $10,000 is refused.
+        putJson(home + "/profile", profile.formatted("{\"fromPrices\":[{\"service\":\"CUT\",\"fromDollars\":0}]}"), as("auth0|rae"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_FIELD"));
+        // No practice at all is fine: none of it is needed.
+        putJson(home + "/profile", profile.formatted("null"), as("auth0|rae")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.practice.labels.length()").value(0))
+                .andExpect(jsonPath("$.practice.fromPrices.length()").value(0))
+                .andExpect(jsonPath("$.practice.consultation").doesNotExist());
+
+        // Repeats collapse; a price for a service not offered (BRAIDS) is dropped; prices follow the specialties' order.
+        putJson(home + "/profile", profile.formatted("""
+                {"labels":["LGBTQ_AFFIRMING","KIDS_WELCOME","LGBTQ_AFFIRMING"],"languages":["SPANISH","SOMALI"],
+                 "fromPrices":[{"service":"COLOR","fromDollars":120},{"service":"BRAIDS","fromDollars":200},{"service":"CUT","fromDollars":65}],
+                 "consultation":"FREE","priceDependsOnHair":true}"""), as("auth0|rae"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.practice.labels").value(org.hamcrest.Matchers.contains("LGBTQ_AFFIRMING", "KIDS_WELCOME")))
+                .andExpect(jsonPath("$.practice.languages").value(org.hamcrest.Matchers.contains("SPANISH", "SOMALI")))
+                .andExpect(jsonPath("$.practice.fromPrices[*].service").value(org.hamcrest.Matchers.contains("CUT", "COLOR")))
+                .andExpect(jsonPath("$.practice.fromPrices[0].fromDollars").value(65))
+                .andExpect(jsonPath("$.practice.consultation").value("FREE"))
+                .andExpect(jsonPath("$.practice.priceDependsOnHair").value(true));
+        api.get(home, as("auth0|rae")).andExpect(jsonPath("$.profile.practice.fromPrices.length()").value(2));
+        // An unknown label is a bad request, not a silent drop.
+        putJson(home + "/profile", profile.formatted("{\"labels\":[\"VOTES_FOR_X\"]}"), as("auth0|rae"))
+                .andExpect(status().isBadRequest());
+
+        // Not LIVE: nothing public.
+        mvc.perform(get("/api/public/stylists/" + orgId + "/practice")).andExpect(status().isNotFound());
+
+        for (int i = 0; i < 2; i++) {
+            tag(orgId, "auth0|rae", upload(orgId, "auth0|rae", TestImages.jpeg(40 + i), "image/jpeg"), "CUT", "WAVY");
+        }
+        mvc.perform(post(home + "/publish").with(as("auth0|rae"))).andExpect(status().isOk());
+
+        mvc.perform(get("/api/public/stylists/" + orgId + "/practice")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.labels.length()").value(2))
+                .andExpect(jsonPath("$.fromPrices[1].service").value("COLOR"))
+                .andExpect(jsonPath("$.consultation").value("FREE"));
+        mvc.perform(get("/api/public/stylists?market=practice-oh")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.stylists[0].practice.languages[0]").value("SPANISH"))
+                .andExpect(jsonPath("$.stylists[0].practice.fromPrices[0].fromDollars").value(65))
+                .andExpect(jsonPath("$.stylists[0].practice.priceDependsOnHair").value(true));
+        // Removing a specialty drops its price.
+        putJson(home + "/profile", profile.replace("\"CUT\",\"COLOR\"", "\"CUT\"").formatted("""
+                {"fromPrices":[{"service":"COLOR","fromDollars":120},{"service":"CUT","fromDollars":70}]}"""), as("auth0|rae"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.practice.fromPrices.length()").value(1))
+                .andExpect(jsonPath("$.practice.labels.length()").value(0));
+
+        mvc.perform(post(home + "/hide").with(as("auth0|rae"))).andExpect(status().isOk());
+        mvc.perform(get("/api/public/stylists/" + orgId + "/practice")).andExpect(status().isNotFound());
     }
 
     @Test

@@ -1,14 +1,21 @@
 package com.lookmate.app.stylists;
 
 import com.lookmate.app.persistence.AssignedIdEntity;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /** A stylist org's public profile. One per org, keyed by the org's id. */
@@ -28,6 +35,16 @@ class StylistProfile extends AssignedIdEntity<UUID> {
     private String instagram;
     private Short priceTier;
     private boolean demo;
+    private String[] practiceLabels;
+    private String[] languages;
+    private String consultation;
+    private boolean priceDependsOnHair;
+    /** Service code to whole dollars (V8). */
+    @ElementCollection
+    @CollectionTable(name = "stylist_price", joinColumns = @JoinColumn(name = "org_id"))
+    @MapKeyColumn(name = "service")
+    @Column(name = "from_dollars")
+    private Map<String, Integer> fromPrices = new HashMap<>();
     @Enumerated(EnumType.STRING)
     private ProfileStatus status;
     private Instant publishedAt;
@@ -41,13 +58,16 @@ class StylistProfile extends AssignedIdEntity<UUID> {
         this.orgId = orgId;
         this.status = ProfileStatus.DRAFT;
         this.specialties = new String[0];
+        this.practiceLabels = new String[0];
+        this.languages = new String[0];
         this.createdAt = Instant.now();
         this.updatedAt = createdAt;
     }
 
     /** The fields the stylist edits, already normalised and checked. */
     record ProfileFields(String displayName, UUID locationId, String market, String bio, List<ServiceType> specialties,
-                         String bookingUrl, BookingPlatform bookingPlatform, String instagram, Integer priceTier) {
+                         String bookingUrl, BookingPlatform bookingPlatform, String instagram, Integer priceTier,
+                         Practice practice) {
     }
 
     void update(ProfileFields f) {
@@ -60,6 +80,13 @@ class StylistProfile extends AssignedIdEntity<UUID> {
         this.bookingPlatform = f.bookingPlatform() == null ? null : f.bookingPlatform().name();
         this.instagram = f.instagram();
         this.priceTier = f.priceTier() == null ? null : f.priceTier().shortValue();
+        Practice practice = f.practice();
+        this.practiceLabels = practice.labels().stream().distinct().map(Enum::name).toArray(String[]::new);
+        this.languages = practice.languages().stream().distinct().map(Enum::name).toArray(String[]::new);
+        this.consultation = practice.consultation() == null ? null : practice.consultation().name();
+        this.priceDependsOnHair = practice.priceDependsOnHair();
+        this.fromPrices.clear();
+        practice.fromPrices().forEach(p -> fromPrices.put(p.service().name(), p.fromDollars()));
         this.updatedAt = Instant.now();
     }
 
@@ -125,6 +152,20 @@ class StylistProfile extends AssignedIdEntity<UUID> {
 
     Integer getPriceTier() {
         return priceTier == null ? null : priceTier.intValue();
+    }
+
+    /** Labels, languages, from-prices (in the order of the specialties) and the consultation. */
+    Practice getPractice() {
+        List<Practice.FromPrice> prices = getSpecialties().stream()
+                .filter(s -> fromPrices.containsKey(s.name()))
+                .map(s -> new Practice.FromPrice(s, fromPrices.get(s.name())))
+                .toList();
+        return new Practice(codes(practiceLabels, PracticeLabel.class), codes(languages, Language.class), prices,
+                consultation == null ? null : Consultation.valueOf(consultation), priceDependsOnHair);
+    }
+
+    private static <E extends Enum<E>> List<E> codes(String[] values, Class<E> type) {
+        return values == null ? List.of() : Arrays.stream(values).map(v -> Enum.valueOf(type, v)).toList();
     }
 
     boolean isDemo() {

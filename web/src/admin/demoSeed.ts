@@ -1,5 +1,14 @@
 import { apiPath, type Org, type UploadSlot } from '../api'
-import type { Location, PortfolioPhoto, Profile, ServiceType } from '../stylists/types'
+import {
+  CONSULTATIONS,
+  LANGUAGES,
+  type Location,
+  type PortfolioPhoto,
+  type Practice,
+  type PracticeLabel,
+  type Profile,
+  type ServiceType,
+} from '../stylists/types'
 import type { DemoPhoto, DemoStylist } from './demoStylists'
 
 type Api = <T>(method: string, path: string, body?: unknown) => Promise<T>
@@ -10,6 +19,52 @@ export type SeedDeps = {
   /** The photo for one slot: the admin's own file if they picked one with this name, else a drawn placeholder. */
   photoFor: (photo: DemoPhoto, stylist: DemoStylist) => Promise<Blob>
   progress: (line: string) => void
+  /** For tests; Math.random otherwise. */
+  random?: () => number
+}
+
+/** A mid-range ($$) starting price per service, in dollars: made up, roughly Columbus salon-suite prices. */
+const BASE_PRICE: Record<ServiceType, number> = {
+  CUT: 55,
+  COLOR: 110,
+  BALAYAGE: 210,
+  HIGHLIGHTS: 150,
+  EXTENSIONS: 400,
+  BRAIDS: 180,
+  LOCS: 120,
+  SILK_PRESS: 75,
+  PERM: 120,
+  TREATMENT: 45,
+  STYLING: 50,
+  OTHER: 60,
+}
+const TIER_SCALE = [0.7, 1, 1.4, 1.9]
+const LABEL_ODDS: Record<PracticeLabel, number> = {
+  GENDER_NEUTRAL_PRICING: 0.5,
+  LGBTQ_AFFIRMING: 0.45,
+  SENSORY_FRIENDLY: 0.25,
+  KIDS_WELCOME: 0.35,
+}
+const PRICED_BY_HAIR: ServiceType[] = ['BRAIDS', 'LOCS', 'EXTENSIONS', 'SILK_PRESS']
+
+/**
+ * What to expect in a made-up stylist's chair, some of it at random so the demo shows a spread: labels, maybe a
+ * language, a from-price per service (scaled by price tier, rounded to $5) and a consultation, or none.
+ */
+export function randomPractice(specialties: ServiceType[], priceTier: number | null, random: () => number = Math.random): Practice {
+  const scale = TIER_SCALE[(priceTier ?? 2) - 1] ?? 1
+  const pick = <T,>(xs: readonly T[]) => xs[Math.floor(random() * xs.length)]
+  const consultation = pick([...CONSULTATIONS, null])
+  return {
+    labels: (Object.keys(LABEL_ODDS) as PracticeLabel[]).filter((l) => random() < LABEL_ODDS[l]),
+    languages: random() < 0.3 ? [pick(LANGUAGES)] : [],
+    fromPrices: specialties.map((service) => ({
+      service,
+      fromDollars: Math.max(5, Math.round((BASE_PRICE[service] * scale * (0.85 + random() * 0.3)) / 5) * 5),
+    })),
+    consultation,
+    priceDependsOnHair: random() < (specialties.some((s) => PRICED_BY_HAIR.includes(s)) ? 0.6 : 0.2),
+  }
 }
 
 /**
@@ -19,7 +74,7 @@ export type SeedDeps = {
  */
 export async function seedDemoStylists(stylists: DemoStylist[], locations: Location[], deps: SeedDeps): Promise<string[]> {
   if (locations.length === 0) throw new Error('Add at least one active location first: demo stylists need one to go live.')
-  const { api, upload, photoFor, progress } = deps
+  const { api, upload, photoFor, progress, random = Math.random } = deps
   const created: string[] = []
   for (const [i, s] of stylists.entries()) {
     progress(`${s.displayName}: creating`)
@@ -33,6 +88,7 @@ export async function seedDemoStylists(stylists: DemoStylist[], locations: Locat
       bookingUrl: `https://example.com/book/${s.slug}`,
       instagram: s.instagram,
       priceTier: s.priceTier,
+      practice: randomPractice(specialties, s.priceTier, random),
     })
     await api<Profile>('POST', apiPath`/api/admin/stylists/${org.id}/demo`)
 

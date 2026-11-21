@@ -37,6 +37,11 @@ describe('ProfilePage', () => {
     await userEvent.type(screen.getByLabelText('Booking link'), 'https://booksy.com/ana')
     await userEvent.type(screen.getByLabelText('Instagram'), '@curls.by.ana')
     await userEvent.click(screen.getByRole('radio', { name: '$$' }))
+    // What to expect in my chair: all optional.
+    await userEvent.click(screen.getByRole('checkbox', { name: /^LGBTQ\+-affirming/ }))
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Spanish' }))
+    await userEvent.type(screen.getByLabelText('Silk press from $'), '80')
+    await userEvent.click(screen.getByRole('radio', { name: 'Free' }))
     await userEvent.click(screen.getByRole('button', { name: 'Save profile' }))
 
     expect(await screen.findByText('Elsewhere')).toBeInTheDocument()
@@ -48,6 +53,40 @@ describe('ProfilePage', () => {
       bookingUrl: 'https://booksy.com/ana',
       instagram: '@curls.by.ana',
       priceTier: 2,
+      practice: {
+        labels: ['LGBTQ_AFFIRMING'],
+        languages: ['SPANISH'],
+        fromPrices: [{ service: 'SILK_PRESS', fromDollars: 80 }],
+        consultation: 'FREE',
+        priceDependsOnHair: false,
+      },
+    })
+  })
+
+  it('only sends prices for services still offered', async () => {
+    const calls = stubApi({
+      [`GET /api/orgs/${ORG}/stylist`]: () => HOME,
+      'GET /api/locations': () => LOCATIONS,
+      [`PUT /api/orgs/${ORG}/stylist/profile`]: () => ({}),
+    })
+    renderAt(`/stylist/${ORG}/profile`, '/stylist/:orgId/profile', <ProfilePage />)
+
+    await userEvent.click(await screen.findByRole('checkbox', { name: 'Cut' }))
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Color' }))
+    await userEvent.type(screen.getByLabelText('Cut from $'), '65')
+    await userEvent.type(screen.getByLabelText('Color from $'), '120')
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Color' }))
+    expect(screen.queryByLabelText('Color from $')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Save profile' }))
+
+    await screen.findByText('Elsewhere')
+    const put = calls.find((c) => c.method === 'PUT')!
+    expect((put.body as { practice: unknown }).practice).toEqual({
+      labels: [],
+      languages: [],
+      fromPrices: [{ service: 'CUT', fromDollars: 65 }],
+      consultation: null,
+      priceDependsOnHair: false,
     })
   })
 

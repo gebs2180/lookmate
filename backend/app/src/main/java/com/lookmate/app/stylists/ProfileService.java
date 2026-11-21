@@ -27,7 +27,7 @@ class ProfileService {
 
     record ProfileView(String displayName, UUID locationId, String market, String bio, List<ServiceType> specialties,
                        String bookingUrl, BookingPlatform bookingPlatform, String instagram, Integer priceTier,
-                       ProfileStatus status, Instant publishedAt, Instant updatedAt, boolean demo) {
+                       ProfileStatus status, Instant publishedAt, Instant updatedAt, boolean demo, Practice practice) {
     }
 
     /**
@@ -39,9 +39,20 @@ class ProfileService {
                        int taggedPhotos, int minTaggedPhotos, int maxPhotos, List<Missing> missing) {
     }
 
+    /** {@code practice}: the whole "What to expect in my chair" section; null clears it (all of it is optional). */
     record ProfileRequest(String displayName, UUID locationId, String bio, List<ServiceType> specialties,
-                          String bookingUrl, String instagram, Integer priceTier) {
+                          String bookingUrl, String instagram, Integer priceTier, PracticeRequest practice) {
     }
+
+    /** As {@link Practice}, every field optional. */
+    record PracticeRequest(List<PracticeLabel> labels, List<Language> languages, List<PriceRequest> fromPrices,
+                           Consultation consultation, Boolean priceDependsOnHair) {
+    }
+
+    record PriceRequest(ServiceType service, Integer fromDollars) {
+    }
+
+    static final int MAX_FROM_DOLLARS = 10_000;
 
     private final StylistProfileRepository profiles;
     private final SalonLocationRepository locations;
@@ -204,14 +215,44 @@ class ProfileService {
                     .orElseThrow(() -> invalid("Pick your location from the list"));
             market = location.getMarket();
         }
+        List<ServiceType> specialties = r.specialties() == null ? List.of()
+                : r.specialties().stream().filter(java.util.Objects::nonNull).distinct().toList();
         try {
             String bookingUrl = ProfileFieldRules.bookingUrl(r.bookingUrl());
-            return new StylistProfile.ProfileFields(name, r.locationId(), market, bio,
-                    r.specialties() == null ? List.of() : r.specialties().stream().filter(java.util.Objects::nonNull).toList(),
-                    bookingUrl, ProfileFieldRules.platform(bookingUrl), ProfileFieldRules.instagram(r.instagram()), r.priceTier());
+            return new StylistProfile.ProfileFields(name, r.locationId(), market, bio, specialties,
+                    bookingUrl, ProfileFieldRules.platform(bookingUrl), ProfileFieldRules.instagram(r.instagram()), r.priceTier(),
+                    practice(r.practice(), specialties));
         } catch (ProfileFieldRules.Invalid e) {
             throw invalid(e.getMessage());
         }
+    }
+
+    /**
+     * The practice section, normalised: no nulls or repeats, and from-prices only for services the stylist offers (a
+     * price left over from an unticked specialty is dropped, not an error).
+     */
+    private static Practice practice(PracticeRequest p, List<ServiceType> specialties) {
+        if (p == null) {
+            return Practice.NONE;
+        }
+        List<PracticeLabel> labels = p.labels() == null ? List.of()
+                : p.labels().stream().filter(java.util.Objects::nonNull).distinct().toList();
+        List<Language> languages = p.languages() == null ? List.of()
+                : p.languages().stream().filter(java.util.Objects::nonNull).distinct().toList();
+        java.util.Map<ServiceType, Practice.FromPrice> prices = new java.util.LinkedHashMap<>();
+        for (PriceRequest price : p.fromPrices() == null ? List.<PriceRequest>of() : p.fromPrices()) {
+            if (price == null || price.service() == null || price.fromDollars() == null || !specialties.contains(price.service())) {
+                continue;
+            }
+            if (price.fromDollars() < 1 || price.fromDollars() > MAX_FROM_DOLLARS) {
+                throw invalid("Enter starting prices in whole dollars, from $1 to $10,000");
+            }
+            if (prices.put(price.service(), new Practice.FromPrice(price.service(), price.fromDollars())) != null) {
+                throw invalid("Give one starting price per service");
+            }
+        }
+        return new Practice(labels, languages, List.copyOf(prices.values()), p.consultation(),
+                Boolean.TRUE.equals(p.priceDependsOnHair()));
     }
 
     private static ApiException invalid(String message) {
@@ -225,6 +266,6 @@ class ProfileService {
     static ProfileView view(StylistProfile p) {
         return new ProfileView(p.getDisplayName(), p.getLocationId(), p.getMarket(), p.getBio(), p.getSpecialties(),
                 p.getBookingUrl(), p.getBookingPlatform(), p.getInstagram(), p.getPriceTier(), p.getStatus(),
-                p.getPublishedAt(), p.getUpdatedAt(), p.isDemo());
+                p.getPublishedAt(), p.getUpdatedAt(), p.isDemo(), p.getPractice());
     }
 }

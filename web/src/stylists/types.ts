@@ -84,6 +84,7 @@ export type Profile = {
   updatedAt: string
   /** A made-up stylist for the proof of concept. */
   demo: boolean
+  practice: Practice
 }
 
 export type ProfileRequest = {
@@ -94,6 +95,8 @@ export type ProfileRequest = {
   bookingUrl: string | null
   instagram: string | null
   priceTier: number | null
+  /** The whole "What to expect in my chair" section; all optional. */
+  practice: PracticeRequest | null
 }
 
 export type StylistHome = {
@@ -150,6 +153,31 @@ export type AdminStylist = {
   publishedAt: string | null
   demo: boolean
 }
+
+// What to expect in a stylist's chair (decided 2026-11-20): shown on the profile only, never a filter or in ranking.
+// Wording in ./practice.ts.
+export const PRACTICE_LABELS = ['GENDER_NEUTRAL_PRICING', 'LGBTQ_AFFIRMING', 'SENSORY_FRIENDLY', 'KIDS_WELCOME'] as const
+export type PracticeLabel = (typeof PRACTICE_LABELS)[number]
+
+/** Besides English, which is implied. */
+export const LANGUAGES = ['SPANISH', 'SOMALI', 'NEPALI', 'ARABIC', 'AMHARIC', 'FRENCH', 'MANDARIN', 'PORTUGUESE', 'VIETNAMESE', 'ASL'] as const
+export type Language = (typeof LANGUAGES)[number]
+
+export const CONSULTATIONS = ['FREE', 'PAID', 'INCLUDED'] as const
+export type Consultation = (typeof CONSULTATIONS)[number]
+
+export type FromPrice = { service: ServiceType; fromDollars: number }
+
+export type Practice = {
+  labels: PracticeLabel[]
+  languages: Language[]
+  /** In the order of the specialties; only services offered. */
+  fromPrices: FromPrice[]
+  consultation: Consultation | null
+  priceDependsOnHair: boolean
+}
+
+export type PracticeRequest = Partial<Practice>
 
 /** "SILK_PRESS" as "Silk press". */
 export function words(value: string) {

@@ -98,6 +98,7 @@ export function DirectoryPage() {
                 specialties={s.specialties.map((v) => labelOf(SERVICES, v) ?? v)}
                 photoUrls={s.photoUrls}
                 instagram={s.instagram}
+                practice={s.practice}
                 book={
                   token
                     ? { href: apiPath`/api/public/book-stylist/${token}/${s.orgId}` }

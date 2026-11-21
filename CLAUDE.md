@@ -48,6 +48,12 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
   picks are added") sets it. No email means no emails, ever. Limits are per IP, not per address.
   See [docs/modules/intake.md](docs/modules/intake.md).
 
+- **What to expect in the chair: profile labels and from-prices** (Zach, 2026-11-20). Stylists may tick gender-neutral
+  pricing, LGBTQ+-affirming, sensory-friendly on request, kids welcome and languages, and give a from-price per service
+  and whether they offer a consultation. All optional. **Profile only:** no filters, nothing in ranking or matching. No
+  political or identity labels. Quiet appointments are the client's choice, not a stylist label. See
+  [docs/modules/stylists.md](docs/modules/stylists.md) and [docs/research/beyond-the-hair.md](docs/research/beyond-the-hair.md).
+
 ## Defaults to confirm (ask before changing; record the answer here)
 
 - ~~Embedding provider and model~~ **Decided 2026-11-20: Amazon Bedrock, Titan Multimodal Embeddings G1** (Zach). AWS

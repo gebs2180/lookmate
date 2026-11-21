@@ -297,6 +297,7 @@ function Cover({
     reason: match.reason,
     photoUrls: match.photoUrls,
     instagram: match.instagram,
+    orgId: match.orgId,
     book,
   }
   const [cover, ...evidence] = match.photoUrls

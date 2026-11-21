@@ -266,7 +266,7 @@ gets the benefit without touching the order.
 - **How much clients care:** 53% of UK clients said they'd prefer silent services [HJI][hji-silent]; widely covered in
   the US since 2022. Also partly covers sensory needs and the wish to avoid political talk.
 - **Who sets it:** both. The stylist ticks "Quiet appointments on request". The client can pick a chip in the
-  existing step.
+  existing step. **Decided 2026-11-20 (Zach): client side only; not a stylist label** (open question 1).
 - **Use:** profile; directory filter; on the match card, highlighted when the client asked ("Offers quiet
   appointments"). Since booking leaves us, the results page tells the client how to ask: "Mention it when you book."
 - **Risk:** none for privacy (the client gives no reason). Fairness: none expected; check chip use by hair type anyway,
@@ -398,10 +398,11 @@ inputs).
 
 ## Open questions for Zach
 
-1. **Which "Add now" items?** All eight, or start with price, quiet appointments and the two chips (the ones tied to
-   the top reasons clients stray)?
-2. **Directory filters or profile only?** Filters help the client who needs one; with 20–40 stylists, a filter may
-   return one or two names (or none). Profile-only for the pilot, filters once there are more stylists?
+1. ~~**Which "Add now" items?**~~ **Decided 2026-11-20 (Zach):** stylist labels for gender-neutral pricing,
+   LGBTQ+-affirming, sensory-friendly on request, kids welcome and languages, plus from-prices and consultation.
+   Quiet appointments are **not** a stylist label: the client asks for one (the chip). All eight items otherwise.
+2. ~~**Directory filters or profile only?**~~ **Decided 2026-11-20 (Zach): profile only.** No filters, nothing in
+   ranking or matching. Revisit filters once there are more stylists.
 3. **Ask the Salon Lofts advisory-board stylist** which labels stylists would actually tick, and whether any would feel
    pressured to tick "LGBTQ+-affirming" or "gender-neutral pricing" to avoid looking unwelcoming.
 4. **Textured-hair pricing.** Show from-prices as stylists set them, including any surcharge by hair type, or ask
@@ -410,8 +411,8 @@ inputs).
    Agree before launch.
 6. **Identity labels later?** Revisit "-owned" labels once a market has enough stylists that a filter can't single
    people out (say 200+)? Or never as filters, only bio text?
-7. **"Politics-free chair" as a stylist option?** It describes a practice, not a belief, but it may read as coded.
-   Our recommendation: no; the quiet appointment covers it. Your call.
+7. ~~**"Politics-free chair" as a stylist option?**~~ **Decided 2026-11-20 (Zach): no.** The client's quiet
+   appointment covers it.
 8. **Lawyer.** Add to the terms review: practice labels and Columbus 2331, and whether Combpatible itself counts as a
    public accommodation for its directory filters.
 9. **Follow-up feedback (item 10)** needs the post-appointment email to exist first. Pilot it with the first 100
