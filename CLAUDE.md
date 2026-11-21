@@ -19,7 +19,7 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
   (the rule above): the repo, `com.lookmate`, Gradle, database, containers, GHCR images, `lookmate.*` config
   keys, `LOOKMATE_*` variables and the Auth0 claim namespaces `https://lookmate.app/*`. The exceptions, all named before this
   rule could apply: the Auth0 API audience, **`https://api.combpatible.app`** (the dev tenant's API was created with it,
-  and an API identifier can't be changed), and the R2 buckets **`combpatible-photos`** and **`combpatible-backups`**
+  and an API identifier can't be changed), and the R2 buckets **`combpatible-photos`** and **`combpatible-backup`**
   (Zach, 2026-11-20).
 - **Stack: pokemans', not Next.js + Supabase.** Spring Boot 4.1 / Java 25 / Gradle / Spring Modulith / Flyway, React 19 +
   Vite PWA, Postgres 18 with pgvector, Cloudflare R2, Auth0, Sentry, Resend. The privacy work the brief asks for
