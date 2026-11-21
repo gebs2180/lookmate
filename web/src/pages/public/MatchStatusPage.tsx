@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type UIEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type UIEvent } from 'react'
 import { Link, useParams } from 'react-router'
 import { ApiError, apiPath, publicApi, type ClientMatch, type ClientView } from '../../api'
 import { message } from '../../format'
@@ -26,16 +26,20 @@ const POLL_START_MS = 1500
 const POLL_BACKOFF: Backoff = { factor: 1.5, maxMs: 30_000, steadyMs: 30_000, giveUpMs: 20 * 60_000 }
 
 /**
- * The client's own request, reached by the private link in their email (/m/:token). No account. Book links and images
- * send no referrer, so the link never reaches a booking site. While the request is being matched the page checks back
- * by itself and shows the stylists as soon as they're published (matching publishes on its own, CLAUDE.md).
+ * The client's own request at its private link (/m/:token): the quiz lands here, and the URL is the client's way back
+ * (no account, and an email only if they add one here). Book links and images send no referrer, so the link never
+ * reaches a booking site. While the request is being matched the page checks back by itself and shows the stylists as
+ * soon as they're published (matching publishes on its own, CLAUDE.md).
  */
 export function MatchStatusPage() {
   const { token = '' } = useParams()
-  const { data: view, error, reload } = useLoad(
+  const { data: loaded, error, reload } = useLoad(
     () => publicApi<ClientView>('GET', apiPath`/api/public/match-requests/${token}`),
     [token],
   )
+  // The email box answers with the whole view; keep it until the next check replaces it.
+  const [updated, setUpdated] = useState<{ after: typeof loaded; view: ClientView } | null>(null)
+  const view = updated && updated.after === loaded ? updated.view : loaded
   useNoReferrer()
   const waiting = view?.stage === 'RECEIVED' || view?.stage === 'MATCHING'
   usePoll(waiting, reload, POLL_START_MS, POLL_BACKOFF)
@@ -84,13 +88,16 @@ export function MatchStatusPage() {
       {waiting && <Progress stage={view.stage} />}
       {waiting && (
         <p className="muted small" role="status">
-          This page updates by itself when your matches are ready, and we'll email you too. Meanwhile you can{' '}
+          This page updates by itself when your matches are ready, usually in a few minutes. Meanwhile you can{' '}
           <Link to={directory}>browse all stylists</Link>.
         </p>
       )}
 
       {noMatches && <NoCloseMatches directory={directory} />}
       {revealed && <Matches token={token} matches={view.matches} hairType={view.hairType} directory={directory} />}
+      {(waiting || view.stage === 'READY') && (
+        <KeepThisList token={token} view={view} title={noMatches ? 'Tell me when picks are added' : 'Email me this list'} onSaved={(saved) => setUpdated({ after: loaded, view: saved })} />
+      )}
 
       <div className="panel">
         <h2>Your inspiration photo</h2>
@@ -158,7 +165,7 @@ function NoCloseMatches({ directory }: { directory: string }) {
           Browse all stylists
         </Link>
       </p>
-      <p className="muted small">Our team may add picks to this list, so it's worth opening your link again later.</p>
+      <p className="muted small">Our team may add picks to this list, so it's worth opening this page again later.</p>
     </div>
   )
 }
@@ -313,6 +320,103 @@ function echo(view: ClientView): string {
     labelOf(HAIR_TYPES, view.hairType)?.toLowerCase(),
   ].filter(Boolean)
   return hair.length > 0 ? `${service}, on my ${hair.join(', ')} hair.` : `${service}.`
+}
+
+/**
+ * The page's URL is the client's link, so say so; and an optional email box that sends it to them (and lets us email
+ * when picks are added, or ask later how the appointment went). Once an email is set it shows a hint of it instead, with
+ * a way to correct it a couple of times.
+ */
+function KeepThisList({
+  token,
+  view,
+  title,
+  onSaved,
+}: {
+  token: string
+  view: ClientView
+  title: string
+  onSaved: (view: ClientView) => void
+}) {
+  const [email, setEmail] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const valid = /^\S+@\S+\.\S+$/.test(email.trim())
+  const showForm = !view.emailHint || editing
+
+  async function save(event: FormEvent) {
+    event.preventDefault()
+    if (!valid || busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      const saved = await publicApi<ClientView>('POST', apiPath`/api/public/match-requests/${token}/email`, { email: email.trim() })
+      setEditing(false)
+      setEmail('')
+      onSaved(saved)
+    } catch (e) {
+      setError(
+        e instanceof ApiError && e.code === 'EMAIL_CHANGE_LIMIT'
+          ? "This request's email can't be changed again. Bookmark this page instead."
+          : e instanceof ApiError && e.code === 'TOO_MANY_FOR_ADDRESS'
+            ? "We've sent that address several links today. Try again tomorrow, or bookmark this page."
+            : message(e),
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="panel keep">
+      <h2>{title}</h2>
+      <p>
+        <strong>This page is your link.</strong> Bookmark this page, or email it to yourself. Anyone with the link can see your request, so
+        keep it to yourself.
+      </p>
+      {view.emailHint && !editing ? (
+        <p role="status">
+          We've emailed this list to <strong>{view.emailHint}</strong>
+          {title === 'Tell me when picks are added' ? ", and we'll write again if picks are added." : '.'}{' '}
+          {view.emailChangeAllowed && (
+            <button type="button" className="link-button" onClick={() => setEditing(true)}>
+              Use a different email
+            </button>
+          )}
+        </p>
+      ) : null}
+      {showForm && (
+        <form className="keep-form" onSubmit={save} noValidate>
+          <label className="field">
+            <span className="field-label">Email (optional)</span>
+            <input
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              maxLength={254}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </label>
+          <button type="submit" disabled={!valid || busy} aria-busy={busy}>
+            {busy ? 'Sending…' : view.emailHint ? 'Send it here instead' : 'Send me the link'}
+          </button>
+          {editing && (
+            <button type="button" className="secondary" onClick={() => setEditing(false)} disabled={busy}>
+              Cancel
+            </button>
+          )}
+        </form>
+      )}
+      {showForm && <p className="muted small">We may ask how your appointment went. No account, no newsletter.</p>}
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  )
 }
 
 function AddPhoto({ token, keptDays, onSent }: { token: string; keptDays: number; onSent: () => void }) {

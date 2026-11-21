@@ -264,9 +264,46 @@ class AutoPublishFlowTest {
                 .andExpect(jsonPath("$.stage").value("READY"))
                 .andExpect(jsonPath("$.matches[*].stylistName").value(Matchers.contains("Straight Only")))
                 .andExpect(jsonPath("$.matches[0].rank").value(1));
-        // Still one email for the request.
+        // Still one "matches ready" email, plus one saying picks were added, with a fresh link to the list.
         assertThat(jdbc.sql("select count(*) from email_message where template = 'MATCHES_READY' and subject_id = ?").params(request)
                 .query(Integer.class).single()).isEqualTo(1);
+        String picks = jdbc.sql("select text_body from email_message where template = 'PICKS_ADDED' and subject_id = ?").params(request)
+                .query(String.class).single();
+        String picksLink = picks.replaceAll("(?s).*/m/([A-Za-z0-9_-]{43}).*", "$1");
+        assertThat(picksLink).hasSize(43).isNotEqualTo(token);
+        mvc.perform(get("/api/public/match-requests/" + picksLink))
+                .andExpect(jsonPath("$.matches[*].stylistName").value(Matchers.contains("Straight Only")));
+        // A second pick doesn't email again.
+        UUID another = stylist("Another", "LIVE");
+        api.postJson("/api/admin/match-requests/" + request + "/matches", "{\"orgId\":\"%s\"}".formatted(another), api.admin())
+                .andExpect(status().isCreated());
+        assertThat(jdbc.sql("select count(*) from email_message where template = 'PICKS_ADDED' and subject_id = ?").params(request)
+                .query(Integer.class).single()).isEqualTo(1);
+    }
+
+    @Test
+    void aClientWithNoEmailIsntEmailedWhenTheirListIsPublishedOrPicksAreAdded() throws Exception {
+        UUID straight = stylist("Straight Only", "LIVE");
+        photo(straight, "CUT", "STRAIGHT", LOOK);
+        String token = token();
+        UUID request = request("COILY", "CUT", token, null);
+        job.runOnce();
+
+        assertThat(statusOf(request)).isEqualTo("PUBLISHED");
+        mvc.perform(get("/api/public/match-requests/" + token))
+                .andExpect(jsonPath("$.stage").value("READY"))
+                .andExpect(jsonPath("$.matches").isEmpty())
+                .andExpect(jsonPath("$.emailHint").value(Matchers.nullValue()));
+        api.postJson("/api/admin/match-requests/" + request + "/matches", "{\"orgId\":\"%s\"}".formatted(straight), api.admin())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.request.statusReason").value(Matchers.nullValue()));
+        mvc.perform(get("/api/public/match-requests/" + token))
+                .andExpect(jsonPath("$.matches[*].stylistName").value(Matchers.contains("Straight Only")));
+        // Nothing queued and no extra links: the client sees the picks through the link they kept.
+        assertThat(jdbc.sql("select count(*) from email_message where subject_id = ?").params(request).query(Integer.class).single())
+                .isZero();
+        assertThat(jdbc.sql("select count(*) from match_request_link where match_request_id = ? and purpose = 'MATCHES_READY'")
+                .params(request).query(Integer.class).single()).isZero();
     }
 
     @Test

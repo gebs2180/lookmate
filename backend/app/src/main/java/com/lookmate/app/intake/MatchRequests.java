@@ -98,7 +98,7 @@ public class MatchRequests {
 
     /**
      * To PUBLISHED: from MATCHING (the ranker publishing on its own, {@code reviewedBy} null), IN_REVIEW (the admin), or
-     * FAILED (a list made by hand). The client is emailed a fresh link to their matches after
+     * FAILED (a list made by hand). A client who gave an email is emailed a fresh link to their matches after
      * {@code lookmate.intake.matches-ready-email-delay}, unless they open the list first ({@link #clientViewedMatches}).
      * Call it in the transaction that finalises the match rows.
      */
@@ -125,6 +125,9 @@ public class MatchRequests {
         }
         Instant now = Instant.now();
         rows.setPublished(id, reviewedBy, reason, now);
+        if (row.email() == null) {
+            return; // The email is optional (CLAUDE.md, 2026-11-20): the client sees their list on the page they're on.
+        }
         String token = LinkTokens.newToken();
         rows.insertLink(LinkTokens.hash(token), id, "MATCHES_READY", now, now.plus(properties.linkTtl()));
         Instant sendAt = now.plus(properties.matchesReadyEmailDelay());
@@ -133,6 +136,28 @@ public class MatchRequests {
         } else {
             emails.matchesReady(id, row.email(), row.firstName(), LinkTokens.path(token), sendAt, now);
         }
+    }
+
+    /**
+     * Our team added stylists to a list that was published empty ({@link #publishWithoutMatches}): the reason it was empty
+     * is cleared, and a client who gave an email (on their page: "Tell me when picks are added") is emailed a fresh link,
+     * once per request. A client who didn't sees the picks next time they open their link. Does nothing for a list that
+     * wasn't published empty. Call it in the transaction that adds the match row.
+     */
+    @Transactional
+    public void picksAdded(UUID id) {
+        MatchRequestRows.Row row = rows.findLocked(id).orElseThrow(() -> new NoSuchElementException("No match request " + id));
+        if (Status.valueOf(row.status()) != Status.PUBLISHED || row.statusReason() == null) {
+            return;
+        }
+        Instant now = Instant.now();
+        rows.setStatus(id, Status.PUBLISHED.name(), null, now);
+        if (row.email() == null) {
+            return;
+        }
+        String token = LinkTokens.newToken();
+        rows.insertLink(LinkTokens.hash(token), id, "MATCHES_READY", now, now.plus(properties.linkTtl()));
+        emails.picksAdded(id, row.email(), row.firstName(), LinkTokens.path(token), now);
     }
 
     /**

@@ -203,7 +203,7 @@ class ReviewService {
     /**
      * Adds a LIVE stylist in the request's market that the ranker didn't pick. Also after publishing (a list published
      * empty, or one the admin wants to extend): the stylist goes last on the client's list at once, and the reason the
-     * list was empty is cleared.
+     * list was empty is cleared; intake emails the client if they asked to hear about picks ({@link MatchRequests#picksAdded}).
      */
     @Transactional
     Review add(UUID requestId, UUID orgId, String note) {
@@ -220,7 +220,8 @@ class ReviewService {
                 properties.ranking().evidencePhotos());
         matches.insertByAdmin(requestId, orgId, evidence, blankToNull(note), clock.instant());
         if ("PUBLISHED".equals(status) && request.statusReason() != null) {
-            requests.markStatus(requestId, MatchRequests.Status.PUBLISHED, null);
+            // A list published empty gets its first pick: intake clears the reason and emails the client if they asked.
+            requests.picksAdded(requestId);
             return view(request(requestId));
         }
         return view(request);

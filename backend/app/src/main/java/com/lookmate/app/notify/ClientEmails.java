@@ -7,7 +7,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 /**
- * The emails a client gets (intake). Clients have no account, so these go to the address they typed in the quiz. Each
+ * The emails a client gets (intake). Clients have no account, and giving an email is optional: it's asked on their results
+ * page, after the reveal (CLAUDE.md, 2026-11-20). Intake calls these only for a client who gave one. Each
  * carries the client's private link; it is stored with the email until retention clears the content
  * (docs/data-retention.md). Queued in the caller's transaction.
  */
@@ -25,16 +26,49 @@ public class ClientEmails {
         this.properties = properties;
     }
 
-    /** "We got your request": the link to follow it. {@code linkPath} is the app path, e.g. {@code /m/<token>}. */
-    public void requestReceived(UUID matchRequestId, String email, String firstName, String linkPath, int photoKeptDays, Instant now) {
-        EmailContent content = EmailContent.of("We got your request",
-                List.of(greeting(firstName),
-                        "Thanks for telling us about the look you want. A Combpatible stylist is matching you with stylists whose own "
-                                + "work looks like it, on hair like yours. We'll email you when your matches are ready, usually within a day or two.",
-                        "Your inspiration photo is private: only our team sees it, and we delete it after " + photoKeptDays + " days."),
-                "See your request", properties.link(linkPath), FOOTER);
-        notifier.queueToAddress("match-request-received:" + matchRequestId, Template.MATCH_REQUEST_RECEIVED, email, matchRequestId,
+    /** Where the client's request stood when they gave their email: the link email says what comes next. */
+    public enum ListState { WAITING, READY, NO_CLOSE_MATCH }
+
+    /**
+     * The client gave (or corrected) their email on their request page: the private link to it. {@code linkPath} is the
+     * app path, e.g. {@code /m/<token>}; {@code change} numbers the client's emails for this request, so a corrected
+     * address gets its own.
+     */
+    public void listLink(UUID matchRequestId, String email, String firstName, String linkPath, ListState state, int change, Instant now) {
+        EmailContent content = switch (state) {
+            case WAITING -> EmailContent.of("Your Combpatible request",
+                    List.of(greeting(firstName),
+                            "Here's the private link to your request. We're matching you with stylists whose own work looks like your "
+                                    + "photo, on hair like yours. It usually takes a few minutes, and we'll email you when your list is ready."),
+                    "See your request", properties.link(linkPath), FOOTER);
+            case READY -> EmailContent.of("Your stylist list",
+                    List.of(greeting(firstName),
+                            "Here's the private link to the stylists we picked for your look, with the work that earned each match. "
+                                    + "They're suggestions: you can book any stylist you like.",
+                            "We may ask how your appointment went."),
+                    "See your stylists", properties.link(linkPath), FOOTER);
+            case NO_CLOSE_MATCH -> EmailContent.of("We'll tell you when picks are added",
+                    List.of(greeting(firstName),
+                            "We haven't found a stylist whose work is a close match for your look yet. If our team adds picks to your "
+                                    + "list, we'll email you. Meanwhile you can browse all our stylists and book any of them.",
+                            "We may ask how your appointment went."),
+                    "See your request", properties.link(linkPath), FOOTER);
+        };
+        notifier.queueToAddress("match-list-link:" + matchRequestId + ":" + change, Template.MATCH_LIST_LINK, email, matchRequestId,
                 content, now);
+    }
+
+    /**
+     * Our team added stylists to a list that was published empty, and the client had asked to hear about it: a fresh
+     * link to their list. Once per request.
+     */
+    public void picksAdded(UUID matchRequestId, String email, String firstName, String linkPath, Instant now) {
+        EmailContent content = EmailContent.of("Picks added to your stylist list",
+                List.of(greeting(firstName),
+                        "Our team found stylists whose work fits the look you asked for and added them to your list. They're "
+                                + "suggestions: you can book any stylist you like."),
+                "See your picks", properties.link(linkPath), FOOTER);
+        notifier.queueToAddress("picks-added:" + matchRequestId, Template.PICKS_ADDED, email, matchRequestId, content, now);
     }
 
     static final String VIEWED_FIRST = "the client opened their matches before it went";

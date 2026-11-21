@@ -321,6 +321,17 @@
         },
         "required" : [ "statusPath", "token", "upload" ]
       },
+      "IntakeControllerEmailBody" : {
+        "properties" : {
+          "email" : {
+            "format" : "email",
+            "maxLength" : 254,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "email" ]
+      },
       "IntakeControllerPhotoFile" : {
         "properties" : {
           "contentType" : {
@@ -360,6 +371,12 @@
         "properties" : {
           "createdAt" : {
             "format" : "date-time",
+            "type" : "string"
+          },
+          "emailChangeAllowed" : {
+            "type" : "boolean"
+          },
+          "emailHint" : {
             "type" : "string"
           },
           "firstName" : {
@@ -405,7 +422,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "createdAt", "firstName", "hairType", "length", "matches", "photoDeleted", "photoDeletesAt", "photoKeptDays", "photoUploaded", "photoUrl", "service", "stage", "texture" ]
+        "required" : [ "createdAt", "emailChangeAllowed", "emailHint", "firstName", "hairType", "length", "matches", "photoDeleted", "photoDeletesAt", "photoKeptDays", "photoUploaded", "photoUrl", "service", "stage", "texture" ]
       },
       "IntakeServiceSettings" : {
         "properties" : {
@@ -3697,6 +3714,42 @@
             "type" : "string"
           }
         } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/IntakeServiceClientView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "intake-controller" ]
+      }
+    },
+    "/api/public/match-requests/{token}/email" : {
+      "post" : {
+        "operationId" : "email",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/IntakeControllerEmailBody"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "content" : {

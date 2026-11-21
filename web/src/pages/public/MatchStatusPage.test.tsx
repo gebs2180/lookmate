@@ -1,5 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { ClientView } from '../../api'
 import { MatchStatusPage } from './MatchStatusPage'
@@ -19,7 +20,43 @@ const BASE: ClientView = {
   photoDeletesAt: '2026-12-20T12:00:00Z',
   photoKeptDays: 21,
   photoUrl: 'https://storage.test/view',
+  emailHint: null,
+  emailChangeAllowed: true,
   matches: [],
+}
+
+const MATCH = {
+  matchId: 'm1',
+  orgId: 'org-1',
+  rank: 1,
+  stylistName: 'Curl Studio',
+  locationName: null,
+  reason: '12 similar cuts on curly hair',
+  photoUrls: [],
+  instagram: null,
+  demo: false,
+}
+
+/** The page's GET answers {@code body}; the email POST answers {@code saved} (or an error). */
+function showWithEmail(body: ClientView, saved: () => Response) {
+  const fetch = vi.fn(async (url: string) => {
+    if (url.endsWith('/email')) return saved()
+    if (url.endsWith('/viewed')) return new Response(null, { status: 204 })
+    return new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } })
+  })
+  vi.stubGlobal('fetch', fetch)
+  render(
+    <MemoryRouter initialEntries={[`/m/${TOKEN}`]}>
+      <Routes>
+        <Route path="/m/:token" element={<MatchStatusPage />} />
+      </Routes>
+    </MemoryRouter>,
+  )
+  return fetch
+}
+
+function jsonResponse(status: number, body: unknown) {
+  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 }
 
 function show(status: number, body: unknown) {
@@ -94,10 +131,54 @@ describe('MatchStatusPage', () => {
     vi.useRealTimers()
   })
 
+  it('says the page is the link, and emails the list only if the client asks', async () => {
+    const ready = { ...BASE, stage: 'READY', matches: [MATCH] } as unknown as ClientView
+    const fetch = showWithEmail(ready, () => jsonResponse(200, { ...ready, emailHint: 'a•••@example.com' }))
+    const user = userEvent.setup()
+    expect(await screen.findByRole('heading', { name: 'Email me this list' })).toBeInTheDocument()
+    expect(screen.getByText(/Bookmark this page, or email it to yourself/)).toBeInTheDocument()
+    expect(screen.getByText(/We may ask how your appointment went/)).toBeInTheDocument()
+    const send = screen.getByRole('button', { name: 'Send me the link' })
+    expect(send).toBeDisabled()
+
+    await user.type(screen.getByLabelText('Email (optional)'), 'ada@example.com')
+    await user.click(send)
+    expect(fetch).toHaveBeenCalledWith(
+      `/api/public/match-requests/${TOKEN}/email`,
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ email: 'ada@example.com' }) }),
+    )
+    // Set: the hint replaces the box, with a way to correct it.
+    expect(await screen.findByText('a•••@example.com')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Email (optional)')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Use a different email' }))
+    expect(screen.getByRole('button', { name: 'Send it here instead' })).toBeInTheDocument()
+  })
+
+  it('offers to say when picks are added to an empty list, and shows the email once given', async () => {
+    showWithEmail({ ...BASE, stage: 'READY', matches: [], emailHint: 'a•••@example.com', emailChangeAllowed: false }, () =>
+      jsonResponse(500, {}),
+    )
+    expect(await screen.findByRole('heading', { name: 'Tell me when picks are added' })).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent("We've emailed this list to a•••@example.com, and we'll write again if picks are added.")
+    expect(screen.queryByLabelText('Email (optional)')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Use a different email' })).not.toBeInTheDocument()
+  })
+
+  it("says why an email can't be changed again", async () => {
+    showWithEmail({ ...BASE, stage: 'MATCHING' }, () =>
+      jsonResponse(409, { detail: 'limit', code: 'EMAIL_CHANGE_LIMIT' }),
+    )
+    const user = userEvent.setup()
+    await user.type(await screen.findByLabelText('Email (optional)'), 'ada@example.com')
+    await user.click(screen.getByRole('button', { name: 'Send me the link' }))
+    expect(await screen.findByRole('alert')).toHaveTextContent("can't be changed again")
+  })
+
   it('asks for the photo when it never arrived', async () => {
     show(200, { ...BASE, stage: 'PHOTO_NEEDED', photoUploaded: false, photoUrl: null, photoDeletesAt: null })
     expect(await screen.findByRole('heading', { name: 'Add your inspiration photo' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Send photo' })).toBeDisabled()
+    expect(screen.queryByLabelText('Email (optional)')).not.toBeInTheDocument()
     expect(screen.getByText(/we delete it 21 days after your request/)).toBeInTheDocument()
   })
 

@@ -20,6 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
  * email address (docs/data-retention.md). Email, phone, first name, neighborhood and the free-text note go; the
  * quiz codes (hair type, texture, length, budget, past-issue codes) and the market stay, unlinkable to a person, so
  * matching quality by hair type can still be measured. One request a year keeps a regular client's details.
+ *
+ * <p>A request whose client gave no email (it's optional, CLAUDE.md 2026-11-20) has no address to link it to others:
+ * its first name, neighborhood and note are cleared the same number of days after that request was made.
  */
 @Component
 public class ClientContactRetention {

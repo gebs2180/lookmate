@@ -10,8 +10,8 @@ and 5). Design: [architecture.md](../architecture.md), "Matching v1".
   ranking (`insertSystem` sets `final_rank = system_rank`). A request with no candidates is published empty
   at once (decided 2026-11-20, open question 6) through `MatchRequests.publishWithoutMatches(id, NO_CANDIDATES)`: the
   reason stays on the request for the monitor, the client's page shows "No close matches yet" with a button to the
-  directory (no polling), and the email is the "no close match yet" variant (`ClientEmails.noCloseMatch`, linking to
-  `/m/<token>/stylists`). The admin can add stylists afterwards (below).
+  directory (no polling), and, if the client gave an email, the email is the "no close match yet" variant
+  (`ClientEmails.noCloseMatch`, linking to `/m/<token>/stylists`). The admin can add stylists afterwards (below).
 - **Switch on** (`lookmate.matching.review-before-publish: true`, env `MATCHING_REVIEW_BEFORE_PUBLISH`): every ranked
   request goes to IN_REVIEW and waits for the admin to publish, exactly as in Phase 1. The web app's `/admin/matches`
   shows the review queue again.
@@ -23,8 +23,9 @@ and 5). Design: [architecture.md](../architecture.md), "Matching v1".
 - **After the fact, either way:** on a PUBLISHED request the admin can hide a match (`PUT .../matches/{matchId}`, it
   leaves the client's list and its Book link at once) or show it again (it goes last if it was hidden at publishing),
   and edit notes, and add a stylist (`POST .../matches`: it goes last on the client's list at once, and a "no
-  candidates" reason is cleared). This is how picks reach a list published empty; the client isn't emailed again (one
-  email per request), the page shows them next time it's opened. Reordering and publishing stay IN_REVIEW only. To take a stylist out of every result, the
+  candidates" reason is cleared). This is how picks reach a list published empty: `ReviewService.add` calls intake's
+  `MatchRequests.picksAdded`, which emails the client once ("picks added", PICKS_ADDED) only if they gave an email
+  ("Tell me when picks are added" on their page); the page shows them next time it's opened. Reordering and publishing stay IN_REVIEW only. To take a stylist out of every result, the
   admin hides their profile (`POST /api/admin/stylists/{orgId}/hide`, the stylists module's existing hide).
 
 ## Contract with intake (built against `claude/lookmate-intake`, merged into this branch)
@@ -34,7 +35,7 @@ and 5). Design: [architecture.md](../architecture.md), "Matching v1".
   (IN_REVIEW, or FAILED after `max-attempts`).
   If embedding fails, the request stays MATCHING with a reason; intake hands it back after
   `lookmate.intake.matching-stuck-after` (15m).
-- Publishing calls `MatchRequests.publish`, which sets PUBLISHED and queues the client's email with a fresh link
+- Publishing calls `MatchRequests.publish`, which sets PUBLISHED and, if the client gave an email, queues it with a fresh link
   (MATCHES_READY), held for `lookmate.intake.matches-ready-email-delay` and cancelled if the client opens the list
   first. Matching sends no email itself.
 - Matching provides intake's `ClientMatchList` bean (`MatchListForClients`): the client's page,

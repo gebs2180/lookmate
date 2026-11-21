@@ -820,6 +820,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/match-requests/{token}/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["email"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/match-requests/{token}/inspiration": {
         parameters: {
             query?: never;
@@ -1023,6 +1039,10 @@ export interface components {
             token: string;
             upload: components["schemas"]["IntakeControllerUploadSlot"];
         };
+        IntakeControllerEmailBody: {
+            /** Format: email */
+            email: string;
+        };
         IntakeControllerPhotoFile: {
             contentType: string;
             /** Format: int64 */
@@ -1040,6 +1060,8 @@ export interface components {
         IntakeServiceClientView: {
             /** Format: date-time */
             createdAt: string;
+            emailChangeAllowed: boolean;
+            emailHint: string;
             firstName: string;
             hairType: string;
             length: string;
@@ -2989,6 +3011,32 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IntakeServiceClientView"];
+                };
+            };
+        };
+    };
+    email: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntakeControllerEmailBody"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
