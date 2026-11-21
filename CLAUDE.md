@@ -40,7 +40,9 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
   candidates is published empty at once: the client sees "No close matches yet" with a link to every stylist and gets
   a "no close match" email; the monitor keeps the reason and the admin can add picks afterwards.
 - **Clients don't sign in.** Intake and the match list work through `/api/public/**` and a link token in the page's
-  URL. Stylists and the admin use Auth0; ADMIN needs MFA.
+  URL. Stylists and the admin use Auth0; ADMIN needs MFA. **Exception (Zach, 2026-11-20):** MFA is off on the
+  pilot server while it uses the dev tenant (`LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA=false` in its `.env`); turn it back on
+  before real stylists join.
 - **Client email is optional and asked after the reveal** (2026-11-20, Zach). Asking for an email before showing
   anything costs clients at the last step; the results page is the link, and "Email me this list" (or "Tell me when
   picks are added") sets it. No email means no emails, ever. Limits are per IP, not per address.

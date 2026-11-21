@@ -109,6 +109,8 @@ plan is **a decision pending**. Same API identifier and claim names, so the back
 the issuer. Production differs from local in three places:
 
 - Callback, logout and web-origin URLs: `https://combpatible.app`.
+- **For now (Zach, 2026-11-20) MFA is off on the pilot server**, which uses the dev tenant: its `.env` sets
+  `LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA=false`. Before real stylists join, remove that line and set up the following.
 - MFA is back on: `LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA` unset (default `true`), **Security → Multi-factor Auth** with
   One-time Password enabled, and the Action requires MFA for admins:
   ```js

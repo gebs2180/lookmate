@@ -45,6 +45,8 @@ services:
       STORAGE_ACCESS_KEY: ${R2_APP_ACCESS_KEY_ID:?set R2_APP_ACCESS_KEY_ID in .env}
       STORAGE_SECRET_KEY: ${R2_APP_SECRET_ACCESS_KEY:?set R2_APP_SECRET_ACCESS_KEY in .env}
       STORAGE_PHOTO_BUCKET: ${R2_PHOTO_BUCKET:-combpatible-photos}
+      # ADMIN needs an MFA login unless .env sets this to false (temporarily off on the pilot server, 2026-11-20).
+      LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA: ${LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA:-true}
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-beta}
       # Optional features, off unless set in .env.
