@@ -1027,7 +1027,7 @@ export interface components {
             /** @enum {string} */
             length: "PIXIE" | "SHORT" | "MEDIUM" | "LONG";
             neighborhood: string;
-            pastIssues: ("DIDNT_LISTEN" | "NOT_THE_LOOK_I_ASKED_FOR" | "CUT_TOO_SHORT" | "COLOR_CAME_OUT_WRONG" | "DAMAGED_MY_HAIR" | "NO_EXPERIENCE_WITH_MY_HAIR_TYPE" | "RUSHED" | "PRICE_SURPRISE" | "HARD_TO_BOOK" | "OTHER")[];
+            pastIssues: ("DIDNT_LISTEN" | "NOT_THE_LOOK_I_ASKED_FOR" | "CUT_TOO_SHORT" | "COLOR_CAME_OUT_WRONG" | "DAMAGED_MY_HAIR" | "NO_EXPERIENCE_WITH_MY_HAIR_TYPE" | "RUSHED" | "PRICE_SURPRISE" | "HARD_TO_BOOK" | "OTHER" | "QUIET_APPOINTMENT" | "HONEST_ADVICE")[];
             pastIssuesNote: string;
             /** @enum {string} */
             service: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
@@ -1058,6 +1058,7 @@ export interface components {
             url: string;
         };
         IntakeServiceClientView: {
+            asks: ("DIDNT_LISTEN" | "NOT_THE_LOOK_I_ASKED_FOR" | "CUT_TOO_SHORT" | "COLOR_CAME_OUT_WRONG" | "DAMAGED_MY_HAIR" | "NO_EXPERIENCE_WITH_MY_HAIR_TYPE" | "RUSHED" | "PRICE_SURPRISE" | "HARD_TO_BOOK" | "OTHER" | "QUIET_APPOINTMENT" | "HONEST_ADVICE")[];
             /** Format: date-time */
             createdAt: string;
             emailChangeAllowed: boolean;

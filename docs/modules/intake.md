@@ -110,7 +110,27 @@ is empty. `photoUrls` must be short-lived presigned links. The `/m/:token` page 
 | `GET /api/public/match-requests/{token}/stylists` | The stylist directory scoped to the request's market (`ClientDirectoryController`, using the stylists module's `StylistDirectory`); rate-limited in the browse bucket |
 | `GET /api/public/intake/settings` | `{photoKeptDays, maxPhotoBytes}`, so the quiz states the real retention period before anything is sent. |
 
+The client's view also carries `asks`: the booking-note asks from the quiz (`QUIET_APPOINTMENT`, `HONEST_ADVICE`, in that
+order, empty when neither was picked), so the page can suggest a booking note. `firstName` is null for new requests.
+
 A wrong or expired token is 404, the same for every case. 429 `RATE_LIMITED` carries `Retry-After`.
+
+## The quiz's answers (2026-11-20)
+
+- **No first name.** The quiz no longer asks for one. `firstName` stays an optional, accepted field on
+  `POST /api/public/match-requests` (a quiz page loaded before the change may still send it) and the `client.first_name`
+  column stays, so old rows keep theirs; no migration. Emails greet "Hi there," when there's no name, and the admin
+  monitor shows "Client" where the name was.
+- **`pastIssues`** holds every chip on the "What should your next stylist get right?" step: what went wrong before
+  (`DIDNT_LISTEN`, `NOT_THE_LOOK_I_ASKED_FOR`, `CUT_TOO_SHORT`, `COLOR_CAME_OUT_WRONG`, `DAMAGED_MY_HAIR`,
+  `NO_EXPERIENCE_WITH_MY_HAIR_TYPE`, `RUSHED`, `PRICE_SURPRISE`, `HARD_TO_BOOK`, `OTHER`) and, since 2026-11-20, two asks:
+  `QUIET_APPOINTMENT` ("A quiet appointment") and `HONEST_ADVICE` ("Honest advice about what my hair can do"), from
+  [the beyond-the-hair research](../research/beyond-the-hair.md). Codes are validated against `Quiz.PastIssue` (400 on
+  an unknown one), at most 12. The column is `text[]` with no constraint, so new codes need no migration. None of them
+  feeds ranking. The admin monitor's request detail shows them as "Went wrong before" and "Asked for"; the client's
+  match page turns the asks into a booking-note tip with a copy button ("Quiet appointment, please." / "I'd like
+  honest advice about what my hair can do.", both when both were picked). The tip sits above the list and never
+  stands between the client and Book.
 
 ## The client's email is optional (2026-11-20)
 
@@ -190,7 +210,7 @@ the matching module should not email clients itself.
 
 ## Web
 
-`/find` (the quiz, one question per screen, then the photo and an optional first name; no email; it goes straight to `/m/:token`) and `/m/:token` (the client's request: stage,
+`/find` (the quiz, one question per screen, ending with the photo, which sends it; no name and no email; it goes straight to `/m/:token`) and `/m/:token` (the client's request: stage,
 photo, matches once published; it can also take the photo if the first upload failed). While the request is NEW or
 being matched, `/m/:token` checks back by itself (`usePoll`: every 1.5s for the first 30s, then ×1.5 up to every 30s,
 for 20 minutes) and shows the list in place once published. `/m/:token/stylists` and `/stylists` are the directory (below the

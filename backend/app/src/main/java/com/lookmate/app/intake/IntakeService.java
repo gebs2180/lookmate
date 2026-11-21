@@ -40,9 +40,14 @@ class IntakeService {
     record Created(String token, String statusPath, BlobStore.PresignedUpload upload) {
     }
 
+    /**
+     * The client's own request. {@code firstName} is only set on requests from before the quiz stopped asking for it.
+     * {@code asks}: what the client asked of their next appointment (the quiet / honest-advice chips), so the page can
+     * suggest a booking note; the other past-issue answers aren't echoed.
+     */
     record ClientView(Stage stage, String firstName, String service, String hairType, String texture, String length, Instant createdAt,
                       boolean photoUploaded, boolean photoDeleted, Instant photoDeletesAt, int photoKeptDays, String photoUrl,
-                      String emailHint, boolean emailChangeAllowed, List<ClientMatch> matches) {
+                      String emailHint, boolean emailChangeAllowed, List<Quiz.PastIssue> asks, List<ClientMatch> matches) {
     }
 
     /** What the quiz tells clients before they send anything: how long their photo is kept, how large it may be. */
@@ -216,7 +221,12 @@ class IntakeService {
         }
         return new ClientView(stage, row.firstName(), row.service(), row.hairType(), row.texture(), row.length(), row.createdAt(), uploaded,
                 deleted, deleted ? null : row.createdAt().plus(photoDays, ChronoUnit.DAYS), photoDays, photoUrl, emailHint(row.email()),
-                row.emailChanges() < properties.maxEmailChangesPerRequest(), matches);
+                row.emailChanges() < properties.maxEmailChangesPerRequest(), asks(row.pastIssues()), matches);
+    }
+
+    /** The chips that ask something of the next appointment, in the enum's order; unknown codes are skipped. */
+    static List<Quiz.PastIssue> asks(List<String> pastIssues) {
+        return Arrays.stream(Quiz.PastIssue.values()).filter(Quiz.PastIssue::isAsk).filter(p -> pastIssues.contains(p.name())).toList();
     }
 
     /**

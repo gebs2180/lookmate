@@ -108,6 +108,6 @@ public class ClientEmails {
     }
 
     private static String greeting(String firstName) {
-        return firstName == null || firstName.isBlank() ? "Hi," : "Hi " + firstName.strip() + ",";
+        return firstName == null || firstName.isBlank() ? "Hi there," : "Hi " + firstName.strip() + ",";
     }
 }

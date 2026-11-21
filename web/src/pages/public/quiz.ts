@@ -65,6 +65,27 @@ export const PAST_ISSUES: Option<PastIssue>[] = [
   { value: 'OTHER', label: 'Something else' },
 ]
 
+/**
+ * What the client asks of their next appointment: two chips on the past-issues step, sent in the same `pastIssues`
+ * list (docs/research/beyond-the-hair.md, items 2 and 3). They never affect ranking; the results page turns them into a
+ * note to paste when booking (`bookingNote`), since we can't pass them to the stylist's booking tool.
+ */
+export const ASKS: Option<PastIssue>[] = [
+  { value: 'QUIET_APPOINTMENT', label: 'A quiet appointment' },
+  { value: 'HONEST_ADVICE', label: 'Honest advice about what my hair can do' },
+]
+
+const BOOKING_NOTES: Partial<Record<PastIssue, string>> = {
+  QUIET_APPOINTMENT: 'Quiet appointment, please.',
+  HONEST_ADVICE: "I'd like honest advice about what my hair can do.",
+}
+
+/** The note for the stylist's booking form, from the client's asks; null when they asked for neither. */
+export function bookingNote(asks: readonly string[] | null | undefined): string | null {
+  const lines = ASKS.filter((a) => asks?.includes(a.value)).map((a) => BOOKING_NOTES[a.value])
+  return lines.length > 0 ? lines.join(' ') : null
+}
+
 export function labelOf<T extends string>(options: Option<T>[], value: string | null | undefined) {
   return options.find((o) => o.value === value)?.label ?? null
 }

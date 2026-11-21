@@ -9,7 +9,7 @@ import { useLoad, usePoll, type Backoff } from '../../useLoad'
 import { PhotoPicker, PrivacyNote } from './PhotoPicker'
 import { sendPhoto } from './photo'
 import { BookLink, InstagramLink, Portfolio, type StylistView } from './Portfolio'
-import { HAIR_TYPES, SERVICES, labelOf } from './quiz'
+import { HAIR_TYPES, SERVICES, bookingNote, labelOf } from './quiz'
 import { useNoReferrer } from './useNoReferrer'
 
 const STAGES: { stage: ClientView['stage']; label: string }[] = [
@@ -94,7 +94,7 @@ export function MatchStatusPage() {
       )}
 
       {noMatches && <NoCloseMatches directory={directory} />}
-      {revealed && <Matches token={token} matches={view.matches} hairType={view.hairType} directory={directory} />}
+      {revealed && <Matches token={token} matches={view.matches} hairType={view.hairType} directory={directory} note={bookingNote(view.asks)} />}
       {(waiting || view.stage === 'READY') && (
         <KeepThisList token={token} view={view} title={noMatches ? 'Tell me when picks are added' : 'Email me this list'} onSaved={(saved) => setUpdated({ after: loaded, view: saved })} />
       )}
@@ -181,11 +181,13 @@ function Matches({
   matches,
   hairType,
   directory,
+  note,
 }: {
   token: string
   matches: ClientMatch[]
   hairType: ClientView['hairType']
   directory: string
+  note: string | null
 }) {
   const [at, setAt] = useState(0)
   // Tell tracking the list was seen (the pilot's "viewed" metric, and the held "matches ready" email isn't sent).
@@ -239,6 +241,7 @@ function Matches({
           <Link to={directory}>All stylists</Link>
         </li>
       </ul>
+      {note && <BookingNote note={note} />}
       <ol className="covers" ref={listRef} onScroll={onScroll} aria-label="Stylists for your look">
         {matches.map((m, i) => (
           <Cover key={m.matchId} index={i} match={m} hairType={hairType} book={{ href: apiPath`/api/public/book/${token}/${m.matchId}` }} />
@@ -346,6 +349,46 @@ function Cover({
       </div>
       {open && <Portfolio stylist={stylist} onClose={() => setOpen(false)} />}
     </li>
+  )
+}
+
+/**
+ * What the client asked for (a quiet appointment, honest advice) can't reach the stylist's booking tool, so we suggest a
+ * line to paste into its notes. Sits above the covers so it's read before Book; never in the way of it.
+ */
+function BookingNote({ note }: { note: string }) {
+  const [copied, setCopied] = useState<'yes' | 'failed' | null>(null)
+  const noteRef = useRef<HTMLQuoteElement>(null)
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(note)
+      setCopied('yes')
+    } catch {
+      // No clipboard (an in-app browser, or permission refused): select the text so a long-press copies it.
+      const range = document.createRange()
+      if (noteRef.current) range.selectNodeContents(noteRef.current)
+      window.getSelection()?.removeAllRanges()
+      window.getSelection()?.addRange(range)
+      setCopied('failed')
+    }
+  }
+
+  return (
+    <div className="booking-note">
+      <p>
+        When you book, add this to your booking notes:{' '}
+        <q ref={noteRef} className="note-text">
+          {note}
+        </q>
+      </p>
+      <button type="button" className="secondary small" onClick={copy}>
+        {copied === 'yes' ? 'Copied' : 'Copy note'}
+      </button>
+      <span className="sr-only" role="status">
+        {copied === 'yes' ? 'Note copied.' : copied === 'failed' ? "Couldn't copy: the note is selected, copy it from there." : ''}
+      </span>
+    </div>
   )
 }
 

@@ -8,6 +8,7 @@ import {
   type StylistOption,
 } from '../../api'
 import { label, message, shortDate } from '../../format'
+import { ASKS, labelOf } from '../public/quiz'
 import { Chip, Field, Loading, PageError } from '../../ui'
 import { useLoad } from '../../useLoad'
 import './matching.css'
@@ -75,6 +76,9 @@ export function MatchReviewPage() {
   }
 
   const r = current.request
+  // The quiet / honest-advice chips travel in pastIssues but are asks, not complaints. Not used for ranking.
+  const asked = r.pastIssues.filter((p) => ASKS.some((a) => a.value === p))
+  const wentWrong = r.pastIssues.filter((p) => !asked.includes(p))
   return (
     <div className="review-page">
       <p className="back">
@@ -114,10 +118,16 @@ export function MatchReviewPage() {
             <dd>{r.budgetTier ? '$'.repeat(r.budgetTier) : '–'}</dd>
             <dt>Area</dt>
             <dd>{r.neighborhood ?? '–'}</dd>
-            {r.pastIssues.length > 0 && (
+            {wentWrong.length > 0 && (
               <>
                 <dt>Went wrong before</dt>
-                <dd>{r.pastIssues.map(label).join(', ')}</dd>
+                <dd>{wentWrong.map(label).join(', ')}</dd>
+              </>
+            )}
+            {asked.length > 0 && (
+              <>
+                <dt>Asked for</dt>
+                <dd>{asked.map((a) => labelOf(ASKS, a)).join(', ')}</dd>
               </>
             )}
             {r.notes && (

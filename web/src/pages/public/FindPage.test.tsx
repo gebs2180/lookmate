@@ -34,7 +34,7 @@ function stubApi(confirm: () => Response = () => json(200, { stage: 'RECEIVED' }
   return calls
 }
 
-async function answerEverything(firstName = 'Ada') {
+async function answerEverything({ asks = false } = {}) {
   const user = userEvent.setup()
   render(
     <MemoryRouter initialEntries={['/find']}>
@@ -44,7 +44,7 @@ async function answerEverything(firstName = 'Ada') {
       </Routes>
     </MemoryRouter>,
   )
-  expect(screen.getByText('Question 1 of 9')).toBeInTheDocument()
+  expect(screen.getByText('Question 1 of 8')).toBeInTheDocument()
   const next = () => user.click(screen.getByRole('button', { name: 'Next' }))
   expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
   await user.click(screen.getByLabelText('Cut'))
@@ -60,32 +60,22 @@ async function answerEverything(firstName = 'Ada') {
   await user.type(screen.getByLabelText('Neighborhood'), 'Clintonville')
   await next()
   await user.click(screen.getByLabelText("They didn't listen"))
+  if (asks) {
+    await user.click(screen.getByLabelText('A quiet appointment'))
+    await user.click(screen.getByLabelText('Honest advice about what my hair can do'))
+  }
   await next()
   expect(screen.getByText(/never public, and we delete it 21 days after your request/)).toBeInTheDocument()
   await user.upload(screen.getByLabelText('Choose from your photos'), new File(['jpeg-bytes'], 'look.jpg', { type: 'image/jpeg' }))
-  await next()
-  expect(screen.getByRole('heading', { name: 'What should we call you?' })).toBeInTheDocument()
+  // The photo is the last step: no name, no email.
+  expect(screen.getByText('Question 8 of 8')).toBeInTheDocument()
   expect(screen.queryByLabelText(/Email/)).not.toBeInTheDocument()
-  if (firstName) await user.type(screen.getByLabelText('First name (optional)'), firstName)
-  if (firstName.includes('@')) return user
+  expect(screen.queryByLabelText(/name/i)).not.toBeInTheDocument()
   await user.click(screen.getByRole('button', { name: 'Find my stylists' }))
   return user
 }
 
 describe('FindPage', () => {
-  it("won't send an email address as the first name", async () => {
-    const calls = stubApi()
-    const user = await answerEverything('ada@example.com')
-
-    expect(screen.getByRole('alert')).toHaveTextContent('That looks like an email address')
-    expect(screen.getByRole('button', { name: 'Find my stylists' })).toBeDisabled()
-    expect(calls.some((c) => c.url === '/api/public/match-requests')).toBe(false)
-
-    await user.clear(screen.getByLabelText('First name (optional)'))
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Find my stylists' })).toBeEnabled()
-  })
-
   it('says the photo is deleted on a schedule, without a number, until the setting loads', () => {
     render(<PrivacyNote keptDays={null} />)
     expect(screen.getByText(/we delete it on a set schedule/)).toBeInTheDocument()
@@ -99,7 +89,6 @@ describe('FindPage', () => {
     expect(await screen.findByRole('heading', { name: 'Results page' })).toBeInTheDocument()
     const create = calls.find((c) => c.url === '/api/public/match-requests')!
     expect(create.body).toEqual({
-      firstName: 'Ada',
       hairType: 'CURLY',
       texture: 'THICK',
       budgetTier: 2,
@@ -125,11 +114,13 @@ describe('FindPage', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Try the photo again' })).toBeEnabled())
   })
 
-  it('sends no first name when it is left blank', async () => {
+  it('sends the quiet and honest-advice chips with the past issues', async () => {
     const calls = stubApi()
-    await answerEverything('')
+    await answerEverything({ asks: true })
     expect(await screen.findByRole('heading', { name: 'Results page' })).toBeInTheDocument()
-    expect(calls.find((c) => c.url === '/api/public/match-requests')!.body).not.toHaveProperty('firstName')
+    expect(calls.find((c) => c.url === '/api/public/match-requests')!.body).toMatchObject({
+      pastIssues: ['DIDNT_LISTEN', 'QUIET_APPOINTMENT', 'HONEST_ADVICE'],
+    })
   })
 
   it('says why when the connection has made too many requests', async () => {
