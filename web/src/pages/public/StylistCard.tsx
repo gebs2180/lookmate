@@ -1,4 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from 'react'
+import { fromPriceLine } from '../../stylists/practice'
 import { Chip } from '../../ui'
 import { BookLink, InstagramLink, Portfolio, type StylistView } from './Portfolio'
 
@@ -11,6 +12,8 @@ export function StylistCard({ index = 0, badge, ...stylist }: StylistView & { in
   // The photo the portfolio opens at, or null while it's closed.
   const [open, setOpen] = useState<number | null>(null)
   const { name, location, demo, specialties, photoUrls } = stylist
+  // Two prices at most, one quiet line: the photos stay the card. The rest is in the portfolio.
+  const prices = fromPriceLine(stylist.practice, 2)
   return (
     <li style={{ '--i': index } as CSSProperties}>
       <div className="row">
@@ -20,6 +23,7 @@ export function StylistCard({ index = 0, badge, ...stylist }: StylistView & { in
       </div>
       {location && <p className="meta">{location}</p>}
       {specialties && specialties.length > 0 && <p className="meta">{specialties.join(' · ')}</p>}
+      {prices && <p className="meta">{prices}</p>}
       {photoUrls.length > 0 && (
         <div className="thumbs">
           {photoUrls.slice(0, 4).map((url, i) => (

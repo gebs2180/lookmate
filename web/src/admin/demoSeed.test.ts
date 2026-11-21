@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { seedDemoStylists } from './demoSeed'
+import { randomPractice, seedDemoStylists } from './demoSeed'
 import { DEMO_STYLISTS, type DemoStylist } from './demoStylists'
 import type { Location } from '../stylists/types'
 
@@ -35,11 +35,23 @@ describe('seedDemoStylists', () => {
       upload,
       photoFor: async () => new Blob(['x'], { type: 'image/jpeg' }),
       progress: () => {},
+      random: () => 0,
     })
 
     expect(ids).toEqual(['org-1'])
     expect(calls[0].body).toEqual({ name: 'Demo: Test Stylist', type: 'STYLIST' })
     expect(calls[1].body).toMatchObject({ locationId: 'loc-1', specialties: ['CUT', 'BRAIDS'], bookingUrl: 'https://example.com/book/test-stylist' })
+    // random() = 0: every label, one language, the lowest prices, consultation FREE.
+    expect((calls[1].body as { practice: unknown }).practice).toEqual({
+      labels: ['GENDER_NEUTRAL_PRICING', 'LGBTQ_AFFIRMING', 'SENSORY_FRIENDLY', 'KIDS_WELCOME'],
+      languages: ['SPANISH'],
+      fromPrices: [
+        { service: 'CUT', fromDollars: 45 },
+        { service: 'BRAIDS', fromDollars: 155 },
+      ],
+      consultation: 'FREE',
+      priceDependsOnHair: true,
+    })
     expect(calls[2].path).toBe('/api/admin/stylists/org-1/demo')
     expect(upload).toHaveBeenCalledTimes(3)
     const tags = calls.filter((c) => c.method === 'PUT' && c.path.endsWith('/tags'))
@@ -49,6 +61,25 @@ describe('seedDemoStylists', () => {
       ['/api/orgs/org-1/photos/p3/tags', null, false],
     ])
     expect(calls.at(-1)?.path).toBe('/api/orgs/org-1/stylist/publish')
+  })
+
+  it('draws a practice that stays in range and only prices services offered', () => {
+    let seed = 7
+    const random = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646
+    for (let i = 0; i < 200; i++) {
+      const tier = (i % 4) + 1
+      const p = randomPractice(['CUT', 'LOCS'], tier, random)
+      expect(p.fromPrices.map((f) => f.service)).toEqual(['CUT', 'LOCS'])
+      for (const f of p.fromPrices) {
+        expect(f.fromDollars % 5).toBe(0)
+        expect(f.fromDollars).toBeGreaterThanOrEqual(5)
+        expect(f.fromDollars).toBeLessThanOrEqual(10_000)
+      }
+      expect(p.languages.length).toBeLessThanOrEqual(1)
+    }
+    // random() just under 1: no labels, no language, no consultation.
+    const none = randomPractice(['CUT'], 2, () => 0.999)
+    expect(none).toMatchObject({ labels: [], languages: [], consultation: null, priceDependsOnHair: false })
   })
 
   it('needs a location', async () => {

@@ -1,6 +1,7 @@
 import { useAuth0 } from '@auth0/auth0-react'
 import { useCallback } from 'react'
 import type { components } from './api.gen'
+import type { Practice } from './stylists/types'
 
 // Hand-written API types for the scaffold. As endpoints land, prefer the generated ones in api.gen.ts
 // (docs/api-types.md): `npm run api:types` after the backend rewrites openapi.json.
@@ -312,10 +313,14 @@ export type MonitorItem = Omit<
   matches: MonitorMatch[]
 }
 export type MatchMonitor = { reviewBeforePublish: boolean; requests: MonitorItem[] }
-export type DirectoryStylist = Omit<Schemas['StylistDirectoryDirectoryStylist'], 'locationName' | 'city' | 'instagram'> & {
+export type DirectoryStylist = Omit<
+  Schemas['StylistDirectoryDirectoryStylist'],
+  'locationName' | 'city' | 'instagram' | 'practice'
+> & {
   locationName: string | null
   city: string | null
   instagram: string | null
+  practice: Practice
 }
 export type DirectoryPage = Omit<Schemas['StylistDirectoryDirectoryPage'], 'service' | 'hairType' | 'stylists'> & {
   service: string | null

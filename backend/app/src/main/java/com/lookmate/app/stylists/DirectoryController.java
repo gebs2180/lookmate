@@ -6,9 +6,13 @@ import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * The open stylist directory ({@code /api/public/stylists}), for visitors without a request (the web app's /stylists,
@@ -37,5 +41,15 @@ class DirectoryController {
         StylistDirectory.DirectoryPage body = directory.page(market == null ? defaultMarket : market, service, hairType, page);
         // The photo links expire: never cached.
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(body);
+    }
+
+    /**
+     * What to expect in one LIVE stylist's chair: labels, languages, from-prices and consultation, for the profile view
+     * on a client's picks (whose stylists come from matching, which doesn't carry it). 404 unless LIVE. Business
+     * information the stylist publishes, like the directory; rate-limited with it.
+     */
+    @GetMapping("/api/public/stylists/{orgId}/practice")
+    Practice practice(@PathVariable UUID orgId) {
+        return directory.practice(orgId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Stylist not found"));
     }
 }

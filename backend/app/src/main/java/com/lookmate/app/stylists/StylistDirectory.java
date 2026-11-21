@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
@@ -26,9 +27,12 @@ public class StylistDirectory {
     static final int PAGE_SIZE = 12;
     static final int PHOTOS_PER_STYLIST = 3;
 
-    /** {@code demo}: a made-up stylist (proof of concept), labelled "Sample stylist" wherever clients see it. */
+    /**
+     * {@code demo}: a made-up stylist (proof of concept), labelled "Sample stylist" wherever clients see it.
+     * {@code practice}: what to expect in their chair, for the profile only (never a filter, never in ranking).
+     */
     public record DirectoryStylist(UUID orgId, String displayName, String locationName, String city, List<ServiceType> specialties,
-                            List<String> photoUrls, boolean demo, String instagram) {
+                            List<String> photoUrls, boolean demo, String instagram, Practice practice) {
     }
 
     public record DirectoryPage(String market, ServiceType service, HairType hairType, int page, int pageSize, long total,
@@ -36,7 +40,8 @@ public class StylistDirectory {
     }
 
     private record Row(UUID orgId, String displayName, String locationName, String city, List<ServiceType> specialties, boolean demo,
-                       String instagram) {
+                       String instagram, List<PracticeLabel> labels, List<Language> languages, Consultation consultation,
+                       boolean priceDependsOnHair) {
     }
 
     /**
@@ -57,11 +62,19 @@ public class StylistDirectory {
     private final JdbcClient jdbc;
     private final BlobStore blobs;
     private final StorageProperties storage;
+    private final StylistProfileRepository profiles;
 
-    StylistDirectory(JdbcClient jdbc, BlobStore blobs, StorageProperties storage) {
+    StylistDirectory(JdbcClient jdbc, BlobStore blobs, StorageProperties storage, StylistProfileRepository profiles) {
         this.jdbc = jdbc;
         this.blobs = blobs;
         this.storage = storage;
+        this.profiles = profiles;
+    }
+
+    /** What to expect in a LIVE stylist's chair (the profile view on a client's picks), or empty if not LIVE. */
+    @Transactional(readOnly = true)
+    public Optional<Practice> practice(UUID orgId) {
+        return profiles.findById(orgId).filter(p -> p.getStatus() == ProfileStatus.LIVE).map(StylistProfile::getPractice);
     }
 
     /** One page (from 0) of LIVE stylists, real ones before sample ones, then by name. */
@@ -72,7 +85,8 @@ public class StylistDirectory {
         long total = jdbc.sql("select count(*) " + WHERE).param("market", market).param("service", s).param("hair", h)
                 .query(Long.class).single();
         List<Row> rows = jdbc.sql("""
-                        select p.org_id, p.display_name, l.name as location_name, l.city, p.specialties, p.demo, p.instagram
+                        select p.org_id, p.display_name, l.name as location_name, l.city, p.specialties, p.demo, p.instagram,
+                               p.practice_labels, p.languages, p.consultation, p.price_depends_on_hair
                         """ + WHERE + """
                         order by p.demo, lower(p.display_name), p.org_id
                         limit :size offset :offset
@@ -80,12 +94,18 @@ public class StylistDirectory {
                 .param("market", market).param("service", s).param("hair", h)
                 .param("size", PAGE_SIZE).param("offset", (long) page * PAGE_SIZE)
                 .query((rs, n) -> new Row(rs.getObject("org_id", UUID.class), rs.getString("display_name"), rs.getString("location_name"),
-                        rs.getString("city"), services(rs.getArray("specialties")), rs.getBoolean("demo"), rs.getString("instagram")))
+                        rs.getString("city"), services(rs.getArray("specialties")), rs.getBoolean("demo"), rs.getString("instagram"),
+                        codes(rs.getArray("practice_labels"), PracticeLabel.class), codes(rs.getArray("languages"), Language.class),
+                        rs.getString("consultation") == null ? null : Consultation.valueOf(rs.getString("consultation")),
+                        rs.getBoolean("price_depends_on_hair")))
                 .list();
-        Map<UUID, List<String>> photos = photoUrls(rows.stream().map(Row::orgId).toList(), s, h);
+        List<UUID> orgIds = rows.stream().map(Row::orgId).toList();
+        Map<UUID, List<String>> photos = photoUrls(orgIds, s, h);
+        Map<UUID, Map<ServiceType, Integer>> prices = prices(orgIds);
         List<DirectoryStylist> stylists = rows.stream()
                 .map(r -> new DirectoryStylist(r.orgId(), r.displayName(), r.locationName(), r.city(), r.specialties(),
-                        photos.getOrDefault(r.orgId(), List.of()), r.demo(), r.instagram()))
+                        photos.getOrDefault(r.orgId(), List.of()), r.demo(), r.instagram(),
+                        practice(r, prices.getOrDefault(r.orgId(), Map.of()))))
                 .toList();
         return new DirectoryPage(market, service, hairType, page, PAGE_SIZE, total, stylists);
     }
@@ -116,6 +136,34 @@ public class StylistDirectory {
                 })
                 .list();
         return out;
+    }
+
+    /** From-prices per stylist, in whole dollars. */
+    private Map<UUID, Map<ServiceType, Integer>> prices(List<UUID> orgIds) {
+        Map<UUID, Map<ServiceType, Integer>> out = new LinkedHashMap<>();
+        if (orgIds.isEmpty()) {
+            return out;
+        }
+        jdbc.sql("select org_id, service, from_dollars from stylist_price where org_id in (:orgs)")
+                .param("orgs", orgIds)
+                .query((rs, n) -> out.computeIfAbsent(rs.getObject("org_id", UUID.class), k -> new LinkedHashMap<>())
+                        .put(ServiceType.valueOf(rs.getString("service")), rs.getInt("from_dollars")))
+                .list();
+        return out;
+    }
+
+    /** As {@link StylistProfile#getPractice()}: prices in the order of the specialties, only for services offered. */
+    private static Practice practice(Row r, Map<ServiceType, Integer> prices) {
+        List<Practice.FromPrice> fromPrices = r.specialties().stream().filter(prices::containsKey)
+                .map(sv -> new Practice.FromPrice(sv, prices.get(sv))).toList();
+        return new Practice(r.labels(), r.languages(), fromPrices, r.consultation(), r.priceDependsOnHair());
+    }
+
+    private static <E extends Enum<E>> List<E> codes(Array array, Class<E> type) throws SQLException {
+        if (array == null) {
+            return List.of();
+        }
+        return Arrays.stream((String[]) array.getArray()).map(v -> Enum.valueOf(type, v)).toList();
     }
 
     private static List<ServiceType> services(Array array) throws SQLException {

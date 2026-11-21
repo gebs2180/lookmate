@@ -24,8 +24,28 @@ const PAGE: Page = {
       photoUrls: ['https://storage.test/a1?X-Amz-Signature=x'],
       demo: false,
       instagram: 'ana.cuts',
+      practice: {
+        labels: ['LGBTQ_AFFIRMING'],
+        languages: ['SPANISH'],
+        fromPrices: [
+          { service: 'CUT', fromDollars: 65 },
+          { service: 'SILK_PRESS', fromDollars: 80 },
+        ],
+        consultation: 'FREE',
+        priceDependsOnHair: false,
+      },
     },
-    { orgId: 'org-bea', displayName: 'Bea', locationName: null, city: null, specialties: [], photoUrls: [], demo: true, instagram: null },
+    {
+      orgId: 'org-bea',
+      displayName: 'Bea',
+      locationName: null,
+      city: null,
+      specialties: [],
+      photoUrls: [],
+      demo: true,
+      instagram: null,
+      practice: { labels: [], languages: [], fromPrices: [], consultation: null, priceDependsOnHair: false },
+    },
   ],
 }
 
@@ -57,6 +77,7 @@ describe('DirectoryPage', () => {
     expect(fetch).toHaveBeenCalledWith(`/api/public/match-requests/${TOKEN}/stylists`, expect.anything())
     expect(within(ana).getByText('Short North, Columbus')).toBeInTheDocument()
     expect(within(ana).getByText('Cut · Silk press')).toBeInTheDocument()
+    expect(within(ana).getByText('Cut from $65 · Silk press from $80')).toBeInTheDocument()
     expect(await within(ana).findByText('On your list')).toBeInTheDocument()
     const book = within(ana).getByRole('link', { name: 'Book with Ana' })
     expect(book).toHaveAttribute('href', `/api/public/book-stylist/${TOKEN}/org-ana`)
@@ -73,7 +94,15 @@ describe('DirectoryPage', () => {
     show('/stylists')
     const ana = (await screen.findByRole('heading', { name: 'Ana' })).closest('li')!
     await userEvent.setup().click(within(ana).getByRole('button', { name: "Ana's work, photo 1" }))
-    expect(screen.getByRole('dialog', { name: 'Ana' })).toBeInTheDocument()
+    const dialog = screen.getByRole('dialog', { name: 'Ana' })
+    // What to expect in her chair comes with the directory: no extra fetch.
+    const practice = within(dialog).getByRole('region', { name: 'What to expect in their chair' })
+    expect(within(practice).getByText('LGBTQ+-affirming')).toBeInTheDocument()
+    expect(within(practice).getByText('Also speaks Spanish')).toBeInTheDocument()
+    expect(within(practice).getByText('Cut from $65 · Silk press from $80')).toBeInTheDocument()
+    expect(within(practice).getByText('Free consultation')).toBeInTheDocument()
+    // Never a "No" for what she didn't tick.
+    expect(within(practice).queryByText(/Sensory|Kids|Gender-neutral/)).not.toBeInTheDocument()
   })
 
   it('without a client link, Book means starting a request: no booking link reaches the page', async () => {

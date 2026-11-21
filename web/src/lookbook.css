@@ -1208,6 +1208,38 @@ button.link-button:active:not(:disabled) {
   margin: 0;
 }
 
+/* What to expect in the stylist's chair: a quiet ruled block between the name and the photos. */
+.pf-practice {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-3) var(--space-4) 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--rule);
+  font-size: 0.9375rem;
+}
+
+.pf-practice h3 {
+  margin: 0 0 var(--space-1);
+}
+
+.pf-practice p {
+  margin: 0;
+}
+
+.pf-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-weight: 600;
+}
+
+.pf-prices {
+  font-variant-numeric: tabular-nums;
+}
+
 .grid2 {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -916,6 +916,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/stylists/{orgId}/practice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["practice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1296,6 +1312,34 @@ export interface components {
             /** Format: uri */
             url: string;
         };
+        Practice: {
+            /** @enum {string} */
+            consultation: "FREE" | "PAID" | "INCLUDED";
+            fromPrices: components["schemas"]["PracticeFromPrice"][];
+            labels: ("GENDER_NEUTRAL_PRICING" | "LGBTQ_AFFIRMING" | "SENSORY_FRIENDLY" | "KIDS_WELCOME")[];
+            languages: ("AMHARIC" | "ARABIC" | "ASL" | "FRENCH" | "MANDARIN" | "NEPALI" | "PORTUGUESE" | "SOMALI" | "SPANISH" | "VIETNAMESE")[];
+            priceDependsOnHair: boolean;
+        };
+        PracticeFromPrice: {
+            /** Format: int32 */
+            fromDollars: number;
+            /** @enum {string} */
+            service: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
+        };
+        ProfileServicePracticeRequest: {
+            /** @enum {string} */
+            consultation: "FREE" | "PAID" | "INCLUDED";
+            fromPrices: components["schemas"]["ProfileServicePriceRequest"][];
+            labels: ("GENDER_NEUTRAL_PRICING" | "LGBTQ_AFFIRMING" | "SENSORY_FRIENDLY" | "KIDS_WELCOME")[];
+            languages: ("AMHARIC" | "ARABIC" | "ASL" | "FRENCH" | "MANDARIN" | "NEPALI" | "PORTUGUESE" | "SOMALI" | "SPANISH" | "VIETNAMESE")[];
+            priceDependsOnHair: boolean;
+        };
+        ProfileServicePriceRequest: {
+            /** Format: int32 */
+            fromDollars: number;
+            /** @enum {string} */
+            service: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
+        };
         ProfileServiceProfileRequest: {
             bio: string;
             bookingUrl: string;
@@ -1303,6 +1347,7 @@ export interface components {
             instagram: string;
             /** Format: uuid */
             locationId: string;
+            practice: components["schemas"]["ProfileServicePracticeRequest"];
             /** Format: int32 */
             priceTier: number;
             specialties: ("CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER")[];
@@ -1318,6 +1363,7 @@ export interface components {
             /** Format: uuid */
             locationId: string;
             market: string;
+            practice: components["schemas"]["Practice"];
             /** Format: int32 */
             priceTier: number;
             /** Format: date-time */
@@ -1525,6 +1571,7 @@ export interface components {
             /** Format: uuid */
             orgId: string;
             photoUrls: string[];
+            practice: components["schemas"]["Practice"];
             specialties: ("CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER")[];
         };
         StylistTrackingControllerStylistMatch: {
@@ -3165,6 +3212,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["StylistDirectoryDirectoryPage"];
+                };
+            };
+        };
+    };
+    practice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Practice"];
                 };
             };
         };

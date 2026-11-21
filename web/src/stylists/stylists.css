@@ -29,6 +29,34 @@
   min-width: 0;
 }
 
+.tag-group > .field-hint {
+  margin-bottom: var(--space-2);
+}
+
+/* Labels that are a whole sentence take the full width. */
+.choices.wide {
+  grid-template-columns: 1fr;
+}
+
+/* What to expect in my chair: optional, set apart from the required fields. */
+.practice-form {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.practice-form h2 {
+  margin: 0;
+}
+
+.practice-form .prices {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  margin-bottom: var(--space-2);
+}
+
 /* The portfolio: square thumbnails, two across on a phone. */
 .portfolio {
   display: grid;

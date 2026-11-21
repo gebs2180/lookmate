@@ -32,6 +32,7 @@ const profile = {
   bookingPlatform: 'BOOKSY' as const,
   instagram: null,
   priceTier: null,
+  practice: { labels: [], languages: [], fromPrices: [], consultation: null, priceDependsOnHair: false },
   status: 'DRAFT' as const,
   publishedAt: null,
   updatedAt: '2026-11-20T00:00:00Z',

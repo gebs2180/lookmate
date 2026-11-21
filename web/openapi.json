@@ -973,6 +973,96 @@
         },
         "required" : [ "expiresAt", "headers", "method", "photoId", "url" ]
       },
+      "Practice" : {
+        "properties" : {
+          "consultation" : {
+            "enum" : [ "FREE", "PAID", "INCLUDED" ],
+            "type" : "string"
+          },
+          "fromPrices" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PracticeFromPrice"
+            },
+            "type" : "array"
+          },
+          "labels" : {
+            "items" : {
+              "enum" : [ "GENDER_NEUTRAL_PRICING", "LGBTQ_AFFIRMING", "SENSORY_FRIENDLY", "KIDS_WELCOME" ],
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "languages" : {
+            "items" : {
+              "enum" : [ "AMHARIC", "ARABIC", "ASL", "FRENCH", "MANDARIN", "NEPALI", "PORTUGUESE", "SOMALI", "SPANISH", "VIETNAMESE" ],
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "priceDependsOnHair" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "consultation", "fromPrices", "labels", "languages", "priceDependsOnHair" ]
+      },
+      "PracticeFromPrice" : {
+        "properties" : {
+          "fromDollars" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "service" : {
+            "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "fromDollars", "service" ]
+      },
+      "ProfileServicePracticeRequest" : {
+        "properties" : {
+          "consultation" : {
+            "enum" : [ "FREE", "PAID", "INCLUDED" ],
+            "type" : "string"
+          },
+          "fromPrices" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ProfileServicePriceRequest"
+            },
+            "type" : "array"
+          },
+          "labels" : {
+            "items" : {
+              "enum" : [ "GENDER_NEUTRAL_PRICING", "LGBTQ_AFFIRMING", "SENSORY_FRIENDLY", "KIDS_WELCOME" ],
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "languages" : {
+            "items" : {
+              "enum" : [ "AMHARIC", "ARABIC", "ASL", "FRENCH", "MANDARIN", "NEPALI", "PORTUGUESE", "SOMALI", "SPANISH", "VIETNAMESE" ],
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "priceDependsOnHair" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "consultation", "fromPrices", "labels", "languages", "priceDependsOnHair" ]
+      },
+      "ProfileServicePriceRequest" : {
+        "properties" : {
+          "fromDollars" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "service" : {
+            "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "fromDollars", "service" ]
+      },
       "ProfileServiceProfileRequest" : {
         "properties" : {
           "bio" : {
@@ -991,6 +1081,9 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "practice" : {
+            "$ref" : "#/components/schemas/ProfileServicePracticeRequest"
+          },
           "priceTier" : {
             "format" : "int32",
             "type" : "integer"
@@ -1003,7 +1096,7 @@
             "type" : "array"
           }
         },
-        "required" : [ "bio", "bookingUrl", "displayName", "instagram", "locationId", "priceTier", "specialties" ]
+        "required" : [ "bio", "bookingUrl", "displayName", "instagram", "locationId", "practice", "priceTier", "specialties" ]
       },
       "ProfileServiceProfileView" : {
         "properties" : {
@@ -1033,6 +1126,9 @@
           "market" : {
             "type" : "string"
           },
+          "practice" : {
+            "$ref" : "#/components/schemas/Practice"
+          },
           "priceTier" : {
             "format" : "int32",
             "type" : "integer"
@@ -1057,7 +1153,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "bio", "bookingPlatform", "bookingUrl", "demo", "displayName", "instagram", "locationId", "market", "priceTier", "publishedAt", "specialties", "status", "updatedAt" ]
+        "required" : [ "bio", "bookingPlatform", "bookingUrl", "demo", "displayName", "instagram", "locationId", "market", "practice", "priceTier", "publishedAt", "specialties", "status", "updatedAt" ]
       },
       "ProfileServiceStylistHome" : {
         "properties" : {
@@ -1561,6 +1657,9 @@
             },
             "type" : "array"
           },
+          "practice" : {
+            "$ref" : "#/components/schemas/Practice"
+          },
           "specialties" : {
             "items" : {
               "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
@@ -1569,7 +1668,7 @@
             "type" : "array"
           }
         },
-        "required" : [ "city", "demo", "displayName", "instagram", "locationName", "orgId", "photoUrls", "specialties" ]
+        "required" : [ "city", "demo", "displayName", "instagram", "locationName", "orgId", "photoUrls", "practice", "specialties" ]
       },
       "StylistTrackingControllerStylistMatch" : {
         "properties" : {
@@ -3951,6 +4050,33 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/StylistDirectoryDirectoryPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "directory-controller" ]
+      }
+    },
+    "/api/public/stylists/{orgId}/practice" : {
+      "get" : {
+        "operationId" : "practice",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Practice"
                 }
               }
             },

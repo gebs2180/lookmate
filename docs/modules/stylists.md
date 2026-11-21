@@ -2,7 +2,8 @@
 
 Stylist onboarding (profile, Salon Lofts location, booking link) and the portfolio (private photos plus tags).
 Package `com.lookmate.app.stylists`. Owns the tables `salon_location`, `stylist_profile`, `portfolio_photo`
-(all from `V2__matching_domain.sql`).
+(all from `V2__matching_domain.sql`) and `stylist_price` (`V8__stylist_practice.sql`, with the practice columns on
+`stylist_profile`).
 
 Everything is package-private except the public service below, its records and enums, and the events. Other modules
 call **only** these; never the repositories or the tables.
@@ -112,6 +113,7 @@ Public (no sign-in, rate-limited per IP with intake's limiter, `rate-limit.brows
 | Method | Path | What |
 |---|---|---|
 | GET | `/api/public/stylists?market=&service=&hairType=&page=` | The open directory, for visitors without a request (`/stylists`, from `/find`): LIVE stylists only, 12 a page from 0, real stylists before sample ones, then by name |
+| GET | `/api/public/stylists/{orgId}/practice` | What to expect in one LIVE stylist's chair (`Practice`, below), for the profile view on a client's picks; 404 unless LIVE |
 | GET | `/api/public/match-requests/{token}/stylists?service=&hairType=&page=` | The same page scoped to a client's link (served by intake with `StylistDirectory`): the request's market, a bad token is 404. The client page (`/m/:token/stylists`) uses this one |
 
 Stylist (`/api/orgs/{orgId}/...`, member of the STYLIST org or ADMIN; anyone else gets 404):
@@ -120,7 +122,7 @@ Stylist (`/api/orgs/{orgId}/...`, member of the STYLIST org or ADMIN; anyone els
 |---|---|---|
 | GET | `/api/locations?market=` | Active locations for the profile form (any signed-in user) |
 | GET | `/api/orgs/{orgId}/stylist` | Home: terms accepted?, profile (or null), photo counts, what's missing to publish |
-| PUT | `/api/orgs/{orgId}/stylist/profile` | Create or update the profile (stays DRAFT/LIVE/HIDDEN as it was) |
+| PUT | `/api/orgs/{orgId}/stylist/profile` | Create or update the profile (stays DRAFT/LIVE/HIDDEN as it was), including `practice` (below; null clears it) |
 | POST | `/api/orgs/{orgId}/stylist/publish` | LIVE; needs accepted terms, a location, an https booking URL and 3+ tagged READY photos |
 | POST | `/api/orgs/{orgId}/stylist/hide` | HIDDEN |
 | GET | `/api/orgs/{orgId}/photos` | READY and HIDDEN photos, in order, with signed view URLs |
@@ -140,7 +142,7 @@ Photo cap: `lookmate.storage.max-photos-per-stylist` (READY + HIDDEN + recent pe
 Clients choose; we recommend (CLAUDE.md): every client can browse every LIVE stylist in a market (default
 `lookmate.default-market`). `StylistDirectory` answers `/api/public/stylists` with, per stylist: `orgId`, `displayName`,
 `locationName`, `city`, `specialties`, up to 3 READY `photoUrls` (short-lived presigned links, those matching the
-filters first), `demo` (label it "Sample stylist") and `instagram`. Nothing else: no email, booking link or other
+filters first), `demo` (label it "Sample stylist"), `instagram` and `practice` (below). Nothing else: no email, booking link or other
 internal id. Responses are `Cache-Control: no-store` (the photo links expire).
 
 - **Filters:** `service` and `hairType` (the enums above). A stylist matches with a READY photo tagged with both (or
@@ -153,6 +155,32 @@ internal id. Responses are `Cache-Control: no-store` (the photo links expire).
   Signed out (`/stylists`, reached from `/find`) there is no Book: the card says "Start a request to book". We chose
   this over an untracked public redirect: it is the simpler safe option (no booking link leaves the server except as a
   tracked redirect) and keeps every booking click attributable (docs/tracking.md).
+
+## What to expect in the chair: labels and from-prices (2026-11-20)
+
+From the research in `docs/research/beyond-the-hair.md` (decided 2026-11-20, CLAUDE.md). A stylist may tick, on the
+profile form under "What to expect in my chair":
+
+- **Labels** (`PracticeLabel`): `GENDER_NEUTRAL_PRICING`, `LGBTQ_AFFIRMING`, `SENSORY_FRIENDLY` (on request),
+  `KIDS_WELCOME`. Stored in `stylist_profile.practice_labels` (`text[]`, checked against the list).
+- **Languages** besides English (`Language`): a short pick-list for Columbus (Spanish, Somali, Nepali, Arabic, Amharic,
+  French, Mandarin, Portuguese, Vietnamese, ASL). `stylist_profile.languages`.
+- **From-prices:** one whole-dollar starting price ($1 to $10,000) per offered service, in `stylist_price`. A price for
+  a service the stylist doesn't offer is dropped on save, and removing a specialty drops its price. The `$`–`$$$$`
+  price tier stays.
+- **Consultation** (`Consultation`): `FREE`, `PAID`, `INCLUDED`, or null (not said). `stylist_profile.consultation`.
+- **`priceDependsOnHair`:** "Price depends on length and density. Ask at your consultation."
+
+All optional; none is needed to go live. `ProfileView.practice` and `DirectoryStylist.practice` carry it as `Practice`
+(`labels`, `languages`, `fromPrices` in the order of the specialties, `consultation`, `priceDependsOnHair`).
+
+- **Profile only.** Shown on the stylist's portfolio view (directory and client picks) and as one short price line on
+  the directory card. No filters, nothing in ranking or matching: `LiveProfile` deliberately doesn't carry it, so
+  matching can't read it. The client's match card doesn't show it; the portfolio fetches it by `orgId`
+  (`/api/public/stylists/{orgId}/practice`) because a client's picks come from matching.
+- **No political or identity labels** (the stylist's race, gender, religion, "-owned"). Quiet appointments are a
+  client-side choice, not a stylist label.
+- **Never a "No":** an unticked label isn't shown. Wording lives in `web/src/stylists/practice.ts`.
 
 ## Notes for the other modules
 
@@ -173,7 +201,9 @@ internal id. Responses are `Cache-Control: no-store` (the photo links expire).
 
 Until real stylists join, the admin creates made-up ones at `/admin/demo` (Zach, 2026-11-20). The page creates each
 one through the normal API, acting as the admin: an org named "Demo: <name>", a profile on one of the active locations,
-`stylist_profile.demo = true` (V3), five tagged photos (before/after pairs included) and publish. Photos are drawn
+`stylist_profile.demo = true` (V3), five tagged photos (before/after pairs included) and publish. Each gets a practice
+drawn at random (`randomPractice` in `web/src/admin/demoSeed.ts`): some labels, maybe a language, a from-price per
+service scaled by price tier, and a consultation or none. Photos are drawn
 placeholders showing their tags, unless the admin picks real photos named as in `web/src/admin/demoStylists.ts`
 (`maya-1.jpg` to `nia-5.jpg`). Booking links go to `https://example.com/book/<slug>`.
 
