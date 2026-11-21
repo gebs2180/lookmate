@@ -12,11 +12,12 @@ infrastructure, so a Combpatible deploy or outage can never touch Rawmark.
 | GHCR / Actions | Same owner | Images `lookmate-backend`, `lookmate-web`, `lookmate-backup` from this repo |
 | healthchecks.io / UptimeRobot | Same accounts | Three checks (backup, backup check, restore test) and one monitor |
 | Resend | Same account | A sending domain, once Combpatible's domain is bought |
-| **Auth0** | **No: a new tenant** | Separate login page, branding, users and post-login Action ([auth.md](auth.md)) |
+| **Auth0** | **No: its own tenant** | Combpatible's dev tenant for now (Zach, 2026-11-20); a separate prod tenant before real stylists join ([auth.md](auth.md)) |
 | Postgres | **No** | Its own database in its own Compose stack (pgvector image) |
 
-The domain is a placeholder (`pilot.combpatible.example`) until one is bought; replace it in `deploy/`, `.claude/skills/`
-and this file then.
+**Domain (Zach, 2026-11-20): `combpatible.app`**, bought with `combpatible.com` at Cloudflare Registrar. The site is the
+bare `combpatible.app`; `www.combpatible.app`, `combpatible.com` and `www.combpatible.com` redirect to it at Cloudflare
+(step 3), so the server only serves one name.
 
 The rest of this file is pokemans' runbook with the names changed: the steps are the same.
 
@@ -99,9 +100,15 @@ You need about an hour, a personal card, and an SSH key (`ssh-keygen -t ed25519`
 
 1. Hetzner → Servers → Add server: **CX23**, Ubuntu 24.04, location Nuremberg/Falkenstein/Helsinki (the CX line is the cheapest; US locations cost about 20% more), your SSH key, IPv4 on. Optionally tick **Backups** (+20%, weekly whole-disk snapshots on top of our nightly ones).
 2. Firewalls → Create: allow inbound TCP 22 (ideally from your IP only), TCP 80, TCP 443 and UDP 443, then apply it to the server.
-3. Pick the site address. Combpatible has no domain yet; `pilot.combpatible.example` is the placeholder. For a new server:
-   - add an A record for the pilot host (e.g. `pilot`) → the server's IPv4, at the registrar or wherever the domain's DNS is hosted;
-   - set `SITE_ADDRESS` in `.env` (step 5) to that host name, without `https://`. `.app` domains only work over HTTPS, which Caddy provides.
+3. Point the domain at the server. Both domains' DNS is at Cloudflare (bought through Cloudflare Registrar).
+   - `combpatible.app` → DNS → Add record: **A**, name `@`, the server's IPv4, proxy status **DNS only** (grey cloud). Caddy
+     gets the certificate itself, so Cloudflare's proxy stays off for the site.
+   - `SITE_ADDRESS=combpatible.app` in `.env` (step 5), without `https://`. `.app` domains only work over HTTPS, which Caddy provides.
+   - Redirects, all at Cloudflare and none on the server: add a **proxied** (orange cloud) A record `www` → `192.0.2.1`
+     on `combpatible.app`, and `@` and `www` → `192.0.2.1` on `combpatible.com` (the address is a placeholder; the proxy
+     answers first). Then on each domain, Rules → Redirect Rules → Create: *All incoming requests*, dynamic,
+     `concat("https://combpatible.app", http.request.uri.path)`, status **301**, preserve query string. On
+     `combpatible.app` limit it to hostname `www.combpatible.app`, or it would redirect the site to itself.
    - Before DNS is ready you can test on `<ip-with-dashes>.sslip.io` (e.g. `203-0-113-7.sslip.io`), which resolves to that IP and gets a certificate too.
 4. SSH in and set up the box:
    ```bash
@@ -259,7 +266,7 @@ It's the same deploy for an older commit: backup, restart, health wait. The chec
 **Check prod without changing anything.** Run this from a checkout. It reports the commit, services, health and recent backend errors:
 
 ```bash
-ssh deploy@pilot.combpatible.example 'bash -s' < deploy/prod-check.sh
+ssh deploy@combpatible.app 'bash -s' < deploy/prod-check.sh
 ```
 
 **Restore after a disaster** (lost server or a bad migration):
@@ -308,7 +315,7 @@ At most a day of data is lost (the last nightly backup), plus whatever Hetzner's
 | Hetzner backups (optional) | +20%, ~€0.90 |
 | Cloudflare R2 | $0 up to 10 GB. The beta is likely 5–15 GB counting the backup copy (photos are 3–8 MB; 40 stylists × 20 photos plus client inspiration photos, deleted after 30 days), so $0–0.10; requests stay inside the free tier |
 | Sentry Developer, healthchecks.io, UptimeRobot | $0 |
-| Domain | Not bought yet (`pilot.combpatible.example` is a placeholder) |
+| Domains | `combpatible.app` and `combpatible.com` at Cloudflare Registrar (at cost), about $2.50 a month together, billed yearly |
 | **Total** | **~$5–7 a month**, about $10 for the whole 6-week beta |
 
 The embedding provider, once chosen, is billed per use on its own account and is not counted here.

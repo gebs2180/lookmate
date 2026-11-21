@@ -53,8 +53,8 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
 - Client contact retention: **decided 2026-11-20**: anonymised 365 days after the latest request by that email
   (`lookmate.retention.client-contact-days`). Client links expire after 90 days (`lookmate.intake.link-ttl`).
 - Stylist terms text: a draft (`backend/app/src/main/resources/terms/`), needs a lawyer before the pilot.
-- ~~App name~~ **Decided 2026-11-20: Combpatible** (Zach). Domain: still a placeholder, `pilot.combpatible.example` in
-  `deploy/`, docs and `.claude/skills/`, until a domain is bought.
+- ~~App name~~ **Decided 2026-11-20: Combpatible** (Zach). Domain **decided 2026-11-20: `combpatible.app`**
+  (Zach), with `combpatible.com` redirecting to it. The hosted site uses the Auth0 dev tenant until real stylists join.
 - Tagged photos a stylist needs before going live: 3 (`lookmate.stylists.min-tagged-photos-to-publish`).
 - Salon locations: entered by Zach on `/admin/locations`, not seeded (2026-11-20).
 - Demo stylists: made-up profiles for the proof of concept, created at `/admin/demo` and hidden all at once when real

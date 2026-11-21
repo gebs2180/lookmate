@@ -108,7 +108,7 @@ A production tenant, in the same Combpatible Auth0 account once the plan allows 
 plan is **a decision pending**. Same API identifier and claim names, so the backend config doesn't change apart from
 the issuer. Production differs from local in three places:
 
-- Callback, logout and web-origin URLs: `https://pilot.combpatible.example` (the placeholder until a domain is bought).
+- Callback, logout and web-origin URLs: `https://combpatible.app`.
 - MFA is back on: `LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA` unset (default `true`), **Security → Multi-factor Auth** with
   One-time Password enabled, and the Action requires MFA for admins:
   ```js

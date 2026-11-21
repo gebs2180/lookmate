@@ -8,7 +8,7 @@ Zach runs every command that changes the server. Never write to the server, and 
 **Check prod, read-only.** From the repo root:
 
 ```bash
-ssh -o BatchMode=yes deploy@pilot.combpatible.example 'bash -s' < deploy/prod-check.sh
+ssh -o BatchMode=yes deploy@combpatible.app 'bash -s' < deploy/prod-check.sh
 ```
 
 Pass a window with `'bash -s -- 6h'`. Keep extra queries read-only.
@@ -22,7 +22,7 @@ Pass a window with `'bash -s -- 6h'`. Keep extra queries read-only.
 **The deploy.** Give Zach exactly these, run from the home directory:
 
 ```bash
-ssh deploy@pilot.combpatible.example
+ssh deploy@combpatible.app
 ```
 
 ```bash
