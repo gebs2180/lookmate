@@ -112,8 +112,10 @@ going cream.
 
 ### Motion
 
-> **Superseded (2026-11-20):** motion is the Strand's (`web/src/strand/`). The matching moment is a contact sheet with
-> the strand and no step counts or photo numbers. The rule below that the wait is never lengthened for effect still holds.
+> **Superseded (2026-11-20):** motion is the Strand's (`web/src/strand/`). The matching moment is a haircut in the chair
+> (`Haircut.tsx`, Zach, 2026-11-22), in the client's hair type, with no step counts or photo numbers. The rule below that
+> the wait is never lengthened for effect still holds, with one exception Zach chose: when the picks arrive on screen,
+> the cut finishes (about 1.6s) before they show. Off screen, in a hidden tab or with reduced motion they show at once.
 
 Short and soft, and only where it explains something:
 

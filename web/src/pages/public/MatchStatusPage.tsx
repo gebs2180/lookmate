@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router'
 import { ApiError, apiPath, publicApi, type ClientMatch, type ClientView } from '../../api'
 import { message } from '../../format'
 import { Strand, type StrandShape } from '../../strand/Strand'
-import { useLoopRunning } from '../../strand/motion'
+import { Haircut } from '../../strand/Haircut'
 import { Chip, Loading } from '../../ui'
 import { useLoad, usePoll, type Backoff } from '../../useLoad'
 import { PhotoPicker, PrivacyNote } from './PhotoPicker'
@@ -43,6 +43,10 @@ export function MatchStatusPage() {
   useNoReferrer()
   const waiting = view?.stage === 'RECEIVED' || view?.stage === 'MATCHING'
   usePoll(waiting, reload, POLL_START_MS, POLL_BACKOFF)
+  // Seen matching on this visit: when the picks arrive, the haircut finishes before they show (Haircut says when).
+  const [sawWaiting, setSawWaiting] = useState(false)
+  const [cutDone, setCutDone] = useState(false)
+  if (waiting && !sawWaiting) setSawWaiting(true)
 
   // A failed check while the page is already showing is retried by the next one; only a first load that fails is an error.
   if (error && !view) {
@@ -62,7 +66,9 @@ export function MatchStatusPage() {
 
   // Published with nobody on it: no stylist's portfolio was a close match (CLAUDE.md, decided 2026-11-20).
   const noMatches = view.stage === 'READY' && view.matches.length === 0
-  const revealed = view.stage === 'READY' && !noMatches
+  const ready = view.stage === 'READY' && !noMatches
+  const finishing = ready && sawWaiting && !cutDone
+  const revealed = ready && !finishing
   const directory = `/m/${encodeURIComponent(token)}/stylists`
   const service = labelOf(SERVICES, view.service)
   const hairType = labelOf(HAIR_TYPES, view.hairType)
@@ -84,8 +90,13 @@ export function MatchStatusPage() {
 
       {view.stage === 'PHOTO_NEEDED' && <AddPhoto token={token} keptDays={view.photoKeptDays} onSent={reload} />}
       {view.stage === 'CLOSED' && <p className="alert alert-info">This request is closed.</p>}
-      {waiting && <ContactSheet hairType={view.hairType} />}
-      {waiting && <Progress stage={view.stage} />}
+      {(waiting || finishing) && <Haircut hairType={view.hairType as StrandShape | null} done={finishing} onDone={() => setCutDone(true)} />}
+      {(waiting || finishing) && <Progress stage={view.stage} />}
+      {finishing && (
+        <p className="muted small" role="status">
+          Your matches are ready.
+        </p>
+      )}
       {waiting && (
         <p className="muted small" role="status">
           This page updates by itself when your matches are ready, usually in a few minutes. Meanwhile you can{' '}
@@ -125,29 +136,6 @@ function Progress({ stage }: { stage: ClientView['stage'] }) {
         </li>
       ))}
     </ol>
-  )
-}
-
-const SHEET_FRAMES = 12
-
-/**
- * The matching moment: a contact sheet of blank frames with the strand, in the client's hair type, threading through
- * it while we look through portfolios. It stands for the looking, never for how far along it is: no frame numbers, no
- * frames ticked off, no counts. Decoration only (the stage list and the status line say it in words), and still when
- * it's off screen or motion is reduced.
- */
-function ContactSheet({ hairType }: { hairType: ClientView['hairType'] }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const running = useLoopRunning(ref)
-  return (
-    <div ref={ref} className={running ? 'sheet' : 'sheet is-paused'} aria-hidden="true">
-      <div className="sheet-frames">
-        {Array.from({ length: SHEET_FRAMES }, (_, i) => (
-          <i key={i} style={{ '--i': i } as CSSProperties} />
-        ))}
-      </div>
-      <Strand shape={hairType as StrandShape} horizontal draw="loop" width={320} height={150} bend={1.6} strokeWidth={3.5} />
-    </div>
   )
 }
 
