@@ -118,7 +118,7 @@ export function FindPage() {
       }
       await sendPhoto(request.token, photo, slot)
       // Straight to the request's own page: the matching moment, then the reveal.
-      navigate(request.statusPath)
+      navigate(request.statusPath, { state: { fromQuiz: true } })
     } catch (e) {
       setError(message(e))
     } finally {

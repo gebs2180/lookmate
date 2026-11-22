@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent, type UIEvent } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useLocation, useNavigate, useParams } from 'react-router'
 import { ApiError, apiPath, publicApi, type ClientMatch, type ClientView } from '../../api'
 import { message } from '../../format'
 import { Strand, type StrandShape } from '../../strand/Strand'
@@ -43,9 +43,18 @@ export function MatchStatusPage() {
   useNoReferrer()
   const waiting = view?.stage === 'RECEIVED' || view?.stage === 'MATCHING'
   usePoll(waiting, reload, POLL_START_MS, POLL_BACKOFF)
-  // Seen matching on this visit: when the picks arrive, the haircut finishes before they show (Haircut says when).
-  const [sawWaiting, setSawWaiting] = useState(false)
+  // Seen matching on this visit, or straight from the quiz (matching can finish before the page's first check): the
+  // haircut plays and finishes before the picks show (Haircut says when). Once done, the quiz mark is dropped so a
+  // reload goes straight to the picks.
+  const location = useLocation()
+  const navigate = useNavigate()
+  const fromQuiz = (location.state as { fromQuiz?: boolean } | null)?.fromQuiz === true
+  const [sawWaiting, setSawWaiting] = useState(fromQuiz)
   const [cutDone, setCutDone] = useState(false)
+  const onCutDone = () => {
+    setCutDone(true)
+    if (fromQuiz) navigate(location.pathname + location.search, { replace: true, state: null })
+  }
   if (waiting && !sawWaiting) setSawWaiting(true)
 
   // A failed check while the page is already showing is retried by the next one; only a first load that fails is an error.
@@ -90,7 +99,7 @@ export function MatchStatusPage() {
 
       {view.stage === 'PHOTO_NEEDED' && <AddPhoto token={token} keptDays={view.photoKeptDays} onSent={reload} />}
       {view.stage === 'CLOSED' && <p className="alert alert-info">This request is closed.</p>}
-      {(waiting || finishing) && <Haircut hairType={view.hairType as StrandShape | null} done={finishing} onDone={() => setCutDone(true)} />}
+      {(waiting || finishing) && <Haircut hairType={view.hairType as StrandShape | null} done={finishing} onDone={onCutDone} />}
       {(waiting || finishing) && <Progress stage={view.stage} />}
       {finishing && (
         <p className="muted small" role="status">

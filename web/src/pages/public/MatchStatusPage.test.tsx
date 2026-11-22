@@ -288,3 +288,29 @@ describe('MatchStatusPage', () => {
     vi.useRealTimers()
   })
 })
+
+describe('MatchStatusPage straight from the quiz', () => {
+  it('plays the haircut even when matching finished before the first check, then shows the picks', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        url.endsWith('/viewed')
+          ? new Response(null, { status: 204 })
+          : new Response(JSON.stringify({ ...BASE, stage: 'READY', matches: [MATCH] }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+      ),
+    )
+    const { container } = render(
+      <MemoryRouter initialEntries={[{ pathname: `/m/${TOKEN}`, state: { fromQuiz: true } }]}>
+        <Routes>
+          <Route path="/m/:token" element={<MatchStatusPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    expect(await screen.findByText('Your matches are ready.')).toBeInTheDocument()
+    expect(container.querySelector('.haircut')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Book with Curl Studio' })).not.toBeInTheDocument()
+    // No IntersectionObserver in tests, so nobody "sees" it: the picks follow without the finish.
+    expect(await screen.findByRole('link', { name: 'Book with Curl Studio' })).toBeInTheDocument()
+    expect(container.querySelector('.haircut')).not.toBeInTheDocument()
+  })
+})
