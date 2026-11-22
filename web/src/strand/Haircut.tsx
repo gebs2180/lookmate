@@ -7,7 +7,8 @@ import type { StrandShape } from './shapes'
  * clippings fall onto the cape. The snipping loops for as long as we look through portfolios, and stands for the
  * looking, never for how far along it is. When the matches arrive (`done`), the scissors take one sweep across at chin
  * height, the cut ends fall, the hair springs back as its type does, and the cape comes off: then `onDone` reveals the
- * picks. Decoration only (the stage list and status line say it in words).
+ * picks. Decoration only (the stage list and status line say it in words). Fast matches still get the whole show: the
+ * snipping runs at least MIN_LOOP_S before the finish starts, so the client sees about 4.6s in all (Zach, 2026-11-22).
  *
  * The finish runs only when the client can see it. Off screen, in a hidden tab or with reduced motion, `onDone` comes
  * at once, so the picks are never held back for an animation nobody watches. Drawn by hand each frame (no React state
@@ -37,10 +38,18 @@ export function Haircut({ hairType, done, onDone }: { hairType: StrandShape | nu
     const s = scene.current
     if (!s) return
     if (done && (!running || reduce)) {
-      // Nobody is watching the finish: show the cut and move straight on.
-      s.finishNow()
-      doneRef.current()
-      return
+      // Nobody is watching the finish: show the cut and move straight on. Just mounted, it can't yet tell whether it's
+      // on screen (IntersectionObserver answers a moment later), so it waits that moment unless motion is reduced.
+      const finishNow = () => {
+        s.finishNow()
+        doneRef.current()
+      }
+      if (reduce) {
+        finishNow()
+        return
+      }
+      const wait = setTimeout(finishNow, UNSEEN_GRACE_MS)
+      return () => clearTimeout(wait)
     }
     if (!running) {
       s.draw(0)
@@ -103,6 +112,10 @@ const PER_SIDE = 12
 const LONG_END = 250
 const CUT_LINE = 166
 /** The finish, in seconds after the matches arrive. */
+/** How long a just-mounted haircut waits to learn it's on screen before giving up on the finish. */
+const UNSEEN_GRACE_MS = 300
+/** Seconds of snipping the client sees before the finish may start, however fast the matches arrive. */
+const MIN_LOOP_S = 3
 const FINISH = { moveIn: 0.2, sweepEnd: 1, capeFrom: 1.05, capeFor: 0.6, end: 1.65 }
 
 const ease = (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2)
@@ -206,6 +219,7 @@ function buildScene(svg: SVGSVGElement, tex: Texture): Scene {
 
   let t = 0
   let finish = -1
+  let wantFinish = false
   let snapped = false
   let from: Pt = [180, 242]
   let at: Pt = [180, 242]
@@ -231,6 +245,10 @@ function buildScene(svg: SVGSVGElement, tex: Texture): Scene {
   function draw(dt: number): boolean {
     t += dt
     if (finish >= 0) finish += dt
+    else if (wantFinish && t >= MIN_LOOP_S) {
+      finish = 0
+      from = at
+    }
     const f = finish
     if (f < 0) {
       // Snipping at the ends, sweeping side to side; each snip drops a clipping on the cape.
@@ -315,10 +333,7 @@ function buildScene(svg: SVGSVGElement, tex: Texture): Scene {
   return {
     draw,
     startFinish() {
-      if (finish < 0) {
-        finish = 0
-        from = at
-      }
+      wantFinish = true
     },
     finishNow() {
       finish = FINISH.end
