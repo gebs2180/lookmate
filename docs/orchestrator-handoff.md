@@ -56,6 +56,15 @@ agrees. `claude/tender-hawking-c4yoo8` wasn't created by the old orchestrator: a
   4. Results appear in place. Check **See all stylists** and **Book** (a tracked redirect).
   5. Check `/admin/matches` and the metrics.
 
+## Before real stylists join
+
+- Admin MFA back on: remove `LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA=false` from the server's `.env`.
+- Move from the Auth0 dev tenant to a production tenant.
+- Move Auth0 tokens out of `localStorage` into memory, with an Auth0 custom domain (`web/src/AuthProvider.tsx`;
+  [review-2026-11-22.md](review-2026-11-22.md) #22, deferred by Zach on 2026-11-22).
+- Hide the demo stylists.
+- A lawyer reviews the stylist terms.
+
 ## Waiting on Zach
 
 1. **AWS account** for Amazon Bedrock Titan Multimodal Embeddings G1 (decided). Then wire a real `EmbeddingProvider`
