@@ -594,67 +594,98 @@
   flex: 1;
 }
 
-/* ---------- The matching moment: a contact sheet, the strand threading through it ---------- */
+/* ---------- The matching moment: a haircut in the chair (strand/Haircut.tsx) ---------- */
 
-.sheet {
-  position: relative;
-  margin: var(--space-4) 0 var(--space-2);
-  padding: 8px;
-  background: var(--sheet);
+.haircut {
+  max-width: 360px;
+  margin: var(--space-4) auto var(--space-2);
 }
 
-.sheet-frames {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 5px;
-}
-
-/* Blank frames: the sheet stands for "looking through portfolios", never for how far along that is. */
-.sheet-frames i {
-  aspect-ratio: 4 / 5;
-  background: linear-gradient(160deg, #3a322d, #26201d);
-  animation: frame-in 420ms var(--ease-out) both;
-  animation-delay: calc(var(--i) * 70ms);
-}
-
-@keyframes frame-in {
-  from {
-    opacity: 0;
-    transform: scale(0.94);
-  }
-  to {
-    opacity: 0.85;
-    transform: none;
-  }
-}
-
-/* A slow light passing over the sheet, like a loupe moving across it. */
-.sheet::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(100deg, transparent 30%, rgb(255 246 242 / 0.09) 50%, transparent 70%);
-  transform: translateX(-100%);
-  animation: loupe 3.6s var(--ease-draw) infinite;
-  pointer-events: none;
-}
-
-.sheet.is-paused::after {
-  animation-play-state: paused;
-}
-
-@keyframes loupe {
-  to {
-    transform: translateX(100%);
-  }
-}
-
-.sheet .strand {
-  position: absolute;
-  inset: 0;
+.haircut svg {
+  display: block;
   width: 100%;
-  height: 100%;
-  color: var(--marker);
+  height: auto;
+  overflow: visible;
+}
+
+.haircut .hc-top {
+  fill: #e2d8c8;
+  stroke: var(--ink);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+
+.haircut .hc-line,
+.haircut .hc-neck,
+.haircut .hc-face {
+  fill: none;
+  stroke: var(--ink);
+  stroke-linecap: round;
+}
+
+.haircut .hc-line {
+  stroke-width: 1.2;
+}
+
+.haircut .hc-neck {
+  stroke-width: 1.8;
+}
+
+.haircut .hc-face {
+  stroke-width: 1.5;
+}
+
+.haircut .hc-cape {
+  fill: #e8dfd1;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+}
+
+.haircut .hc-fold {
+  fill: none;
+  stroke: #cdbfad;
+  stroke-width: 1.2;
+}
+
+.haircut .hc-head {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.haircut .hc-mass {
+  fill: var(--accent);
+  stroke-linejoin: round;
+}
+
+.haircut .hc-hair {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.haircut .hc-blade {
+  fill: var(--ink);
+}
+
+.haircut .hc-shank {
+  stroke: var(--ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.haircut .hc-ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.8;
+}
+
+.haircut .hc-pivot {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1;
 }
 
 .steps {
