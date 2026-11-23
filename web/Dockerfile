@@ -1,7 +1,7 @@
 # Production image for the web app (docs/hosting.md): the built PWA served by Caddy, which also
 # terminates HTTPS and proxies /api to the backend. Build context: web/. Caddyfile: deploy/Caddyfile, mounted.
 
-FROM node:24-bookworm-slim AS build
+FROM node:26-bookworm-slim AS build
 WORKDIR /src
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
