@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from 'react-router'
-import { useApi, type MatchQueueItem, type MatchRequestStatus } from '../../api'
+import { type MatchQueueItem, type MatchRequestStatus } from '../../api'
+import { useApi } from '../../useApi'
 import { label, shortDate } from '../../format'
 import { EmptyState, Loading, PageError } from '../../ui'
 import { useLoad } from '../../useLoad'
@@ -36,7 +37,7 @@ export function ReviewQueue() {
           </Link>
         ))}
       </nav>
-      {error && <PageError message={error} />}
+      {error && <PageError inline message={error} />}
       {!error && !items && <Loading />}
       {items && items.length === 0 && <EmptyState title="Nothing here right now." />}
       {items && items.length > 0 && (

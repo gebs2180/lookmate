@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import { apiPath, useApi } from '../api'
+import { apiPath } from '../api'
+import { useApi } from '../useApi'
 import { message } from '../format'
 import { Chip, Loading, PageError, type Tone } from '../ui'
 import { useLoad } from '../useLoad'

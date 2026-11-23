@@ -48,20 +48,25 @@ export type Backoff = { factor: number; maxMs: number; steadyMs?: number; giveUp
 /**
  * Calls {@code reload} every {@code ms} while {@code active}, e.g. while background work is pending. With a
  * {@code backoff}, the waits grow after a steady start (up to maxMs) so a page left open doesn't keep hammering the API,
- * and polling stops after giveUpMs; it starts over when {@code active} turns true again.
+ * and polling stops after giveUpMs; it starts over when {@code active} turns true again. Returns {@code gaveUp}: true
+ * once polling has stopped on its own, so the page can stop promising that it updates by itself.
  */
 export function usePoll(active: boolean, reload: () => void, ms = 2000, backoff?: Backoff) {
   const factor = backoff?.factor ?? 1
   const maxMs = backoff?.maxMs ?? ms
   const giveUpMs = backoff?.giveUpMs
   const steadyMs = backoff?.steadyMs ?? 0
+  const [gaveUp, setGaveUp] = useState(false)
   useEffect(() => {
     if (!active) return
     let wait = ms
     let waited = 0
     let timer: ReturnType<typeof setTimeout>
     const next = () => {
-      if (giveUpMs !== undefined && waited + wait > giveUpMs) return
+      if (giveUpMs !== undefined && waited + wait > giveUpMs) {
+        timer = setTimeout(() => setGaveUp(true), Math.max(0, giveUpMs - waited))
+        return
+      }
       timer = setTimeout(() => {
         waited += wait
         reload()
@@ -70,6 +75,10 @@ export function usePoll(active: boolean, reload: () => void, ms = 2000, backoff?
       }, wait)
     }
     next()
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(timer)
+      setGaveUp(false)
+    }
   }, [active, reload, ms, factor, maxMs, steadyMs, giveUpMs])
+  return { gaveUp: active && gaveUp }
 }

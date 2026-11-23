@@ -14,12 +14,12 @@ describe('client pages', () => {
     expect(screen.queryByRole('button', { name: 'Stylist log in' })).not.toBeInTheDocument()
   })
 
-  it('are offered on the signed-out home page', () => {
+  it('are offered on the signed-out home page', async () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <App />
       </MemoryRouter>,
     )
-    expect(screen.getByRole('link', { name: 'Find my stylist' })).toHaveAttribute('href', '/find')
+    expect(await screen.findByRole('link', { name: 'Find my stylist' })).toHaveAttribute('href', '/find')
   })
 })

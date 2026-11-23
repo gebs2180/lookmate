@@ -10,7 +10,6 @@ import { PhotoPicker, PrivacyNote } from './PhotoPicker'
 import { sendPhoto } from './photo'
 import { BookLink, InstagramLink, Portfolio, type StylistView } from './Portfolio'
 import { HAIR_TYPES, SERVICES, bookingNote, labelOf } from './quiz'
-import { useNoReferrer } from './useNoReferrer'
 
 const STAGES: { stage: ClientView['stage']; label: string }[] = [
   { stage: 'RECEIVED', label: 'Request received' },
@@ -40,9 +39,8 @@ export function MatchStatusPage() {
   // The email box answers with the whole view; keep it until the next check replaces it.
   const [updated, setUpdated] = useState<{ after: typeof loaded; view: ClientView } | null>(null)
   const view = updated && updated.after === loaded ? updated.view : loaded
-  useNoReferrer()
   const waiting = view?.stage === 'RECEIVED' || view?.stage === 'MATCHING'
-  usePoll(waiting, reload, POLL_START_MS, POLL_BACKOFF)
+  const { gaveUp } = usePoll(waiting, reload, POLL_START_MS, POLL_BACKOFF)
   // Seen matching on this visit, or straight from the quiz (matching can finish before the page's first check): the
   // haircut plays and finishes before the picks show (Haircut says when). Once done, the quiz mark is dropped so a
   // reload goes straight to the picks.
@@ -99,6 +97,7 @@ export function MatchStatusPage() {
 
       {view.stage === 'PHOTO_NEEDED' && <AddPhoto token={token} keptDays={view.photoKeptDays} onSent={reload} />}
       {view.stage === 'CLOSED' && <p className="alert alert-info">This request is closed.</p>}
+      {view.stage === 'FAILED' && <RetakePhoto token={token} keptDays={view.photoKeptDays} canRetake={!view.photoDeleted} directory={directory} onSent={reload} />}
       {(waiting || finishing) && <Haircut hairType={view.hairType as StrandShape | null} done={finishing} onDone={onCutDone} />}
       {(waiting || finishing) && <Progress stage={view.stage} />}
       {finishing && (
@@ -106,17 +105,30 @@ export function MatchStatusPage() {
           Your matches are ready.
         </p>
       )}
-      {waiting && (
+      {waiting && !gaveUp && (
         <p className="muted small" role="status">
           This page updates by itself when your matches are ready, usually in a few minutes. Meanwhile you can{' '}
           <Link to={directory}>browse all stylists</Link>.
         </p>
       )}
+      {waiting && gaveUp && (
+        <div className="muted small" role="status">
+          <p>
+            This page has stopped checking. Reload it to see if your matches are ready, or open the link in your email, if you gave us
+            one. Meanwhile you can <Link to={directory}>browse all stylists</Link>.
+          </p>
+          <p>
+            <button type="button" className="secondary small" onClick={() => window.location.reload()}>
+              Reload
+            </button>
+          </p>
+        </div>
+      )}
 
       {noMatches && <NoCloseMatches directory={directory} />}
       {revealed && <Matches token={token} matches={view.matches} hairType={view.hairType} directory={directory} note={bookingNote(view.asks)} />}
       {(waiting || view.stage === 'READY') && (
-        <KeepThisList token={token} view={view} title={noMatches ? 'Tell me when picks are added' : 'Email me this list'} onSaved={(saved) => setUpdated({ after: loaded, view: saved })} />
+        <KeepThisList token={token} view={view} mode={noMatches ? 'picks' : 'list'} onSaved={(saved) => setUpdated({ after: loaded, view: saved })} />
       )}
 
       <div className="panel">
@@ -412,12 +424,13 @@ function echo(view: ClientView): string {
 function KeepThisList({
   token,
   view,
-  title,
+  mode,
   onSaved,
 }: {
   token: string
   view: ClientView
-  title: string
+  /** 'list': email me this list. 'picks': the list is empty, so tell me when picks are added. */
+  mode: 'list' | 'picks'
   onSaved: (view: ClientView) => void
 }) {
   const [email, setEmail] = useState('')
@@ -426,6 +439,7 @@ function KeepThisList({
   const [error, setError] = useState<string | null>(null)
   const valid = /^\S+@\S+\.\S+$/.test(email.trim())
   const showForm = !view.emailHint || editing
+  const title = mode === 'picks' ? 'Tell me when picks are added' : 'Email me this list'
 
   async function save(event: FormEvent) {
     event.preventDefault()
@@ -460,7 +474,7 @@ function KeepThisList({
       {view.emailHint && !editing ? (
         <p role="status">
           We've emailed this list to <strong>{view.emailHint}</strong>
-          {title === 'Tell me when picks are added' ? ", and we'll write again if picks are added." : '.'}{' '}
+          {mode === 'picks' ? ", and we'll write again if picks are added." : '.'}{' '}
           {view.emailChangeAllowed && (
             <button type="button" className="link-button" onClick={() => setEditing(true)}>
               Use a different email
@@ -501,7 +515,49 @@ function KeepThisList({
   )
 }
 
-function AddPhoto({ token, keptDays, onSent }: { token: string; keptDays: number; onSent: () => void }) {
+/** Matching couldn't read the photo (decided 2026-11-22): say so, offer a different one, and the directory. */
+function RetakePhoto({
+  token,
+  keptDays,
+  canRetake,
+  directory,
+  onSent,
+}: {
+  token: string
+  keptDays: number
+  canRetake: boolean
+  directory: string
+  onSent: () => void
+}) {
+  return (
+    <>
+      <div className="panel">
+        <h2>We couldn't read your photo</h2>
+        <p>
+          Something about that photo stopped us matching it. {canRetake ? 'A different one will usually work: a clear, well-lit photo of the look you want.' : ''}
+        </p>
+        <p>
+          <Link className={canRetake ? 'button secondary' : 'button'} to={directory}>
+            Browse all stylists
+          </Link>
+        </p>
+      </div>
+      {canRetake && <AddPhoto token={token} keptDays={keptDays} onSent={onSent} title="Add a different photo" />}
+    </>
+  )
+}
+
+function AddPhoto({
+  token,
+  keptDays,
+  onSent,
+  title = 'Add your inspiration photo',
+}: {
+  token: string
+  keptDays: number
+  onSent: () => void
+  title?: string
+}) {
   const [photo, setPhoto] = useState<Blob | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -514,8 +570,12 @@ function AddPhoto({ token, keptDays, onSent }: { token: string; keptDays: number
       await sendPhoto(token, photo)
       onSent()
     } catch (e) {
-      setError(e instanceof ApiError && e.code === 'PHOTO_ALREADY_CONFIRMED' ? null : message(e))
-      if (e instanceof ApiError && e.code === 'PHOTO_ALREADY_CONFIRMED') onSent()
+      if (e instanceof ApiError && e.code === 'PHOTO_ALREADY_CONFIRMED') {
+        setError(null)
+        onSent()
+      } else {
+        setError(message(e))
+      }
     } finally {
       setBusy(false)
     }
@@ -523,7 +583,7 @@ function AddPhoto({ token, keptDays, onSent }: { token: string; keptDays: number
 
   return (
     <div className="panel">
-      <h2>Add your inspiration photo</h2>
+      <h2>{title}</h2>
       <p>We match on the look in your photo, so we start once it's here.</p>
       <PhotoPicker photo={photo} onChange={setPhoto} />
       <PrivacyNote keptDays={keptDays} />

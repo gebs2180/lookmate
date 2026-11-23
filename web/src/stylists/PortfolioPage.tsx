@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from 'react'
 import { Link, useParams } from 'react-router'
-import { apiPath, uploadToStorage, useApi, type UploadSlot } from '../api'
+import { apiPath, uploadToStorage, type UploadSlot } from '../api'
+import { useApi } from '../useApi'
 import { message } from '../format'
 import { EmptyState, Loading, PageError } from '../ui'
 import { useLoad } from '../useLoad'

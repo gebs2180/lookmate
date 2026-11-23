@@ -1,5 +1,6 @@
 import { useParams } from 'react-router'
-import { apiPath, useApi, type StylistStats } from '../../api'
+import { apiPath, type StylistStats } from '../../api'
+import { useApi } from '../../useApi'
 import { Loading, PageError } from '../../ui'
 import { useLoad } from '../../useLoad'
 import './tracking.css'

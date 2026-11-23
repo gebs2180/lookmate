@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { useApi, type FairnessReport } from '../../api'
+import { type FairnessReport } from '../../api'
+import { useApi } from '../../useApi'
 import { label, percent } from '../../format'
 import { EmptyState, Loading, PageError } from '../../ui'
 import { useLoad } from '../../useLoad'
@@ -37,7 +38,7 @@ export function FairnessPage() {
           </button>
         ))}
       </div>
-      {error && <PageError message={error} />}
+      {error && <PageError inline message={error} />}
       {!error && !report && <Loading />}
       {report && report.rows.length === 0 && <EmptyState title="No requests in this period." />}
       {report && report.rows.length > 0 && <FairnessTable report={report} />}

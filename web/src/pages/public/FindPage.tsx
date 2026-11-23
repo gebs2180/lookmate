@@ -1,8 +1,9 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { publicApi, type IntakeSettings, type MatchRequestCreate, type MatchRequestCreated } from '../../api'
 import { Strand, type StrandShape } from '../../strand/Strand'
 import { useLoad } from '../../useLoad'
+import { focusHeading } from '../../useRouteFocus'
 import { message } from '../../format'
 import { PhotoPicker, PrivacyNote } from './PhotoPicker'
 import { sendPhoto } from './photo'
@@ -68,6 +69,13 @@ export function FindPage() {
   const navigate = useNavigate()
   const { data: settings } = useLoad(() => publicApi<IntakeSettings>('GET', '/api/public/intake/settings'), [])
   const keptDays = settings?.photoKeptDays ?? null
+
+  // A step change swaps the question without a route change: move focus to the new question so a screen reader says it.
+  const firstStep = useRef(true)
+  useEffect(() => {
+    if (firstStep.current) firstStep.current = false
+    else focusHeading()
+  }, [step])
 
   const set = <K extends keyof Answers>(key: K, value: Answers[K]) => setAnswers((a) => ({ ...a, [key]: value }))
   const current: Step = STEPS[step]

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { apiPath, useApi, type FairnessReport, type MatchMonitor, type MonitorItem, type MonitorMatch } from '../../api'
+import { apiPath, type FairnessReport, type MatchMonitor, type MonitorItem, type MonitorMatch } from '../../api'
+import { useApi } from '../../useApi'
 import { label, message, shortDate } from '../../format'
 import { Chip, EmptyState, Loading, PageError } from '../../ui'
 import { useLoad } from '../../useLoad'
@@ -60,7 +61,7 @@ export function MatchMonitorPage() {
 
       <section className="panel" aria-labelledby="fairness-title">
         <h2 id="fairness-title">Fairness by hair type, last 90 days</h2>
-        {fairnessError && <PageError message={fairnessError} />}
+        {fairnessError && <PageError inline message={fairnessError} />}
         {!fairnessError && !fairness && <Loading />}
         {fairness && fairness.rows.length === 0 && <p className="muted">No requests in this period.</p>}
         {fairness && fairness.rows.length > 0 && <FairnessTable report={fairness} />}
@@ -83,7 +84,7 @@ export function MatchMonitorPage() {
             {actionError}
           </p>
         )}
-        {error && <PageError message={error} />}
+        {error && <PageError inline message={error} />}
         {!error && !monitor && <Loading />}
         {monitor && monitor.requests.length === 0 && <EmptyState title="No requests yet." />}
         {monitor && monitor.requests.length > 0 && (

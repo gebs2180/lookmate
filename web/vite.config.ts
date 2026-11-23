@@ -22,7 +22,7 @@ export default defineConfig({
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
@@ -33,9 +33,12 @@ export default defineConfig({
   build: {
     rolldownOptions: {
       output: {
-        // React, the router and Auth0 change rarely: their own chunk caches across deploys of our code.
+        // React and the router change rarely: their own chunk caches across deploys of our code. Auth0 stays in the lazy signed-in chunk,
+        // so a client on /m/:token never downloads it.
         advancedChunks: {
-          groups: [{ name: 'vendor', test: /node_modules[\\/](react|react-dom|react-router|@auth0|scheduler)/ }],
+          groups: [
+            { name: 'vendor', test: /node_modules[\\/](react|react-dom|react-router|scheduler)/ },
+          ],
         },
       },
     },

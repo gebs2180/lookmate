@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import { ApiError, apiPath, useApi } from '../api'
+import { ApiError, apiPath } from '../api'
+import { useApi } from '../useApi'
 import { message } from '../format'
 import { Field, Loading, PageError } from '../ui'
 import { useFormError } from '../useFormError'

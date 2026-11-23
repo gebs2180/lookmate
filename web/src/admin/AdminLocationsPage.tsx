@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
-import { apiPath, useApi } from '../api'
+import { apiPath } from '../api'
+import { useApi } from '../useApi'
 import { message } from '../format'
 import type { AdminLocation } from '../stylists/types'
 import { Chip, EmptyState, Field, Loading, PageError } from '../ui'

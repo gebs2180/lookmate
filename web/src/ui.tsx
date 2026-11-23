@@ -22,8 +22,12 @@ export function Loading({ children = 'Loading…' }: { children?: ReactNode }) {
   )
 }
 
-/** A page that couldn't be shown: why, and the way back. */
-export function PageError({ message }: { message: string }) {
+/**
+ * A page that couldn't be shown: why, and the way back. {@code inline} is for a failed part of a page that already has
+ * its heading: just the message, with no second h1 and no link away.
+ */
+export function PageError({ message, inline = false }: { message: string; inline?: boolean }) {
+  if (inline) return <p className="error" role="alert">{message}</p>
   return (
     <>
       <h1>Something went wrong</h1>
