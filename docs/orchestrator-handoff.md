@@ -1,11 +1,10 @@
-# Orchestrator handoff (2026-11-20)
+# Orchestrator handoff (2026-11-23)
 
-For the new orchestrator session, which runs on Zach's computer in the local `lookmate` clone. It takes over from the
-cloud orchestrator session that built Phase 1. Read [CLAUDE.md](../CLAUDE.md) first; it holds the decisions and rules.
-This file holds the state, the standing instructions and what's next.
+For an orchestrator session running on Zach's computer in the local `lookmate` clone. Read [CLAUDE.md](../CLAUDE.md)
+first; it holds the decisions and rules. This file holds the standing instructions, the state and what's next.
 
-**First thing to do:** `git pull origin main`, then help Zach finish the local Auth0 setup ([auth.md](auth.md),
-[local-dev.md](local-dev.md)), run the app, and walk the smoke test below.
+**First thing to do:** `git pull origin main`, read [review-2026-11-22.md](review-2026-11-22.md) (its "Fix groups"
+section) and the service finder doc below, then ask Zach what is next.
 
 ## Standing instructions from Zach
 
@@ -21,40 +20,37 @@ This file holds the state, the standing instructions and what's next.
 
 ## Where things are
 
-`main` at `a361322` has everything below merged. No PRs are open.
+`main` has everything below merged. Open PRs are only Dependabot bumps. The latest Flyway migration is `V8`
+(`backend/app/src/main/resources/db/migration`). What is running in production is not recorded here: check it with
+the deploy-prod skill's read-only check (`deploy/prod-check.sh`, [hosting.md](hosting.md#day-to-day)).
 
 | PR | What |
 |---|---|
-| #1 | Phase 1: the scaffold (pokemans' stack) plus the stylists, intake, matching and tracking modules |
-| #2, #3 | Dependabot: setup-java, AWS SDK |
-| #4 | UX design: [docs/ux/](ux/) (direction, flows, tokens, implementation plan) and the prototype at https://claude.ai/artifact/74ApqgXdGU52ULhyr6Cvfm |
-| #5 | Matches publish automatically; a public stylist directory; admin as a monitor; the review switch, off by default |
-| #6 | Rename to Combpatible; auth and local-dev docs rewritten for the current setup |
-| #7 | `utm_source=combpatible` |
+| #1 to #7 | Phase 1 (the scaffold plus stylists, intake, matching, tracking), the UX design, auto-publish matching, the rename to Combpatible, `utm_source=combpatible` |
+| #28, #29 | The haircut animation while matching (web). **Merged, but waiting for Zach to deploy.** |
+| #30 | The codebase review, [review-2026-11-22.md](review-2026-11-22.md) |
+| #35, #32, #44, #46, #31, #47 | Review fix groups A (intake), B (deploy and CI), C (matching), D (stylists and storage), E (notify, tracking, identity), F (web). All merged. |
+| This PR | Group G, the docs |
+| #42, #43, #45 | Service finder: research, Zach's decisions, and the spreadsheet template |
 
-**Tests:** on `main`, the backend passes 176 tests and the web app passes 57, and lint and build are clean. CI runs on PRs and on pushes to
-`main`. The image build (`.github/workflows/images.yml`) fails on `main` until the Auth0 repository variables
-(`AUTH0_DOMAIN`, `AUTH0_SPA_CLIENT_ID`, `AUTH0_AUDIENCE`) are set. That's expected until deployment.
+**Tests:** CI runs the backend and web checks on every PR and on pushes to `main`; read the latest run for the counts
+rather than trusting a number here. The images workflow (`.github/workflows/images.yml`) needs the Auth0 repository
+variables (`AUTH0_DOMAIN`, `AUTH0_SPA_CLIENT_ID`, `AUTH0_AUDIENCE`) to be set.
 
-**Stale branches** on GitHub, all merged: `claude/lookmate-{stylists,intake,matching,tracking,auto-publish,ux-design}`,
-`claude/combpatible-rename` and `claude/pensive-cerf-u7ya5b` (the old orchestrator's branch). Delete them if Zach
-agrees. `claude/tender-hawking-c4yoo8` wasn't created by the old orchestrator: ask Zach before touching it.
+**Deferred by Zach:** review finding #22 (Auth0 tokens in `localStorage`), until real stylists join; see the list below.
 
-## In progress: local setup (Zach)
+## In progress
 
-- **Auth0:** the free plan allows one tenant per account, and Rawmark's account already has one. LookMate gets a **second
-  Auth0 account** (a different email) with a `lookmate-dev` tenant. Local dev runs **without MFA**: the Action sets the MFA
-  claim to false, and the backend runs with `LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA=false`. Steps: [auth.md](auth.md).
-- **Clean up Rawmark's tenant:** if any LookMate objects were added there (an Action in its post-login flow, an API or an
-  app), remove them. Rawmark's tenant also shows a **"Pro MFA exceeded"** warning, from its own admin MFA. That's Zach's
-  call, in the pokemans repo, and outside this repo.
-- **Smoke test, once logged in as ADMIN:**
-  1. Add a location at `/admin/locations`.
-  2. Create demo stylists at `/admin/demo`, each with 3 or more tagged photos, then publish.
-  3. In a private window, go to `/find` and use **a demo stylist's own photo** as the inspiration. The fake matcher only
-     matches identical images.
-  4. Results appear in place. Check **See all stylists** and **Book** (a tracked redirect).
-  5. Check `/admin/matches` and the metrics.
+- **Service finder** ("Not sure what to book?"): research and decisions are in
+  [research/service-finder.md](research/service-finder.md). **Next:** the partner stylist fills in
+  [research/service-finder-template.xlsx](research/service-finder-template.xlsx). Then pilot step 1, the `consult`
+  module (rules a partner writes and tests, never AI; no other module depends on it).
+- **Deploy:** PRs #28 and #29 and everything after them are on `main` but not necessarily on the server. Zach deploys
+  ([hosting.md](hosting.md#day-to-day)); don't deploy for him.
+- **Pilot server:** it uses the Auth0 dev tenant with admin MFA off (`LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA=false`), by
+  Zach's decision of 2026-11-20 ([auth.md](auth.md)). Auth0 setup steps are in [auth.md](auth.md) and
+  [local-dev.md](local-dev.md). If any Combpatible objects were added to Rawmark's Auth0 tenant, remove them; Rawmark's
+  own tenant settings are outside this repo.
 
 ## Before real stylists join
 
@@ -71,27 +67,24 @@ agrees. `claude/tender-hawking-c4yoo8` wasn't created by the old orchestrator: a
    ([embedding-providers.md](embedding-providers.md)) and set `MATCHING_PROVIDER`. Until then real matching doesn't work.
 2. **A labelled textured-hair set:** 20–30 looks, each paired with the portfolio photos a stylist would call a match.
    It sets the similarity threshold (now a 0.8 placeholder) and checks Titan against Cohere v4 on curly and coily hair.
-3. **Infrastructure** ([hosting.md](hosting.md), Option A): a Hetzner server, R2 buckets, a Sentry project, a production
-   Auth0 tenant (a third account or a paid plan, and decide on admin MFA there), health checks, and the GitHub
-   repository variables for Auth0.
+3. **Production Auth0 tenant** (a third account or a paid plan; admin MFA on there) before real stylists join. The pilot
+   server itself ([hosting.md](hosting.md), Option A) is already up.
 4. **Domain:** decided 2026-11-20, `combpatible.app` only (not `.com`), bought by Zach at Cloudflare
    Registrar. No trademark on "Combpatible" turned up in a web search; a USPTO search or the lawyer should confirm.
 5. **A lawyer reviews the stylist terms** (`backend/app/src/main/resources/terms/`, still a draft).
 
 ## Next build work (not started)
 
-- **Lookbook follow-ups** (the redesign is gebs2180/lookmate#14, replacing Chair-side and `docs/ux/tokens.css`): a client
-  note field for the reveal's pull quote (now built from quiz answers), a single-stylist endpoint for the portfolio
-  dialog, dark mode, install icons, and View Transitions between routes. Studio and admin weren't checked in the
-  browser.
-- **Module boundaries:** matching still reads the stylists, intake and tracking tables with read-only SQL (the documented
-  exception in architecture.md). The follow-ups are in `docs/modules/matching.md`: intake adds `inspirationUrl` and
-  `lockForReview`, and the fairness report moves into tracking.
+- **Lookbook follow-ups** (redesign is gebs2180/lookmate#14): a client note field for the reveal's pull quote (now
+  built from quiz answers), a single-stylist endpoint for the portfolio dialog, dark mode, install icons, and View
+  Transitions between routes.
+- **Module boundaries:** matching still reads the stylists and intake tables with read-only SQL (the documented
+  exception in [architecture.md](architecture.md)); the follow-ups are listed in
+  [modules/matching.md](modules/matching.md). Tracking has a similar documented exception.
 - **Deferred:**
   - a reviewer or monitor warning when some of a market's photos aren't embedded yet;
-  - a cleanup job for abandoned upload slots;
-  - a fuller rate limit on public booking clicks (capped at 20 counted clicks per link per day for now);
-  - an HNSW index once the vector dimension is fixed by Titan (1024).
+  - an HNSW index once the vector dimension is fixed by Titan (1024);
+  - a shared (not per-instance) rate limit, needed only with a second app container.
 
 ## Environment notes
 

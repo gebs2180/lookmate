@@ -28,7 +28,7 @@ and 5). Design: [architecture.md](../architecture.md), "Matching v1".
   ("Tell me when picks are added" on their page); the page shows them next time it's opened. Reordering and publishing stay IN_REVIEW only. To take a stylist out of every result, the
   admin hides their profile (`POST /api/admin/stylists/{orgId}/hide`, the stylists module's existing hide).
 
-## Contract with intake (built against `claude/lookmate-intake`, merged into this branch)
+## Contract with intake
 
 - Matching takes requests with `MatchRequests.claimNew` (NEW with a confirmed photo → MATCHING, `SKIP LOCKED`), reads the
   photo with `inspirationBytes`, and moves them on with `publish` (switch off, at least one stylist), `publishWithoutMatches` (switch off, none) or `markStatus`
@@ -47,11 +47,11 @@ and 5). Design: [architecture.md](../architecture.md), "Matching v1".
 
 ## Contract with stylists
 
-The stylists module's code isn't merged yet (only its API doc, docs/modules/stylists.md). Until it is, matching reads
-with SQL: `stylist_profile` (LIVE, market), `salon_location.name`, `portfolio_photo` (READY, `service`, `hair_type`,
-`object_key`). Only READY photos with a hair type and the requested service are candidates; every READY photo is
-embedded. Once `Stylists` is merged, swap to `readyPhotos`, `liveProfiles`, `photoUrl` and `photoBytes`, and filter
-the SQL candidates by `readyPhotos` (the vector query itself stays in matching).
+The stylists module is merged and has a public `Stylists` service (`readyPhotos`, `liveProfiles`, `photoUrl`,
+`photoBytes`), but matching still reads its tables with read-only SQL in `CandidateQueries`: the photos to embed and
+the vector query join `portfolio_photo` and `stylist_profile` (LIVE, market), and the stylist cards read
+`salon_location.name`. Only READY photos with a hair type and the requested service are candidates; every READY photo
+is embedded. Moving these reads onto `Stylists` is a follow-up (the vector query itself stays in matching).
 
 ## Endpoints
 
@@ -99,8 +99,5 @@ with their 4 best photos as evidence.
 3. Should a request rank only after all of the market's portfolio photos are embedded? Today it ranks with what's there.
 4. Re-rank after a stylist adds photos (intake allows IN_REVIEW → MATCHING)? No button yet; re-ranking keeps existing
    match rows (`on conflict do nothing`).
-6. ~~**No candidates with auto-publish**~~ **Decided 2026-11-20 (Zach): publish an empty result right away**, pointing
-   the client at the directory with a "no close match yet" email; the monitor keeps the reason and the admin can add
-   picks afterwards (see Publishing). With the review switch on, such a request still goes to IN_REVIEW.
 5. The fairness report counts `match_event` directly (tracking's table, read only). Move to a tracking service when
    one exists.

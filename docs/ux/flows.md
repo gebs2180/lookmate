@@ -1,5 +1,12 @@
 # Information architecture and key flows
 
+> **Partly superseded (2026-11-20, Zach).** The look is now Lookbook with Strand motion
+> ([redesign-options.md](redesign-options.md)); "Chair-side" and its prototype are history. Flow and copy that still
+> stand: routes, empty and error states, the stylist and admin flows. Where a row below says "we'll email you", read it
+> with the later decision that **the client's email is optional and asked after the reveal**
+> ([../modules/intake.md](../modules/intake.md#the-clients-email-is-optional-2026-11-20)): with no email, nothing is
+> ever sent, and the page itself is the link.
+
 Companion to [design-direction.md](design-direction.md). Screen numbers refer to the prototype
 (<https://claude.ai/artifact/74ApqgXdGU52ULhyr6Cvfm>). Routes are today's (`web/src/App.tsx`); routes marked *new* don't
 exist yet.
@@ -69,8 +76,8 @@ four-tab bar; the admin gets a sidebar.
 - "Question 1 of 9" with a native `<progress>`: keep the count, style a thin bar.
 - Instagram's in-app browser can't pick HEIC well and loses state on app switch: keep answers in `sessionStorage` until
   sent, so leaving to find a screenshot doesn't restart the quiz.
-- The sent screen says "a Combpatible stylist is matching you…" and "we'll email you": replace it with the in-page wait that
-  becomes the results (matches now publish automatically in seconds).
+- The sent screen said "a Combpatible stylist is matching you…" and "we'll email you". It is now the in-page wait that
+  becomes the results (matches publish automatically in seconds).
 - The match list is the only way to see stylists: add "See all stylists" next to it, so choosing anyone is real.
 
 **Empty states**
@@ -79,10 +86,10 @@ four-tab bar; the admin gets a sidebar.
 |---|---|---|
 | `/m/:token`, RECEIVED/MATCHING | Ranking under way | The wait (step 10). |
 | Ranking slow (> 20 s) | Worker busy or the embedding provider slow | Keep the wait, change the line: "This is taking longer than usual. Stay here, or bookmark this page and come back." Keep polling (back off to every 10 s). |
-| Ranking failed (FAILED) | Provider outage, unreadable photo | "We couldn't match your photo just now. We'll try again and email you. Meanwhile, here's everyone who does curly cuts." with See all stylists pre-filtered. |
+| Ranking failed (FAILED) | Provider outage, unreadable photo | "We couldn't match your photo just now. We'll try again; stay on this page, or if you gave an email, we'll write when it's ready. Meanwhile, here's everyone who does curly cuts." with See all stylists pre-filtered. |
 | No close match | Ranking returned 0 stylists for the hair type and service | Honest headline: "We couldn't find stylists with work close to your photo on curly hair yet." Show See all stylists filtered to the hair type. Never pad the list with poor matches. |
 | Few close matches | 1–2 stylists | Show them; the reason says when evidence is from a neighbouring type ("…on wavy and curly hair"). |
-| Review switched on (admin) | Request waits for a person | "A stylist is checking your matches. We'll email you when they're ready, usually within a few hours." See all stylists stays available. |
+| Review switched on (admin) | Request waits for a person | "A stylist is checking your matches. Come back to this page in a few hours" (and, only if the client gave an email, "We'll email you when they're ready"). See all stylists stays available. |
 | Photo deleted (after 30 days) | Photo gone | "Deleted on Dec 20, as promised." Matches stay visible. |
 | See all stylists, filters return nothing | | "No stylists show braids on straight hair yet. The pilot is small, so some combinations are thin." Button: "Show braids on any hair type". |
 

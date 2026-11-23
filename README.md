@@ -9,6 +9,15 @@ Salon Lofts stylists.
 - `backend/`: Spring Boot API (Java 25, Postgres + pgvector)
 - `web/`: React PWA (Vite)
 - `deploy/`: production Compose stack, Caddy, backups
-- `docs/`: [brief](docs/brief.md), [architecture](docs/architecture.md), [local dev](docs/local-dev.md), [hosting](docs/hosting.md)
+- `docs/`:
+  - [brief](docs/brief.md): what we build, why, the pilot metrics
+  - [architecture](docs/architecture.md), [API types](docs/api-types.md), [auth](docs/auth.md),
+    [data retention](docs/data-retention.md), [tracking](docs/tracking.md),
+    [embedding providers](docs/embedding-providers.md)
+  - modules: [stylists](docs/modules/stylists.md), [intake](docs/modules/intake.md), [matching](docs/modules/matching.md)
+  - running it: [local dev](docs/local-dev.md), [hosting](docs/hosting.md)
+  - design: [direction](docs/ux/design-direction.md), [redesign options](docs/ux/redesign-options.md) (Lookbook, decided)
+  - research: [beyond the hair](docs/research/beyond-the-hair.md), [service finder](docs/research/service-finder.md)
+  - [codebase review, 2026-11-22](docs/review-2026-11-22.md) and [orchestrator handoff](docs/orchestrator-handoff.md)
 
 Start with [CLAUDE.md](CLAUDE.md).

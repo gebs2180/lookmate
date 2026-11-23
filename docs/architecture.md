@@ -60,13 +60,13 @@ the owners' services too; the metrics stay reporting SQL. See [tracking.md](trac
 Module details, endpoints and open questions: [modules/matching.md](modules/matching.md). Provider choice:
 [embedding-providers.md](embedding-providers.md).
 
-**The one sanctioned cross-module exception (Phase 1 build):** `matching/CandidateQueries` reads the stylists module's
-V2 tables (`stylist_profile`, `salon_location`, `portfolio_photo`) with read-only SQL, because that module was built in
-parallel with matching, plus a few reads of intake's (the inspiration key, a row lock while reviewing, the fairness
-counts). It moves onto `Stylists` and `MatchRequests` once they are merged. Request status changes and publishing
-already go through intake's `MatchRequests`.
+**The sanctioned cross-module exception (matching):** `matching/CandidateQueries` reads the stylists module's tables
+(`stylist_profile`, `salon_location`, `portfolio_photo`) with read-only SQL for the photos to embed, the vector query and
+the stylist cards, plus a few reads of intake's (the inspiration key, a row lock while reviewing, the fairness counts).
+Both owners now have public services (`Stylists`, `MatchRequests`), so these reads can move onto them; until then they
+stay read-only. Request status changes and publishing already go through intake's `MatchRequests`.
 
-Quality across hair types (CLAUDE.md, Privacy) is measured, not assumed: an admin report of match acceptance by hair
+Quality across hair types (CLAUDE.md, Non-negotiables) is measured, not assumed: an admin report of match acceptance by hair
 type, and a small labelled set of textured-hair looks checked before each model change.
 
 ## How it scales
