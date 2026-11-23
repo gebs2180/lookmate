@@ -54,8 +54,25 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       NOTIFY_EMAIL_FROM: ${NOTIFY_EMAIL_FROM:-Combpatible <notify@combpatible.app>}
       NOTIFY_APP_URL: ${NOTIFY_APP_URL:-}
+      # Matching, retention and tracking (application.yml). Each default is the app's own, so leaving a key out of
+      # .env changes nothing; never "${X:-}", which would replace the app's default with an empty value.
+      # The embedding provider's AWS settings join these when Bedrock lands (docs/embedding-providers.md).
+      MATCHING_PROVIDER: ${MATCHING_PROVIDER:-fake}
+      MATCHING_REVIEW_BEFORE_PUBLISH: ${MATCHING_REVIEW_BEFORE_PUBLISH:-false}
+      MATCHING_WORKER_ENABLED: ${MATCHING_WORKER_ENABLED:-true}
+      RETENTION_ENABLED: ${RETENTION_ENABLED:-true}
+      RETENTION_CRON: ${RETENTION_CRON:-0 15 4 * * *}
+      TRACKING_TIME_ZONE: ${TRACKING_TIME_ZONE:-America/New_York}
+      STORAGE_REGION: ${STORAGE_REGION:-auto}
     # No OpenCV or PDF rendering here, so far less than pokemans needs. The JVM takes 60% of this as heap.
     mem_limit: 768m
+    # Runs as the image's app user with no capabilities and a read-only filesystem; the JVM and Tomcat write
+    # only to /tmp (uploads go straight to storage, presigned).
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
     logging: *logging
 
   caddy:
@@ -115,6 +132,11 @@ services:
       # Optional off-site copy on another provider and account (backup/README.md). Off unless both are set.
       OFFSITE_REMOTE: ${OFFSITE_REMOTE:-}
       OFFSITE_PATH: ${OFFSITE_PATH:-}
+      # Encrypted copies of photos the app no longer keeps are pruned once they are this many days old, which must
+      # be at least the bucket's lock on photos-age/ (docs/hosting.md#3-r2-buckets-and-tokens). A prune bigger than
+      # BACKUP_PRUNE_MAX deletes nothing and fails the run.
+      BACKUP_PHOTO_LOCK_DAYS: ${BACKUP_PHOTO_LOCK_DAYS:-30}
+      BACKUP_PRUNE_MAX: ${BACKUP_PRUNE_MAX:-100}
       # rclone remotes: "photos" reads the photo bucket, "backups" writes the backup bucket (separate tokens).
       RCLONE_CONFIG_PHOTOS_TYPE: s3
       RCLONE_CONFIG_PHOTOS_PROVIDER: Cloudflare
@@ -128,6 +150,11 @@ services:
       RCLONE_CONFIG_BACKUPS_ACCESS_KEY_ID: ${R2_BACKUP_WRITE_ACCESS_KEY_ID:?set R2_BACKUP_WRITE_ACCESS_KEY_ID in .env}
       RCLONE_CONFIG_BACKUPS_SECRET_ACCESS_KEY: ${R2_BACKUP_WRITE_SECRET_ACCESS_KEY:?set R2_BACKUP_WRITE_SECRET_ACCESS_KEY in .env}
       RCLONE_CONFIG_BACKUPS_NO_CHECK_BUCKET: "true"
+    # The image's postgres user, no capabilities. Not read-only: the dump and a batch of photos are encrypted in
+    # /tmp, and on a tmpfs they would count against this limit.
+    mem_limit: 512m
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
     logging: *logging
 
 volumes:

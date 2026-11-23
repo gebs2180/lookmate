@@ -12,10 +12,16 @@
 		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: {$PHOTO_ORIGIN}; connect-src 'self' https://{$AUTH0_DOMAIN} {$PHOTO_ORIGIN}; font-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options nosniff
-		Referrer-Policy strict-origin-when-cross-origin
 		X-Frame-Options DENY
 		-Server
 	}
+
+	# A client's page (/m/<token>) has their link token in its path: send no Referer at all from it, so a click to a
+	# stylist's booking page or Instagram can't carry the token away. Every other page sends only the origin
+	# cross-site. The matchers don't overlap, so neither header can overwrite the other.
+	@notClientLink not path /m/*
+	header @notClientLink Referrer-Policy strict-origin-when-cross-origin
+	header /m/* Referrer-Policy no-referrer
 
 	# The API. Only health is exposed from actuator.
 	handle /api/* {
@@ -44,13 +50,13 @@
 
 	log {
 		output stdout
-		# An invite link is a key to an org for a week, and a client's link (/m/<token>, the API behind it, and the
+		# An invite link (/invite/<token> and the API behind it) is a key to an org for a week, and a client's link (/m/<token>, the API behind it, and the
 		# tracked Book links /api/public/book/<token> and /api/public/book-stylist/<token>) is the key to their
 		# request: the tokens are in the path.
 		format filter {
 			wrap console
 			fields {
-				request>uri regexp "^/(api/invites|api/public/match-requests|api/public/book-stylist|api/public/book|m)/[^/?]+" "/${1}/REDACTED"
+				request>uri regexp "^/(api/invites|api/public/match-requests|api/public/book-stylist|api/public/book|invite|m)/[^/?]+" "/${1}/REDACTED"
 			}
 		}
 	}

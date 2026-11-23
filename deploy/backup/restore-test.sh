@@ -79,8 +79,9 @@ while read -r t counted; do
   printf '%-40s %10s %10s%s\n' "$t" "$restored" "$counted" "$flag"
 done < "$work/counts"
 
-# The sanity query: the tables everything else hangs off can't restore empty.
-for t in org app_user card_item photo flyway_schema_history; do
+# The sanity query: the tables everything else hangs off can't restore empty. Every other table that had rows is
+# checked against its count above (portfolio_photo, match_request and the rest can be empty on a new server).
+for t in org app_user flyway_schema_history; do
   (( $(restored_sql "select count(*) from \"$t\"") > 0 )) || { echo "restore-test: key table $t restored empty" >&2; failed=1; }
 done
 (( $(restored_sql "select count(*) from flyway_schema_history where not success") == 0 )) \

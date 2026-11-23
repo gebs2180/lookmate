@@ -79,8 +79,12 @@ Compose sets these from `deploy/.env`; another host would set them directly.
 | `STORAGE_PHOTO_BUCKET` | yes | e.g. `combpatible-photos` |
 | `STORAGE_PUBLIC_ENDPOINT` | no | Only if browsers must use a different endpoint than the app. Then set the Caddy container's `PHOTO_ORIGIN` to it too, or the Content-Security-Policy blocks photos |
 | `STORAGE_REGION` | no | Default `auto` (R2) |
+| `MATCHING_PROVIDER` | no | Embedding provider, default `fake` until Bedrock lands; its AWS settings join this table then |
+| `MATCHING_REVIEW_BEFORE_PUBLISH`, `MATCHING_WORKER_ENABLED` | no | Defaults `false` and `true` (CLAUDE.md: matching publishes automatically) |
+| `RETENTION_ENABLED`, `RETENTION_CRON` | no | Defaults `true` and `0 15 4 * * *` (server time) |
+| `TRACKING_TIME_ZONE` | no | Default `America/New_York` |
 | `SENTRY_DSN`, `SENTRY_ENVIRONMENT` | no | Without a DSN, Sentry is off |
-| `NOTIFY_EMAIL_ENABLED` + `RESEND_API_KEY`, and each feature's switch as it lands | no | Feature switches, all off by default (`docs/local-dev.md`). `deploy/compose.prod.yml` passes only these to the backend, so a new switch needs a line there too. |
+| `NOTIFY_EMAIL_ENABLED` + `RESEND_API_KEY`, and each feature's switch as it lands | no | Feature switches, all off by default (`docs/local-dev.md`). `deploy/compose.prod.yml` passes only the variables in this table to the backend, each defaulting to the app's own value, so a new setting needs a line there too. |
 
 Web build args (baked into the bundle, not secrets): `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID`, `VITE_AUTH0_AUDIENCE`. CI takes them from the repository variables `AUTH0_DOMAIN`, `AUTH0_SPA_CLIENT_ID` and `AUTH0_AUDIENCE` (GitHub → Settings → Secrets and variables → Actions → Variables), and the images workflow fails until they are set. They must match the server's `.env`. Only `deploy.sh --build` reads them from `.env`.
 
@@ -134,11 +138,11 @@ You need about an hour, a personal card, and an SSH key (`ssh-keygen -t ed25519`
    - `lookmate-backup-write`: Object Read & Write, `combpatible-backup` only.
    Copy each Access Key ID and Secret Access Key (they're shown once), plus the S3 endpoint `https://<account-id>.r2.cloudflarestorage.com`.
 
-4. `combpatible-backup` → Settings → **Bucket lock rules** → Add rule: name `keep-30-days`, no prefix (the whole bucket), retention **30 days**. No one can delete or overwrite a backup in its first 30 days, whoever holds a token.
-5. `combpatible-backup` → Settings → **Object lifecycle rules** → Add rule: name `expire-dumps`, prefix `postgres/`, delete objects **35 days** after upload. Photos in the backup are never expired.
+4. `combpatible-backup` → Settings → **Bucket lock rules** → Add two rules: `keep-dumps`, prefix `postgres/`, retention **30 days**; and `keep-photos`, prefix `photos-age/`, retention **28 days**. No one can delete or overwrite a backup while it's locked, whoever holds a token. Photos lock for 28 days, not 30, so the nightly prune (below) can remove a deleted photo's copy within the 30 days the stylist terms promise; set `BACKUP_PHOTO_LOCK_DAYS=28` in `.env` to match. (The first server had one whole-bucket rule `keep-30-days`; with it, leave `BACKUP_PHOTO_LOCK_DAYS` at 30 and a deleted photo can take about 31 days to leave.)
+5. `combpatible-backup` → Settings → **Object lifecycle rules** → Add rule: name `expire-dumps`, prefix `postgres/`, delete objects **35 days** after upload. Photos in the backup don't expire by age: `backup.sh` prunes the copy of each photo the app no longer keeps (review 2026-11-22, #3).
 6. A fourth token for the restore test on your own machine: `lookmate-backup-restore`, Object Read only, `combpatible-backup` only. It goes in your local `restore-test.env` (step 7), never on the server.
 
-The backup can read photos but not delete them, and the app can't touch the backups. R2 has no write-only token, so the backup's write token could still delete a backup; the lock rule is what stops it, for 30 days. The backup job itself never deletes: old dumps go by the lifecycle rule. A copy outside this Cloudflare account comes later (review D1).
+The backup can read photos but not delete them, and the app can't touch the backups. R2 has no write-only token, so the backup's write token could still delete a backup; the lock rule is what stops it, while an object is locked. The backup job deletes only the encrypted copies of photos the app no longer keeps, once their lock is over, and never more than `BACKUP_PRUNE_MAX` (100) in one night; old dumps go by the lifecycle rule. A copy outside this Cloudflare account comes later (review D1).
 
 ### Backup encryption key
 
@@ -184,7 +188,7 @@ Generate `POSTGRES_PASSWORD` with `openssl rand -base64 32 | tr -d '/+='`. Keep 
 
 ### 7. Backups and the restore test
 
-The `backup` service runs every day at `BACKUP_AT` (UTC): it dumps the database, encrypts the dump and every new photo (photos under an hour old wait for the next night), and uploads them to `postgres/lookmate-<time>.dump.age` and `photos-age/<key>.age`, with a plain row count per table next to the dump (`lookmate-<time>.counts`). After each backup, `backup-check.sh` checks on the server that the newest dump is there, under 26 hours old and encrypted, and that every photo has an encrypted copy (also off-site when that's on). Run both once now:
+The `backup` service runs every day at `BACKUP_AT` (UTC): it dumps the database, encrypts the dump and every new photo (photos under an hour old wait for the next night), and uploads them to `postgres/lookmate-<time>.dump.age` and `photos-age/<key>.age`, with a plain row count per table next to the dump (`lookmate-<time>.counts`). Then it prunes the encrypted copies of photos the app no longer keeps once the lock lets them go (`BACKUP_PHOTO_LOCK_DAYS`). After each backup, `backup-check.sh` checks on the server that the newest dump is there, under 26 hours old and encrypted, that every photo the app keeps has an encrypted copy, and that no deleted photo's copy is overdue for pruning (also off-site when that's on). Run both once now:
 
 ```bash
 docker compose -f compose.prod.yml run --rm backup bash -c "backup.sh && backup-check.sh"
@@ -262,10 +266,10 @@ It's the same deploy for an older commit: backup, restart, health wait. The chec
 
 **Fallback: build on the server.** If GHCR or the Images workflow is down, `deploy.sh --build` (optionally with a SHA) builds the three images on the box from that commit, as deploys used to, then deploys them the same way. It takes about 10 minutes on a CX23 and competes with the running backend for memory. The web image then takes its Auth0 settings from `.env`.
 
-**Check prod without changing anything.** Run this from a checkout. It reports the commit, services, health and recent backend errors:
+**Check prod without changing anything.** Run this from a checkout. It reports the commit, services, health and recent backend errors, then counts from the database: portfolio photos by status, the embedding backlog and failures, match requests by status and any stuck, failed and overdue emails, and inspiration photos past retention. It prints no client addresses or tokens:
 
 ```bash
-ssh deploy@combpatible.app 'bash -s' < deploy/prod-check.sh
+ssh -o BatchMode=yes deploy@167.233.167.167 'bash -s' < deploy/prod-check.sh
 ```
 
 **Restore after a disaster** (lost server or a bad migration):

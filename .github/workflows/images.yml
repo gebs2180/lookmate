@@ -1,11 +1,15 @@
 name: Images
 
-# Builds the production images on every push to main and pushes them to GHCR, tagged with the commit SHA and
-# `main`, so the server pulls a built image instead of building one, and can roll back to an earlier SHA
-# (deploy/deploy.sh, docs/hosting.md "Day to day"). The packages are private; the server logs in with a
-# read-only token.
+# Builds the production images once CI has passed on a push to main and pushes them to GHCR, tagged with the
+# commit SHA and `main`, so the server pulls a built image instead of building one, and can roll back to an earlier
+# SHA (deploy/deploy.sh, docs/hosting.md "Day to day"). A commit whose tests failed gets no image, so deploy.sh
+# can't pull it (review 2026-11-22, #18). The packages are private; the server logs in with a read-only token.
+# Each image is then scanned (Trivy). The scan runs after the push so an urgent fix can still deploy, but a red
+# run means a critical or high vulnerability with a fix available is in that image.
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   # Rebuild a commit by hand, for example after setting the web build variables below.
   workflow_dispatch:
@@ -17,8 +21,16 @@ concurrency:
   group: images-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  # Under workflow_run, github.sha is main's head when this run starts, not the commit CI tested.
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
 jobs:
   image:
+    # Only pushes CI passed on (not pull requests from a branch named main).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -36,6 +48,8 @@ jobs:
             context: deploy/backup
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SHA }}
       # Vite bakes the Auth0 settings into the web bundle. They are not secrets (the browser sees them), so they
       # are repository variables: Settings → Secrets and variables → Actions → Variables.
       - name: Web build variables are set
@@ -61,12 +75,12 @@ jobs:
           pull: true
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/lookmate-${{ matrix.name }}:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/lookmate-${{ matrix.name }}:${{ env.SHA }}
             ghcr.io/${{ github.repository_owner }}/lookmate-${{ matrix.name }}:main
           # The source label links each package to this repository.
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.revision=${{ env.SHA }}
           # Only the web image reads these; the others ignore them.
           build-args: |
             VITE_AUTH0_DOMAIN=${{ vars.AUTH0_DOMAIN }}
@@ -74,3 +88,11 @@ jobs:
             VITE_AUTH0_AUDIENCE=${{ vars.AUTH0_AUDIENCE }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,scope=${{ matrix.name }},mode=max
+      - name: Scan the image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: v0.76.2
+          image-ref: ghcr.io/${{ github.repository_owner }}/lookmate-${{ matrix.name }}:${{ env.SHA }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'

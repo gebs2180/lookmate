@@ -117,9 +117,9 @@ main() {
 
 # The backend image has a health check (/actuator/health). Give it up to 5 minutes: Flyway runs first.
 wait_healthy() {
-  local compose=$1 cid status i
+  local compose=$1 cid status
   cid=$($compose ps -q backend)
-  for i in $(seq 60); do
+  for _ in $(seq 60); do
     status=$(docker inspect -f '{{.State.Health.Status}}' "$cid" 2> /dev/null || echo missing)
     case "$status" in
       healthy) echo "Backend healthy"; return 0 ;;
