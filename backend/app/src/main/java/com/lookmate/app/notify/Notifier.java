@@ -36,22 +36,7 @@ class Notifier {
     boolean queue(String dedupeKey, Template template, UUID userId, UUID orgId, UUID subjectId, EmailContent content, Instant sendAt,
                   Instant now) {
         String email = userId == null ? null : blankToNull(directory.email(userId));
-        Status status = Status.PENDING;
-        String reason = null;
-        if (email == null) {
-            status = Status.SKIPPED;
-            reason = NO_EMAIL;
-        } else if (!properties.enabled()) {
-            status = Status.SKIPPED;
-            reason = SENDING_OFF;
-        }
-        boolean queued = outbox.queue(new EmailOutbox.New(dedupeKey, template, userId, email, orgId, subjectId, content, status, reason,
-                sendAt, now));
-        if (queued) {
-            // The key names the template and ids only: no address, no content.
-            log.info("Email {} {}{}", dedupeKey, status, reason == null ? "" : " (" + reason + ")");
-        }
-        return queued;
+        return store(dedupeKey, template, userId, email, orgId, subjectId, content, sendAt, now);
     }
 
     /**
@@ -65,19 +50,25 @@ class Notifier {
     /** As {@link #queueToAddress(String, Template, String, UUID, EmailContent, Instant)}, due at {@code sendAt}. */
     boolean queueToAddress(String dedupeKey, Template template, String email, UUID subjectId, EmailContent content, Instant sendAt,
                            Instant now) {
-        String address = blankToNull(email);
+        return store(dedupeKey, template, null, blankToNull(email), null, subjectId, content, sendAt, now);
+    }
+
+    /** The one place that decides an email is skipped: no address means no email, and so does sending being off. */
+    private boolean store(String dedupeKey, Template template, UUID userId, String email, UUID orgId, UUID subjectId,
+                          EmailContent content, Instant sendAt, Instant now) {
         Status status = Status.PENDING;
         String reason = null;
-        if (address == null) {
+        if (email == null) {
             status = Status.SKIPPED;
             reason = NO_EMAIL;
         } else if (!properties.enabled()) {
             status = Status.SKIPPED;
             reason = SENDING_OFF;
         }
-        boolean queued = outbox.queue(new EmailOutbox.New(dedupeKey, template, null, address, null, subjectId, content, status, reason,
+        boolean queued = outbox.queue(new EmailOutbox.New(dedupeKey, template, userId, email, orgId, subjectId, content, status, reason,
                 sendAt, now));
         if (queued) {
+            // The key names the template and ids only: no address, no content.
             log.info("Email {} {}{}", dedupeKey, status, reason == null ? "" : " (" + reason + ")");
         }
         return queued;

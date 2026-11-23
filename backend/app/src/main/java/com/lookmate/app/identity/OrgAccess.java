@@ -37,21 +37,6 @@ public class OrgAccess {
         return org;
     }
 
-    /**
-     * Like {@link #require}, but only for the org's own members: the admin gets no pass. For things only the
-     * org can say about itself.
-     */
-    @Transactional(readOnly = true)
-    public Org requireMember(UUID orgId, OrgType... expectedTypes) {
-        Org org = orgs.findById(orgId).orElseThrow(OrgAccess::notFound);
-        if (!Arrays.asList(expectedTypes).contains(org.getType())
-                || memberships.findByOrgIdAndUserId(orgId, currentUser.id()).isEmpty()) {
-            throw notFound();
-        }
-        return org;
-    }
-
-
     private static ResponseStatusException notFound() {
         return new ResponseStatusException(HttpStatus.NOT_FOUND, "Org not found");
     }

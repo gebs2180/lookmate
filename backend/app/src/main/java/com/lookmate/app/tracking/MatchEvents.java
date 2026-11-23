@@ -2,6 +2,8 @@ package com.lookmate.app.tracking;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -132,14 +134,14 @@ class MatchEvents {
     }
 
     /** Every event on a match except VOIDED rows themselves, newest first, each marked if it was voided. */
-    java.util.List<Event> forMatch(UUID matchId) {
+    List<Event> forMatch(UUID matchId) {
         return jdbc.sql(SELECT_EVENT + " where e.match_id = :match and e.type <> 'VOIDED' order by e.occurred_at desc, e.created_at desc")
                 .param("match", matchId)
                 .query((rs, n) -> event(rs))
                 .list();
     }
 
-    java.util.Optional<Event> find(UUID eventId) {
+    Optional<Event> find(UUID eventId) {
         return jdbc.sql(SELECT_EVENT + " where e.id = :id")
                 .param("id", eventId)
                 .query((rs, n) -> event(rs))

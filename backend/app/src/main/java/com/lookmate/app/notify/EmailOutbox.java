@@ -5,8 +5,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
@@ -17,7 +15,7 @@ class EmailOutbox {
 
     enum Status { PENDING, SENDING, SENT, FAILED, SKIPPED, CANCELLED }
 
-    /** What an email is, so its rows can be found again: e.g. reminders to cancel once paid. */
+    /** What an email is, so its rows can be found again. */
     /** MATCH_REQUEST_RECEIVED is no longer sent (the quiz asks no email since V7); it stays for the rows already stored. */
     enum Template { MATCHES_READY, STYLIST_INVITE, MATCH_REQUEST_RECEIVED, MATCH_LIST_LINK, PICKS_ADDED }
 
@@ -111,12 +109,6 @@ class EmailOutbox {
                 .update();
     }
 
-    void cancel(UUID id, String reason, Instant now) {
-        jdbc.sql("update email_message set status = 'CANCELLED', status_reason = :reason, updated_at = :now where id = :id")
-                .param("id", id).param("reason", reason).param("now", ts(now))
-                .update();
-    }
-
     /** Cancels the emails about one thing (a match request, say) of the template that haven't gone yet. Returns how many. */
     int cancelPending(UUID subjectId, Template template, String reason, Instant now) {
         return jdbc.sql("""
@@ -125,20 +117,6 @@ class EmailOutbox {
                         """)
                 .param("subject", subjectId).param("template", template.name()).param("reason", reason).param("now", ts(now))
                 .update();
-    }
-
-    /** When the user's last email of the template for the org was queued, whatever became of it. */
-    Optional<Instant> lastQueued(UUID userId, UUID orgId, Template template) {
-        return jdbc.sql("""
-                        select max(created_at) from email_message
-                        where recipient_user_id = :user and org_id = :org and template = :template
-                        """)
-                .param("user", userId).param("org", orgId).param("template", template.name())
-                .query((rs, n) -> rs.getTimestamp(1))
-                .list().stream()
-                .filter(Objects::nonNull)
-                .map(Timestamp::toInstant)
-                .findFirst();
     }
 
     private static Claimed claimed(ResultSet rs, int n) throws SQLException {

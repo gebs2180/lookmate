@@ -6,9 +6,6 @@ import com.lookmate.app.stylists.Stylists;
 import com.lookmate.app.tracking.MatchEvents.Source;
 import com.lookmate.app.tracking.MatchEvents.Type;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -16,7 +13,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -262,7 +258,7 @@ public class TrackingService {
      * theirs, else 404.
      */
     @Transactional(readOnly = true)
-    java.util.List<MatchEvents.Event> events(UUID matchId, UUID orgId) {
+    List<MatchEvents.Event> events(UUID matchId, UUID orgId) {
         queries.entryTarget(matchId)
                 .filter(t -> orgId == null || t.orgId().equals(orgId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Match not found"));
@@ -303,14 +299,5 @@ public class TrackingService {
 
     private Instant startOfDay(Instant now) {
         return LocalDate.ofInstant(now, properties.timeZone()).atStartOfDay(properties.timeZone()).toInstant();
-    }
-
-    /** Lower-case hex SHA-256 of the UTF-8 token, as stored in {@code match_request.access_token_hash}. */
-    static String hash(String token) {
-        try {
-            return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
     }
 }

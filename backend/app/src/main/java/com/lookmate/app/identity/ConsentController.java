@@ -37,8 +37,8 @@ class ConsentController {
 
     @PostMapping("/api/orgs/{orgId}/consent")
     ConsentStatus accept(@PathVariable UUID orgId, @Valid @RequestBody AcceptRequest request) {
-        Instant accepted = consents.accept(orgId, request.version());
         Consents.Terms terms = Consents.termsFor(access.require(orgId, Consents.TERMS_ORGS).getType()).orElseThrow();
+        Instant accepted = consents.accept(orgId, request.version());
         return new ConsentStatus(terms.version(), terms.text(), accepted);
     }
 }

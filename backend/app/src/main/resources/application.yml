@@ -16,6 +16,12 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  task:
+    scheduling:
+      pool:
+        # Scheduled jobs (email sender, matching, retention) must not queue behind one another: a matching pass
+        # that waits on the embedding provider would otherwise hold every email.
+        size: 4
   # OIDC: set SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI (e.g. https://<tenant>.us.auth0.com/)
   # and SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_AUDIENCES (the API identifier) in the environment.
   # Without an issuer the API rejects every bearer token.
@@ -133,6 +139,16 @@ sentry:
     minimum-event-level: error
     minimum-breadcrumb-level: info
 
+
+# Appended by tracking (docs/tracking.md).
+lookmate.tracking:
+  # Days and weeks for the metrics, and "once a day" for VIEWED, are counted in this zone.
+  time-zone: ${TRACKING_TIME_ZONE:America/New_York}
+  # A second "Book" click on the same match within this long counts once.
+  click-dedupe-window: 30s
+  # At most this many clicks counted per client link per day; more still redirect.
+  max-clicks-per-request-per-day: 20
+
 ---
 # Production (docs/hosting.md): SPRING_PROFILES_ACTIVE=prod. Nothing here has a local default, so the app
 # refuses to start with a variable missing instead of quietly using the docker-compose credentials.
@@ -176,12 +192,3 @@ management:
   endpoint:
     health:
       show-details: never
-
-# Appended by tracking (docs/tracking.md).
-lookmate.tracking:
-  # Days and weeks for the metrics, and "once a day" for VIEWED, are counted in this zone.
-  time-zone: ${TRACKING_TIME_ZONE:America/New_York}
-  # A second "Book" click on the same match within this long counts once.
-  click-dedupe-window: 30s
-  # At most this many clicks counted per client link per day; more still redirect.
-  max-clicks-per-request-per-day: 20
