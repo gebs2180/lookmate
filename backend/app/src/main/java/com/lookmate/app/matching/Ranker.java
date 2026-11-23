@@ -1,5 +1,6 @@
 package com.lookmate.app.matching;
 
+import com.lookmate.app.stylists.HairType;
 import com.lookmate.app.intake.MatchRequests;
 import com.lookmate.app.intake.MatchRequests.Status;
 import java.time.Clock;
@@ -21,14 +22,16 @@ import org.springframework.transaction.support.TransactionTemplate;
  * ({@link MatchRequests#publishWithoutMatches}, keeping the reason for the monitor): the client is pointed at the
  * directory, and the admin can add stylists afterwards. With review on, it goes to IN_REVIEW with the reason.
  *
- * <p>If the photo can't be embedded, the request stays MATCHING with a reason, and intake hands it back after
- * {@code lookmate.intake.matching-stuck-after}; after {@code max-attempts} it becomes FAILED.
+ * <p>If the photo can't be embedded, or ranking throws, the request stays MATCHING with a reason, and intake hands it
+ * back after {@code lookmate.intake.matching-stuck-after}; after {@code max-attempts} tries at either step it becomes
+ * FAILED (review #23). Tries are counted per photo ({@code match_request_attempt}), so a retake starts again.
  */
 @Component
 class Ranker {
 
     static final String NO_CANDIDATES = "No stylist has a compatible portfolio photo for this look yet";
     static final String NOT_EMBEDDED = "The inspiration photo could not be read for matching";
+    static final String NOT_RANKED = "Matching failed on our side";
 
     private static final Logger log = LoggerFactory.getLogger(Ranker.class);
 
@@ -36,18 +39,20 @@ class Ranker {
     private final EmbeddingWorker worker;
     private final CandidateQueries queries;
     private final MatchStore matches;
+    private final EmbeddingStore attempts;
     private final EmbeddingProvider provider;
     private final MatchingProperties.Ranking settings;
     private final boolean reviewBeforePublish;
     private final TransactionTemplate tx;
     private final Clock clock;
 
-    Ranker(MatchRequests requests, EmbeddingWorker worker, CandidateQueries queries, MatchStore matches, EmbeddingProvider provider,
-           MatchingProperties properties, TransactionTemplate tx, Optional<Clock> clock) {
+    Ranker(MatchRequests requests, EmbeddingWorker worker, CandidateQueries queries, MatchStore matches, EmbeddingStore attempts,
+           EmbeddingProvider provider, MatchingProperties properties, TransactionTemplate tx, Optional<Clock> clock) {
         this.requests = requests;
         this.worker = worker;
         this.queries = queries;
         this.matches = matches;
+        this.attempts = attempts;
         this.provider = provider;
         this.settings = properties.ranking();
         this.reviewBeforePublish = properties.reviewBeforePublish();
@@ -59,14 +64,21 @@ class Ranker {
     int rankBatch(int limit) {
         List<MatchRequests.Request> claimed = requests.claimNew(limit);
         for (MatchRequests.Request request : claimed) {
+            boolean embedded;
             try {
                 // Embedding runs outside a transaction (a slow provider call holds no locks); ranking runs in one.
-                if (inspirationEmbedded(request)) {
-                    tx.executeWithoutResult(s -> rank(request));
-                }
+                embedded = inspirationEmbedded(request);
             } catch (RuntimeException e) {
-                // Left MATCHING: intake hands it back once it's stuck.
-                log.error("Matching request {} failed", request.id(), e);
+                log.error("Embedding request {} failed", request.id(), e); // left MATCHING: intake hands it back once it's stuck
+                continue;
+            }
+            if (!embedded) {
+                continue;
+            }
+            try {
+                tx.executeWithoutResult(s -> rank(request));
+            } catch (RuntimeException e) {
+                rankFailed(request, e);
             }
         }
         return claimed.size();
@@ -87,9 +99,26 @@ class Ranker {
         return false;
     }
 
+    /**
+     * Counts the failed try and says so on the request; FAILED after {@code max-attempts}. Otherwise it stays MATCHING
+     * with the reason, which also restarts intake's stuck timer: that is the wait before the next try.
+     */
+    private void rankFailed(MatchRequests.Request request, RuntimeException e) {
+        log.error("Ranking request {} failed", request.id(), e);
+        try {
+            int tries = attempts.failedRequest(request.id(), EmbeddingStore.Step.RANK, e.getClass().getSimpleName() + ": " + e.getMessage(),
+                    clock.instant());
+            boolean giveUp = tries >= worker.maxAttempts();
+            requests.markStatus(request.id(), giveUp ? Status.FAILED : Status.MATCHING,
+                    giveUp ? NOT_RANKED : NOT_RANKED + " (attempt " + tries + "); trying again later");
+        } catch (RuntimeException bookkeeping) {
+            log.error("Could not record the failed ranking of request {}", request.id(), bookkeeping); // left MATCHING
+        }
+    }
+
     private void rank(MatchRequests.Request request) {
         Instant now = clock.instant();
-        HairType hair = HairType.parse(request.hairType());
+        HairType hair = HairTypes.parse(request.hairType());
         Scoring.Settings s = settings.settings();
         List<Scoring.PhotoMatch> photos = queries.similarities(request.id(), provider.model(), request.market(), request.service(),
                 s.hair().compatible(hair));
@@ -98,6 +127,7 @@ class Ranker {
         for (Scoring.Ranked r : ranked) {
             matches.insertSystem(request.id(), r.orgId(), r.score(), Reasons.forRanked(r, request.service(), hair), r.evidence(), ++rank, now);
         }
+        attempts.clearRequest(request.id());
         if (reviewBeforePublish) {
             requests.markStatus(request.id(), Status.IN_REVIEW, ranked.isEmpty() ? NO_CANDIDATES : null);
         } else if (ranked.isEmpty()) {

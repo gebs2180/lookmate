@@ -121,7 +121,7 @@ class MatchRequestRows {
     }
 
     List<Row> list(String status, int limit) {
-        return jdbc.sql(SELECT + " where r.status = :status order by r.created_at desc, r.id limit :limit")
+        return jdbc.sql(SELECT + " where r.status = :status order by r.created_at, r.id limit :limit")
                 .param("status", status)
                 .param("limit", limit)
                 .query(MatchRequestRows::row)

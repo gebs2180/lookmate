@@ -263,7 +263,12 @@ class AutoPublishFlowTest {
         mvc.perform(get("/api/public/match-requests/" + token))
                 .andExpect(jsonPath("$.stage").value("READY"))
                 .andExpect(jsonPath("$.matches[*].stylistName").value(Matchers.contains("Straight Only")))
-                .andExpect(jsonPath("$.matches[0].rank").value(1));
+                .andExpect(jsonPath("$.matches[0].rank").value(1))
+                // Hand-picked, in the team's words (review #26); the monitor still says ADMIN.
+                .andExpect(jsonPath("$.matches[0].pickedByTeam").value(true))
+                .andExpect(jsonPath("$.matches[0].reason").value(Reasons.PICKED_BY_TEAM));
+        api.get("/api/admin/match-monitor?market=" + market, api.admin())
+                .andExpect(jsonPath("$.requests[0].matches[0].source").value("ADMIN"));
         // Still one "matches ready" email, plus one saying picks were added, with a fresh link to the list.
         assertThat(jdbc.sql("select count(*) from email_message where template = 'MATCHES_READY' and subject_id = ?").params(request)
                 .query(Integer.class).single()).isEqualTo(1);
@@ -337,6 +342,45 @@ class AutoPublishFlowTest {
         assertThat((String) matchesReadyEmail(empty).get("text_body")).contains("didn't find a close match");
         // Everything hidden by the admin: it stays for them.
         assertThat(statusOf(allHidden)).isEqualTo("IN_REVIEW");
+    }
+
+    /**
+     * Through the real pgvector SQL (review #28): a coily request ranks the coily stylist above the curly one, an
+     * adjacent type, and the fairness report counts each hair type on its own row.
+     */
+    @Test
+    void aCoilyRequestRanksTheCoilyStylistFirstAndTheFairnessReportSplitsByHairType() throws Exception {
+        UUID coily = stylist("Coily Pro", "LIVE");
+        UUID curly = stylist("Curly Pro", "LIVE");
+        for (int i = 0; i < 3; i++) {
+            photo(coily, "CUT", "COILY", LOOK);
+            photo(curly, "CUT", "CURLY", LOOK);
+        }
+        String coilyToken = token();
+        UUID coilyRequest = request("COILY", "CUT", coilyToken, null);
+        String wavyToken = token();
+        request("WAVY", "CUT", wavyToken, null);
+        job.runOnce();
+
+        mvc.perform(get("/api/public/match-requests/" + coilyToken))
+                .andExpect(jsonPath("$.matches[*].stylistName").value(Matchers.contains("Coily Pro", "Curly Pro")))
+                .andExpect(jsonPath("$.matches[0].reason").value("3 similar cuts on coily hair"))
+                .andExpect(jsonPath("$.matches[0].pickedByTeam").value(false));
+        assertThat(jdbc.sql("select org_id from match where match_request_id = ? order by system_rank").params(coilyRequest)
+                .query(UUID.class).list()).containsExactly(coily, curly);
+        // Wavy: curly is adjacent, coily is not compatible.
+        mvc.perform(get("/api/public/match-requests/" + wavyToken))
+                .andExpect(jsonPath("$.matches[*].stylistName").value(Matchers.contains("Curly Pro")));
+
+        api.get("/api/admin/match-reports/fairness?market=" + market, api.admin()).andExpect(status().isOk())
+                .andExpect(jsonPath("$.rows[*].hairType").value(Matchers.contains("WAVY", "COILY")))
+                .andExpect(jsonPath("$.rows[?(@.hairType=='COILY')].requests").value(1))
+                .andExpect(jsonPath("$.rows[?(@.hairType=='COILY')].ranked").value(1))
+                .andExpect(jsonPath("$.rows[?(@.hairType=='COILY')].reviewedByAdmin").value(0))
+                .andExpect(jsonPath("$.rows[?(@.hairType=='COILY')].published").value(1))
+                .andExpect(jsonPath("$.rows[?(@.hairType=='COILY')].noSystemMatches").value(0))
+                .andExpect(jsonPath("$.rows[?(@.hairType=='COILY')].shownMatches").value(2))
+                .andExpect(jsonPath("$.rows[?(@.hairType=='WAVY')].shownMatches").value(1));
     }
 
     private void match(UUID request, UUID org, int systemRank, Integer finalRank, boolean hidden, String source) {

@@ -1,5 +1,6 @@
 package com.lookmate.app.matching;
 
+import com.lookmate.app.stylists.HairType;
 import java.time.Duration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
@@ -25,15 +26,20 @@ record MatchingProperties(@DefaultValue("fake") String provider,
      *
      * @param enabled      run it on a schedule (tests call it directly)
      * @param pollInterval pause between passes
-     * @param batchSize    images claimed per provider call; their rows stay locked for the call, so keep it small
-     * @param maxAttempts  tries per image before it is given up on (a request then becomes FAILED)
-     * @param retryBackoff wait after a failure, times the number of attempts so far
+     * @param batchSize    images claimed per provider call
+     * @param maxAttempts  tries per image before it is given up on; for a request, tries at embedding its photo and,
+     *                     separately, at ranking it, before it becomes FAILED
+     * @param retryBackoff wait after a portfolio photo's failure, times the number of attempts so far (a request is
+     *                     retried when intake hands it back, after {@code lookmate.intake.matching-stuck-after})
+     * @param claimLease   how long a claimed portfolio photo is kept from other passes while it is read and embedded
+     *                     outside the claiming transaction; longer than a slow provider call
      */
     record Worker(@DefaultValue("true") boolean enabled,
                   @DefaultValue("30s") Duration pollInterval,
                   @DefaultValue("16") int batchSize,
                   @DefaultValue("5") int maxAttempts,
-                  @DefaultValue("5m") Duration retryBackoff) {
+                  @DefaultValue("5m") Duration retryBackoff,
+                  @DefaultValue("10m") Duration claimLease) {
     }
 
     /**

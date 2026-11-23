@@ -166,11 +166,15 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "ranked" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
           "requests" : {
             "format" : "int64",
             "type" : "integer"
           },
-          "reviewed" : {
+          "reviewedByAdmin" : {
             "format" : "int64",
             "type" : "integer"
           },
@@ -183,7 +187,7 @@
             "type" : "integer"
           }
         },
-        "required" : [ "bookedRequests", "clickedRequests", "failed", "hairType", "meanTopScore", "noSystemMatches", "published", "requests", "reviewed", "shownMatches", "withAdminChanges" ]
+        "required" : [ "bookedRequests", "clickedRequests", "failed", "hairType", "meanTopScore", "noSystemMatches", "published", "ranked", "requests", "reviewedByAdmin", "shownMatches", "withAdminChanges" ]
       },
       "ClientMatch" : {
         "properties" : {
@@ -210,6 +214,9 @@
             },
             "type" : "array"
           },
+          "pickedByTeam" : {
+            "type" : "boolean"
+          },
           "rank" : {
             "format" : "int32",
             "type" : "integer"
@@ -221,7 +228,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "demo", "instagram", "locationName", "matchId", "orgId", "photoUrls", "rank", "reason", "stylistName" ]
+        "required" : [ "demo", "instagram", "locationName", "matchId", "orgId", "photoUrls", "pickedByTeam", "rank", "reason", "stylistName" ]
       },
       "ConsentControllerAcceptRequest" : {
         "properties" : {

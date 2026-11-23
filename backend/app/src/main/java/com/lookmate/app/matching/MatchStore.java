@@ -5,15 +5,23 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
 
 /** The {@code match} rows of a request. */
 @Repository
 class MatchStore {
+
+    /** {@code match.source} of a stylist the admin added by hand. */
+    static final String ADMIN = "ADMIN";
 
     record MatchRow(UUID id, UUID requestId, UUID orgId, double score, String reason, List<UUID> evidence, int systemRank,
                     Integer finalRank, boolean hidden, boolean adminOverride, String adminNote, String source) {
@@ -38,7 +46,7 @@ class MatchStore {
     UUID insertByAdmin(UUID requestId, UUID orgId, List<UUID> evidence, String note, Instant now) {
         int next = jdbc.sql("select coalesce(max(greatest(system_rank, coalesce(final_rank, 0))), 0) + 1 from match where match_request_id = :r")
                 .param("r", requestId).query(Integer.class).single();
-        return insert(requestId, orgId, 0, Reasons.ADDED_BY_REVIEWER, evidence, next, next, true, note, "ADMIN", now);
+        return insert(requestId, orgId, 0, Reasons.PICKED_BY_TEAM, evidence, next, next, true, note, ADMIN, now);
     }
 
     private UUID insert(UUID requestId, UUID orgId, double score, String reason, List<UUID> evidence, int systemRank, int finalRank,
@@ -61,6 +69,27 @@ class MatchStore {
     List<MatchRow> forRequest(UUID requestId) {
         return jdbc.sql("select * from match where match_request_id = :r order by final_rank nulls last, system_rank, id")
                 .param("r", requestId).query(MatchStore::row).list();
+    }
+
+    /** The matches of several requests, each in the reviewer's order; a request with none is missing from the map. */
+    Map<UUID, List<MatchRow>> forRequests(Collection<UUID> requestIds) {
+        if (requestIds.isEmpty()) {
+            return Map.of();
+        }
+        return jdbc.sql("select * from match where match_request_id in (:r) order by match_request_id, final_rank nulls last, system_rank, id")
+                .param("r", requestIds).query(MatchStore::row).list().stream()
+                .collect(Collectors.groupingBy(MatchRow::requestId, LinkedHashMap::new, Collectors.toList()));
+    }
+
+    /** How many matches each request has (hidden ones included); a request with none is missing from the map. */
+    Map<UUID, Integer> counts(Collection<UUID> requestIds) {
+        Map<UUID, Integer> out = new HashMap<>();
+        if (!requestIds.isEmpty()) {
+            jdbc.sql("select match_request_id, count(*) as n from match where match_request_id in (:r) group by match_request_id")
+                    .param("r", requestIds)
+                    .query((rs, n) -> out.put(rs.getObject("match_request_id", UUID.class), rs.getInt("n"))).list();
+        }
+        return out;
     }
 
     /** What the client sees: ranked and not hidden. */
