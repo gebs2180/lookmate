@@ -134,7 +134,7 @@ the same commitment matching makes.
 
 | Step | What | Who | Size |
 |---|---|---|---|
-| 0 | Spreadsheet template (questions, outcomes, rules, tests). They fill it in for their own menu | Us → partner | A day |
+| 0 | Spreadsheet template ([service-finder-template.xlsx](service-finder-template.xlsx): questions, outcomes, rules, tests). They fill it in for their own menu | Us → partner | A day |
 | 1 | `consult` module, the partner's ruleset loaded, the client flow at `/c/<their-slug>`, the landing-page button, tracked hand-off | Us | About a week across two sessions (backend, then web) |
 | 2 | Four weeks live on their link. They mark each finder client's booking as "right service / wrong service / needed a consult" | Partner | 4 weeks |
 | 3 | If the right-service rate is high, build the self-serve editor and invite 5 to 10 independent Salon Lofts stylists free | Us | About a week |
