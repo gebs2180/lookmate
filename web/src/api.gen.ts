@@ -1000,9 +1000,11 @@ export interface components {
             /** Format: int64 */
             published: number;
             /** Format: int64 */
+            ranked: number;
+            /** Format: int64 */
             requests: number;
             /** Format: int64 */
-            reviewed: number;
+            reviewedByAdmin: number;
             /** Format: int64 */
             shownMatches: number;
             /** Format: int64 */
@@ -1017,6 +1019,7 @@ export interface components {
             /** Format: uuid */
             orgId: string;
             photoUrls: string[];
+            pickedByTeam: boolean;
             /** Format: int32 */
             rank: number;
             reason: string;

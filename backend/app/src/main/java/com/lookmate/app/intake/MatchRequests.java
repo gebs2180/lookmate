@@ -193,7 +193,7 @@ public class MatchRequests {
         return rows.find(id).map(MatchRequests::request);
     }
 
-    /** Newest first, for the admin's queue. */
+    /** Oldest first, for the admin's review queue: with more waiting than {@code limit}, the oldest are the ones shown (review #24). */
     @Transactional(readOnly = true)
     public List<Request> list(Status status, int limit) {
         return rows.list(status.name(), Math.max(0, Math.min(limit, 500))).stream().map(MatchRequests::request).toList();

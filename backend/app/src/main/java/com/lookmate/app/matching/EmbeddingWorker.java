@@ -2,7 +2,6 @@ package com.lookmate.app.matching;
 
 import com.lookmate.app.intake.MatchRequests;
 import com.lookmate.app.matching.CandidateQueries.PendingImage;
-import com.lookmate.app.matching.EmbeddingStore.Subject;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -18,6 +17,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * Embeds images for the current model: READY portfolio photos in batches claimed with {@code FOR UPDATE SKIP LOCKED}
  * (so several app instances share the work without embedding a photo twice), and one request's inspiration photo at
  * a time for the {@link Ranker}. A portfolio photo that fails backs off and, after {@code max-attempts}, is left alone.
+ * Provider calls run outside any transaction.
  */
 @Component
 class EmbeddingWorker {
@@ -48,17 +48,24 @@ class EmbeddingWorker {
     /**
      * One batch of portfolio photos. Returns how many it embedded: 0 when there was nothing to do or everything failed,
      * so a pass doesn't spin on photos that keep failing.
+     *
+     * <p>The claim is a short transaction that also writes a lease ({@code claim-lease}) for each photo, so the
+     * provider call holds no row locks or connection, and no other pass takes the photos meanwhile. Each photo is then
+     * saved on its own: a photo that can't be saved is counted as failed and backs off, without undoing the others or
+     * being claimed again straight away (review #8).
      */
     int portfolioBatch() {
-        Integer n = tx.execute(s -> {
+        String model = provider.model();
+        List<PendingImage> claimed = tx.execute(s -> {
             Instant now = clock.instant();
-            List<PendingImage> claimed = queries.claimPortfolioPhotosToEmbed(provider.model(), now, settings.maxAttempts(), settings.batchSize());
-            return embedPortfolio(claimed, now);
+            List<PendingImage> rows = queries.claimPortfolioPhotosToEmbed(model, now, settings.maxAttempts(), settings.batchSize());
+            rows.forEach(p -> store.lease(p.id(), model, now.plus(settings.claimLease()), now));
+            return rows;
         });
-        return n == null ? 0 : n;
+        return claimed == null || claimed.isEmpty() ? 0 : embedPortfolio(claimed, model);
     }
 
-    private int embedPortfolio(List<PendingImage> claimed, Instant now) {
+    private int embedPortfolio(List<PendingImage> claimed, String model) {
         List<PendingImage> read = new ArrayList<>();
         List<EmbeddingProvider.Image> bytes = new ArrayList<>();
         for (PendingImage p : claimed) {
@@ -66,63 +73,74 @@ class EmbeddingWorker {
                 bytes.add(new EmbeddingProvider.Image(images.read(p.objectKey()), p.contentType()));
                 read.add(p);
             } catch (RuntimeException e) {
-                failed(Subject.PORTFOLIO_PHOTO, p.id(), "read: " + e.getClass().getSimpleName(), now);
+                failedPortfolio(p.id(), model, "read: " + e.getClass().getSimpleName());
             }
         }
         if (read.isEmpty()) {
             return 0;
         }
+        List<float[]> vectors;
         try {
-            List<float[]> vectors = provider.embedBatch(bytes);
+            vectors = provider.embedBatch(bytes);
             if (vectors.size() != read.size()) {
                 throw new IllegalStateException("provider returned " + vectors.size() + " vectors for " + read.size() + " images");
             }
-            for (int i = 0; i < read.size(); i++) {
-                store.save(Subject.PORTFOLIO_PHOTO, read.get(i).id(), provider.model(), vectors.get(i), now);
-            }
-            return read.size();
         } catch (RuntimeException batchFailure) {
             // One bad photo shouldn't hold up the rest: try them one by one.
             log.warn("Embedding batch of {} failed ({}); trying one by one", read.size(), batchFailure.getClass().getSimpleName());
-            int saved = 0;
+            vectors = new ArrayList<>();
             for (int i = 0; i < read.size(); i++) {
                 try {
-                    store.save(Subject.PORTFOLIO_PHOTO, read.get(i).id(), provider.model(),
-                            provider.embed(bytes.get(i).bytes(), bytes.get(i).contentType()), now);
-                    saved++;
+                    vectors.add(provider.embed(bytes.get(i).bytes(), bytes.get(i).contentType()));
                 } catch (RuntimeException e) {
-                    failed(Subject.PORTFOLIO_PHOTO, read.get(i).id(), "embed: " + e.getClass().getSimpleName() + ": " + e.getMessage(), now);
+                    vectors.add(null);
+                    failedPortfolio(read.get(i).id(), model, "embed: " + e.getClass().getSimpleName() + ": " + e.getMessage());
                 }
             }
-            return saved;
         }
+        int saved = 0;
+        for (int i = 0; i < read.size(); i++) {
+            float[] vector = vectors.get(i);
+            if (vector == null) {
+                continue;
+            }
+            UUID id = read.get(i).id();
+            try {
+                tx.executeWithoutResult(s -> store.savePortfolio(id, model, vector, clock.instant()));
+                saved++;
+            } catch (RuntimeException e) {
+                failedPortfolio(id, model, "save: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            }
+        }
+        return saved;
     }
 
-    /** Whether the request's inspiration photo has an embedding for the current model. */
+    /** Whether the request's current inspiration photo (after any retake) has an embedding for the current model. */
     boolean hasInspiration(UUID requestId) {
-        return store.has(Subject.MATCH_REQUEST, requestId, provider.model());
+        return queries.inspirationEmbedded(requestId, provider.model());
     }
 
     /**
-     * Embeds a claimed request's inspiration photo (bytes from intake, metadata already stripped). Returns the attempts
-     * so far if it failed, or 0 if it's embedded.
+     * Embeds a claimed request's inspiration photo (bytes from intake, metadata already stripped). Returns the tries so
+     * far at embedding this photo if it failed, or 0 if it's embedded.
      */
     int embedInspiration(UUID requestId) {
-        Instant now = clock.instant();
         try {
             MatchRequests.Inspiration photo = requests.inspirationBytes(requestId)
                     .orElseThrow(() -> new IllegalStateException("no inspiration photo (not uploaded, or deleted)"));
-            store.save(Subject.MATCH_REQUEST, requestId, provider.model(), provider.embed(photo.bytes(), photo.contentType()), now);
+            store.saveInspiration(requestId, provider.model(), provider.embed(photo.bytes(), photo.contentType()), photo.sha256(), clock.instant());
             return 0;
         } catch (RuntimeException e) {
-            return failed(Subject.MATCH_REQUEST, requestId, e.getClass().getSimpleName() + ": " + e.getMessage(), now);
+            String error = e.getClass().getSimpleName() + ": " + e.getMessage();
+            int attempts = store.failedRequest(requestId, EmbeddingStore.Step.EMBED, error, clock.instant());
+            log.warn("Could not embed the inspiration photo of request {} (attempt {}): {}", requestId, attempts, error);
+            return attempts;
         }
     }
 
-    private int failed(Subject subject, UUID id, String error, Instant now) {
-        int attempts = store.failed(subject, id, provider.model(), error, settings.retryBackoff(), now);
-        log.warn("Could not embed {} {} (attempt {}): {}", subject, id, attempts, error);
-        return attempts;
+    private void failedPortfolio(UUID id, String model, String error) {
+        int attempts = store.failedPortfolio(id, model, error, settings.retryBackoff(), clock.instant());
+        log.warn("Could not embed portfolio photo {} (attempt {}): {}", id, attempts, error);
     }
 
     int maxAttempts() {

@@ -1,5 +1,6 @@
 package com.lookmate.app.matching;
 
+import com.lookmate.app.stylists.HairType;
 import com.lookmate.app.api.ApiException;
 import com.lookmate.app.matching.CandidateQueries.Photo;
 import com.lookmate.app.intake.ClientMatch;
@@ -112,10 +113,12 @@ class ReviewService {
 
     @Transactional(readOnly = true)
     List<QueueItem> queue(MatchRequests.Status status) {
-        // Intake lists newest first; the review queue works oldest first.
-        return requests.list(status, 200).reversed().stream()
-                .map(r -> new QueueItem(r.id(), r.status().name(), r.statusReason(), r.market(), r.service(), HairType.parse(r.hairType()),
-                        r.texture(), r.length(), r.firstName(), r.createdAt(), matches.forRequest(r.id()).size()))
+        // Oldest first, so the longest-waiting are never cut off (review #24); one count query for the page (#25).
+        List<MatchRequests.Request> waiting = requests.list(status, 200);
+        Map<UUID, Integer> counts = matches.counts(waiting.stream().map(MatchRequests.Request::id).toList());
+        return waiting.stream()
+                .map(r -> new QueueItem(r.id(), r.status().name(), r.statusReason(), r.market(), r.service(), HairTypes.parse(r.hairType()),
+                        r.texture(), r.length(), r.firstName(), r.createdAt(), counts.getOrDefault(r.id(), 0)))
                 .toList();
     }
 
@@ -127,24 +130,22 @@ class ReviewService {
     Monitor monitor(String market, int limit) {
         List<MatchRequests.Request> recent = requests.recent(market, limit);
         Map<UUID, TrackingService.RequestActivity> activity = tracking.activity(recent.stream().map(MatchRequests.Request::id).toList());
-        Map<UUID, List<MatchRow>> rowsByRequest = new HashMap<>();
-        for (MatchRequests.Request r : recent) {
-            rowsByRequest.put(r.id(), matches.forRequest(r.id()));
-        }
+        Map<UUID, List<MatchRow>> rowsByRequest = matches.forRequests(recent.stream().map(MatchRequests.Request::id).toList()); // #25
         Map<UUID, Stylist> stylists = stylistsOf(rowsByRequest.values().stream().flatMap(List::stream).toList());
         List<MonitorItem> items = recent.stream().map(r -> {
             TrackingService.RequestActivity a = activity.get(r.id());
             boolean published = r.publishedAt() != null;
-            List<MonitorMatch> shown = rowsByRequest.get(r.id()).stream().map(m -> {
+            List<MatchRow> rows = rowsByRequest.getOrDefault(r.id(), List.of());
+            List<MonitorMatch> shown = rows.stream().map(m -> {
                 Stylist s = stylists.get(m.orgId());
                 TrackingService.MatchActivity n = a.match(m.id());
                 return new MonitorMatch(m.id(), m.orgId(), s == null ? null : s.displayName(), s != null && "LIVE".equals(s.status()),
                         published && !m.hidden() ? m.finalRank() : null, m.systemRank(), m.hidden(), m.source(), n.bookingClicks(),
                         n.bookings(), n.rebooks());
             }).toList();
-            return new MonitorItem(r.id(), r.status().name(), r.statusReason(), r.market(), r.service(), HairType.parse(r.hairType()),
+            return new MonitorItem(r.id(), r.status().name(), r.statusReason(), r.market(), r.service(), HairTypes.parse(r.hairType()),
                     r.firstName(), r.createdAt(), r.publishedAt(), shown.stream().anyMatch(m -> !"SYSTEM".equals(m.source()))
-                    || rowsByRequest.get(r.id()).stream().anyMatch(MatchRow::adminOverride), a.firstViewedAt(), shown,
+                    || rows.stream().anyMatch(MatchRow::adminOverride), a.firstViewedAt(), shown,
                     a.directoryClicks(), a.directoryBookings());
         }).toList();
         return new Monitor(properties.reviewBeforePublish(), items);
@@ -248,28 +249,29 @@ class ReviewService {
      * With review switched off, publishes up to {@code limit} requests still waiting IN_REVIEW (from while the switch was
      * on), each with its current list: the reviewer's order, hides and additions kept. A request with no match at all
      * (the ranker found nobody and nobody was added) is published empty, as the ranker does now; one whose matches are
-     * all hidden stays for the admin. Each request in its own transaction; returns how many were published.
+     * all hidden stays for the admin and isn't fetched, so it can't block the ones behind it (review #24). Oldest first,
+     * each request in its own transaction; returns how many were published.
      */
     int publishWaitingReviews(int limit) {
         if (properties.reviewBeforePublish()) {
             return 0;
         }
         int published = 0;
-        for (MatchRequests.Request r : requests.list(MatchRequests.Status.IN_REVIEW, limit).reversed()) {
+        for (UUID id : queries.reviewsToPublish(limit)) {
             Boolean done = tx.execute(s -> {
                 // The admin may be publishing it right now: take the lock and look again.
-                if (!"IN_REVIEW".equals(queries.lockStatus(r.id()).orElse(null))) {
+                if (!"IN_REVIEW".equals(queries.lockStatus(id).orElse(null))) {
                     return false;
                 }
-                List<MatchRow> rows = matches.forRequest(r.id());
+                List<MatchRow> rows = matches.forRequest(id);
                 if (rows.isEmpty()) {
-                    requests.publishWithoutMatches(r.id(), Ranker.NO_CANDIDATES);
+                    requests.publishWithoutMatches(id, Ranker.NO_CANDIDATES);
                     return true;
                 }
                 if (rows.stream().noneMatch(MatchRow::visible)) {
                     return false;
                 }
-                finalizeAndPublish(r.id(), null);
+                finalizeAndPublish(id, null);
                 return true;
             });
             if (Boolean.TRUE.equals(done)) {
@@ -318,8 +320,10 @@ class ReviewService {
             List<String> evidence = m.evidence().stream().map(photos::get)
                     .filter(p -> p != null && "READY".equals(p.status()))
                     .map(p -> url(p.objectKey()).toString()).toList();
-            out.add(new ClientMatch(m.id(), m.orgId(), out.size() + 1, s.displayName(), s.locationName(), m.reason(), evidence, s.instagram(),
-                    s.demo()));
+            // A hand-picked stylist says so in the team's words, whatever reason the row holds (review #26).
+            boolean pickedByTeam = MatchStore.ADMIN.equals(m.source());
+            out.add(new ClientMatch(m.id(), m.orgId(), out.size() + 1, s.displayName(), s.locationName(),
+                    pickedByTeam ? Reasons.PICKED_BY_TEAM : m.reason(), evidence, s.instagram(), s.demo(), pickedByTeam));
         }
         return out;
     }
@@ -356,7 +360,7 @@ class ReviewService {
                     m.finalRank(), m.hidden(), m.adminOverride(), m.adminNote(), m.source(), evidence);
         }).toList();
         Optional<String> inspiration = queries.inspirationKey(r.id());
-        RequestView request = new RequestView(r.id(), r.status().name(), r.statusReason(), r.market(), r.service(), HairType.parse(r.hairType()),
+        RequestView request = new RequestView(r.id(), r.status().name(), r.statusReason(), r.market(), r.service(), HairTypes.parse(r.hairType()),
                 r.texture(), r.length(), r.budgetTier(), r.neighborhood(), r.pastIssues(), r.pastIssuesNote(), r.firstName(), r.createdAt(),
                 r.publishedAt(), r.inspirationDeleted());
         return new Review(request, inspiration.map(this::url).orElse(null), views);

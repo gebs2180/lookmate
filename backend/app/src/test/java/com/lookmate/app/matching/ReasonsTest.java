@@ -1,10 +1,12 @@
 package com.lookmate.app.matching;
 
-import static com.lookmate.app.matching.HairType.CURLY;
-import static com.lookmate.app.matching.HairType.WAVY;
+import com.lookmate.app.stylists.HairType;
+import static com.lookmate.app.stylists.HairType.CURLY;
+import static com.lookmate.app.stylists.HairType.WAVY;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.lookmate.app.matching.Scoring.PhotoMatch;
+import com.lookmate.app.stylists.ServiceType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -14,6 +16,12 @@ class ReasonsTest {
 
     private static final Scoring.Settings SETTINGS = new Scoring.Settings(3, 0.8, 0.25, 10, 4, 5, new HairCompatibility(0.5));
     private static final UUID ORG = new UUID(0, 1);
+
+    /** Review #38: a service added to {@link ServiceType} gets a word in the reason, not the "look" fallback. */
+    @Test
+    void everyServiceHasANoun() {
+        assertThat(Reasons.SERVICE.keySet()).containsExactlyInAnyOrder(ServiceType.values());
+    }
 
     @Test
     void countsSimilarWorkOnTheClientsHairType() {

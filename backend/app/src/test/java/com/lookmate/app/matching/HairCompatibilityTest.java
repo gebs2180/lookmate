@@ -1,9 +1,10 @@
 package com.lookmate.app.matching;
 
-import static com.lookmate.app.matching.HairType.COILY;
-import static com.lookmate.app.matching.HairType.CURLY;
-import static com.lookmate.app.matching.HairType.STRAIGHT;
-import static com.lookmate.app.matching.HairType.WAVY;
+import com.lookmate.app.stylists.HairType;
+import static com.lookmate.app.stylists.HairType.COILY;
+import static com.lookmate.app.stylists.HairType.CURLY;
+import static com.lookmate.app.stylists.HairType.STRAIGHT;
+import static com.lookmate.app.stylists.HairType.WAVY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
