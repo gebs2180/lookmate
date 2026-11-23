@@ -32,12 +32,11 @@ class IntakeController {
 
     /**
      * {@code email} is optional and no longer asked by the quiz: clients add it after the reveal ({@link EmailBody}).
-     * {@code firstName} is legacy: the quiz stopped asking for it on 2026-11-20, but it's still accepted (and stored) so a
-     * quiz page loaded before then can still send. {@code pastIssues} also carries the client's asks for the next
+     * A {@code firstName} from a quiz page loaded before 2026-11-20 is ignored: it went into emails to whatever address
+     * was given (review 2026-11-22, finding 4). {@code pastIssues} also carries the client's asks for the next
      * appointment (QUIET_APPOINTMENT, HONEST_ADVICE); none of them affects ranking.
      */
     record CreateRequest(@Email @Size(max = 254) String email,
-                         @Size(max = 40) String firstName,
                          @NotNull Quiz.HairType hairType,
                          Quiz.Texture texture,
                          Quiz.Length length,
@@ -77,7 +76,7 @@ class IntakeController {
     @PostMapping(BASE)
     @ResponseStatus(HttpStatus.CREATED)
     Created create(@Valid @RequestBody CreateRequest body) {
-        IntakeService.Created created = intake.create(new IntakeService.NewRequest(body.email(), body.firstName(), body.hairType(),
+        IntakeService.Created created = intake.create(new IntakeService.NewRequest(body.email(), body.hairType(),
                 body.texture(), body.length(), body.budgetTier(), body.neighborhood(), body.service(), body.pastIssues(), body.pastIssuesNote(),
                 body.inspiration().contentType(), body.inspiration().sizeBytes()));
         return new Created(created.token(), created.statusPath(), UploadSlot.of(created.upload()));
@@ -97,11 +96,21 @@ class IntakeController {
         return intake.setEmail(token, body.email());
     }
 
+    /**
+     * A fresh upload slot: when the first expired or the upload failed, or, on a request at stage {@code FAILED} with
+     * {@code retakeAllowed}, for a different photo (the old one is deleted and the request goes back to
+     * {@code PHOTO_NEEDED}). Upload to the slot, then confirm.
+     */
     @PostMapping(BASE + "/{token}/inspiration")
     UploadSlot uploadSlot(@PathVariable String token, @Valid @RequestBody PhotoFile body) {
         return UploadSlot.of(intake.uploadSlot(token, body.contentType(), body.sizeBytes()));
     }
 
+    /**
+     * Checks the uploaded photo and strips its metadata. 409 {@code NOT_UPLOADED} before the upload landed, 422
+     * {@code IMAGE_REJECTED} for a file we can't use (upload another to a new slot), 503 {@code BUSY} when the server is
+     * checking too many photos at once (try again shortly).
+     */
     @PostMapping(BASE + "/{token}/inspiration/confirm")
     IntakeService.ClientView confirm(@PathVariable String token) {
         return intake.confirm(token);

@@ -1036,7 +1036,6 @@ export interface components {
             budgetTier: number;
             /** Format: email */
             email: string;
-            firstName: string;
             /** @enum {string} */
             hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
             inspiration: components["schemas"]["IntakeControllerPhotoFile"];
@@ -1090,9 +1089,10 @@ export interface components {
             photoKeptDays: number;
             photoUploaded: boolean;
             photoUrl: string;
+            retakeAllowed: boolean;
             service: string;
             /** @enum {string} */
-            stage: "PHOTO_NEEDED" | "RECEIVED" | "MATCHING" | "READY" | "CLOSED";
+            stage: "PHOTO_NEEDED" | "RECEIVED" | "MATCHING" | "READY" | "CLOSED" | "FAILED";
             texture: string;
         };
         IntakeServiceSettings: {

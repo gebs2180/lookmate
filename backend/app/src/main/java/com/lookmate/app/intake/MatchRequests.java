@@ -130,11 +130,12 @@ public class MatchRequests {
         }
         String token = LinkTokens.newToken();
         rows.insertLink(LinkTokens.hash(token), id, "MATCHES_READY", now, now.plus(properties.linkTtl()));
+        // No first name in client emails, even an old request's: it was whatever the sender typed (review 2026-11-22, #4).
         Instant sendAt = now.plus(properties.matchesReadyEmailDelay());
         if (empty) {
-            emails.noCloseMatch(id, row.email(), row.firstName(), LinkTokens.path(token) + "/stylists", sendAt, now);
+            emails.noCloseMatch(id, row.email(), null, LinkTokens.path(token) + "/stylists", sendAt, now);
         } else {
-            emails.matchesReady(id, row.email(), row.firstName(), LinkTokens.path(token), sendAt, now);
+            emails.matchesReady(id, row.email(), null, LinkTokens.path(token), sendAt, now);
         }
     }
 
@@ -157,7 +158,7 @@ public class MatchRequests {
         }
         String token = LinkTokens.newToken();
         rows.insertLink(LinkTokens.hash(token), id, "MATCHES_READY", now, now.plus(properties.linkTtl()));
-        emails.picksAdded(id, row.email(), row.firstName(), LinkTokens.path(token), now);
+        emails.picksAdded(id, row.email(), null, LinkTokens.path(token), now);
     }
 
     /**

@@ -86,7 +86,10 @@ class IntakeFlowTest {
     @Autowired
     private ClientContactRetention contactRetention;
 
-    /** The quiz's answers; {@code email} null leaves it out, as the quiz does now. */
+    /**
+     * The quiz's answers; {@code email} null leaves it out, as the quiz does now. {@code firstName} is what quiz pages from
+     * before 2026-11-20 sent: the API ignores it.
+     */
     static String quiz(String email, String firstName) {
         return """
                 {%s"firstName":"%s","hairType":"CURLY","texture":"THICK","length":"MEDIUM","budgetTier":2,
@@ -156,14 +159,17 @@ class IntakeFlowTest {
 
         view(token).andExpect(status().isOk())
                 .andExpect(jsonPath("$.stage").value("PHOTO_NEEDED"))
-                .andExpect(jsonPath("$.firstName").value("Ada"))
+                .andExpect(jsonPath("$.firstName").value(nullValue()))
                 .andExpect(jsonPath("$.photoUploaded").value(false))
+                .andExpect(jsonPath("$.retakeAllowed").value(false))
                 .andExpect(jsonPath("$.photoKeptDays").value(30))
                 .andExpect(jsonPath("$.matches").isEmpty())
                 .andExpect(jsonPath("$.emailHint").value(nullValue()))
                 .andExpect(jsonPath("$.emailChangeAllowed").value(true))
                 .andExpect(jsonPath("$.email").doesNotExist());
-        // No name either.
+        // An old quiz page's first name is ignored, not stored (review 2026-11-22, finding 4).
+        assertThat(jdbc.sql("select c.first_name from client c join match_request r on r.client_id = c.id where r.id = :id").param("id", id)
+                .query().singleRow().get("first_name")).isNull();
         create(quiz(null, "").replace("\"firstName\":\"\",", "")).andExpect(status().isCreated());
     }
 
@@ -195,7 +201,8 @@ class IntakeFlowTest {
         assertThat(emails).hasSize(1);
         assertThat(emails.getFirst().get("template")).isEqualTo("MATCH_LIST_LINK");
         assertThat(emails.getFirst().get("recipient_email")).isEqualTo("ada@example.com");
-        assertThat((String) emails.getFirst().get("text_body")).contains("/m/" + token).contains("Hi Ada");
+        assertThat((String) emails.getFirst().get("text_body")).contains("/m/" + token).contains("Hi there,")
+                .doesNotContain("Ada");
         view(token).andExpect(jsonPath("$.emailHint").value("a\u2022\u2022\u2022@example.com"));
     }
 
@@ -212,7 +219,7 @@ class IntakeFlowTest {
         assertThat(emails).hasSize(1);
         assertThat(emails.getFirst().get("template")).isEqualTo("MATCH_LIST_LINK");
         assertThat(emails.getFirst().get("recipient_email")).isEqualTo("bea@example.com");
-        assertThat((String) emails.getFirst().get("text_body")).contains("/m/" + token).contains("Hi Bea");
+        assertThat((String) emails.getFirst().get("text_body")).contains("/m/" + token).contains("Hi there,");
         view(token).andExpect(jsonPath("$.emailHint").value("b\u2022\u2022\u2022@example.com"));
 
         // Correcting a typo replaces it and sends the link to the new address, up to the per-request cap; then 409.
@@ -238,6 +245,45 @@ class IntakeFlowTest {
         create(quiz("gUs@example.COM", "Gus")).andExpect(status().isTooManyRequests())
                 .andExpect(jsonPath("$.code").value("TOO_MANY_FOR_ADDRESS"));
         setEmail(newRequest(null, "Hal"), "someone-else@example.com").andExpect(status().isOk());
+    }
+
+    @Test
+    void replacingAnAddressDoesntGiveItItsLinksBack() throws Exception {
+        // Review 2026-11-22, finding 4: setting an address and then another on each request used to keep the first
+        // address's count at zero, so any address could be sent links without end.
+        for (int i = 0; i < 5; i++) {
+            String token = newRequest(null, "");
+            setEmail(token, "victim@example.com").andExpect(status().isOk());
+            setEmail(token, "junk" + i + "@example.com").andExpect(status().isOk());
+        }
+        setEmail(newRequest(null, ""), "victim@example.com").andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.code").value("TOO_MANY_FOR_ADDRESS"));
+        assertThat(jdbc.sql("select count(*) from client_email_use where address_hash = :h")
+                .param("h", IntakeService.addressHash("Victim@Example.com")).query(Integer.class).single()).isEqualTo(5);
+        assertThat(jdbc.sql("select count(*) from client_email_use where address_hash like '%@%'").query(Integer.class).single())
+                .as("addresses are kept only hashed").isZero();
+
+        // Retention forgets the log after two days.
+        contactRetention.run(Instant.now().plus(Duration.ofDays(3)));
+        assertThat(jdbc.sql("select count(*) from client_email_use where address_hash = :h")
+                .param("h", IntakeService.addressHash("victim@example.com")).query(Integer.class).single()).isZero();
+    }
+
+    @Test
+    void aCorrectedAddressCancelsTheEmailToTheMistypedOne() throws Exception {
+        // Review 2026-11-22, finding 17: the link email queued to a typo went out anyway.
+        String token = newRequest(null, "");
+        UUID id = idOf(token);
+        setEmail(token, "wen@exmaple.com").andExpect(status().isOk());
+        // Sending is off here, so the email was stored as skipped: as if it were on, it waits to go.
+        jdbc.sql("update email_message set status = 'PENDING', status_reason = null where subject_id = :id").param("id", id).update();
+        setEmail(token, "wen@example.com").andExpect(status().isOk());
+        jdbc.sql("update email_message set status = 'PENDING', status_reason = null where subject_id = :id and status = 'SKIPPED'")
+                .param("id", id).update();
+        var sent = jdbc.sql("select recipient_email, status from email_message where subject_id = :id order by created_at")
+                .param("id", id).query().listOfRows();
+        assertThat(sent).extracting(e -> e.get("recipient_email")).containsExactly("wen@exmaple.com", "wen@example.com");
+        assertThat(sent).extracting(e -> e.get("status")).containsExactly("CANCELLED", "PENDING");
     }
 
     @Test
@@ -288,8 +334,8 @@ class IntakeFlowTest {
         upload(dev, TestPhotos.jpegWithGps());
 
         confirm(cleo).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("NOT_UPLOADED"));
-        view(cleo).andExpect(jsonPath("$.firstName").value("Cleo")).andExpect(jsonPath("$.photoUploaded").value(false));
-        view(dev).andExpect(jsonPath("$.firstName").value("Dev")).andExpect(jsonPath("$.photoUploaded").value(false));
+        view(cleo).andExpect(jsonPath("$.emailHint").value("c\u2022\u2022\u2022@example.com")).andExpect(jsonPath("$.photoUploaded").value(false));
+        view(dev).andExpect(jsonPath("$.emailHint").value("d\u2022\u2022\u2022@example.com")).andExpect(jsonPath("$.photoUploaded").value(false));
         assertThat(requests.view(idOf(dev)).orElseThrow().inspirationReady()).isFalse();
     }
 
@@ -333,6 +379,44 @@ class IntakeFlowTest {
     }
 
     @Test
+    void aPhotoMatchingCouldntReadCanBeRetaken() throws Exception {
+        // Review 2026-11-22, finding 5: a FAILED request showed "matching" for ever. Now the client sees FAILED and may
+        // add a different photo, which sends the request round again.
+        String token = newRequest(null, "");
+        UUID id = idOf(token);
+        upload(token, TestPhotos.jpegWithGps());
+        confirm(token).andExpect(status().isOk());
+        assertThat(requests.claimNew(50)).extracting(MatchRequests.Request::id).contains(id);
+        requests.markStatus(id, MatchRequests.Status.FAILED, "not embedded");
+
+        view(token).andExpect(jsonPath("$.stage").value("FAILED"))
+                .andExpect(jsonPath("$.retakeAllowed").value(true))
+                .andExpect(jsonPath("$.statusReason").doesNotExist());
+
+        mvc.perform(post("/api/public/match-requests/" + token + "/inspiration").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"contentType\":\"image/jpeg\",\"sizeBytes\":5000}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.method").value("PUT"));
+        assertThat(blobs.head(storage.photoBucket(), IntakeService.objectKey(id))).as("the old photo is gone").isEmpty();
+        view(token).andExpect(jsonPath("$.stage").value("PHOTO_NEEDED"))
+                .andExpect(jsonPath("$.retakeAllowed").value(false))
+                .andExpect(jsonPath("$.photoUploaded").value(false));
+        assertThat(requests.claimNew(50)).as("not before the new photo is confirmed").extracting(MatchRequests.Request::id).doesNotContain(id);
+
+        upload(token, TestPhotos.jpegWithGps());
+        confirm(token).andExpect(status().isOk()).andExpect(jsonPath("$.stage").value("RECEIVED"));
+        assertThat(requests.claimNew(50)).extracting(MatchRequests.Request::id).contains(id);
+
+        // Once retention deleted the photo there's nothing to retake: the page offers the directory.
+        requests.markStatus(id, MatchRequests.Status.FAILED, "not embedded");
+        jdbc.sql("update match_request set created_at = now() - interval '31 days' where id = :id").param("id", id).update();
+        retention.run(Instant.now());
+        view(token).andExpect(jsonPath("$.stage").value("FAILED")).andExpect(jsonPath("$.retakeAllowed").value(false));
+        mvc.perform(post("/api/public/match-requests/" + token + "/inspiration").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"contentType\":\"image/jpeg\",\"sizeBytes\":5000}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("PHOTO_DELETED"));
+    }
+
+    @Test
     void matchingClaimsConfirmedRequestsOnceAndPublishingEmailsAFreshLink() throws Exception {
         String waiting = newRequest("ida@example.com", "Ida");
         String ready = newRequest("jo@example.com", "Jo");
@@ -363,7 +447,7 @@ class IntakeFlowTest {
                 .query(String.class).single();
         String fresh = body.replaceAll("(?s).*/m/([A-Za-z0-9_-]{43}).*", "$1");
         assertThat(fresh).isNotEqualTo(ready);
-        view(fresh).andExpect(status().isOk()).andExpect(jsonPath("$.firstName").value("Jo"));
+        view(fresh).andExpect(status().isOk()).andExpect(jsonPath("$.stage").value("READY"));
         view(ready).andExpect(status().isOk()); // the first link keeps working
     }
 
@@ -417,6 +501,9 @@ class IntakeFlowTest {
         // No email: the request's own age decides.
         String anonymous = newRequest(null, "Rae");
         String anonymousRecent = newRequest(null, "Sol");
+        // First names come only from requests made before the quiz stopped asking (and the API stopped taking them).
+        jdbc.sql("update client set first_name = 'Someone' where id in (select client_id from match_request where id in (:ids))")
+                .param("ids", List.of(idOf(old), idOf(oldButReturning), idOf(returning), idOf(anonymous), idOf(anonymousRecent))).update();
         List<UUID> aged = List.of(idOf(old), idOf(oldButReturning), idOf(anonymous));
         jdbc.sql("update match_request set created_at = now() - interval '400 days' where id in (:ids)").param("ids", aged).update();
         jdbc.sql("update client set created_at = now() - interval '400 days' where id in "
@@ -433,10 +520,10 @@ class IntakeFlowTest {
         assertThat(pam.get("hair_type")).as("kept for the fairness metrics").isEqualTo("CURLY");
         assertThat(pam.get("anonymised_at")).isNotNull();
         view(old).andExpect(jsonPath("$.firstName").value(nullValue()));
-        view(oldButReturning).andExpect(jsonPath("$.firstName").value("Quin"));
-        view(returning).andExpect(jsonPath("$.firstName").value("Quin"));
+        view(oldButReturning).andExpect(jsonPath("$.firstName").value("Someone"));
+        view(returning).andExpect(jsonPath("$.firstName").value("Someone"));
         view(anonymous).andExpect(jsonPath("$.firstName").value(nullValue()));
-        view(anonymousRecent).andExpect(jsonPath("$.firstName").value("Sol"));
+        view(anonymousRecent).andExpect(jsonPath("$.firstName").value("Someone"));
         assertThat(contactRetention.run(Instant.now())).as("nothing left to do").isZero();
     }
 }

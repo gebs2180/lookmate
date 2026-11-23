@@ -261,11 +261,6 @@
             "minLength" : 0,
             "type" : "string"
           },
-          "firstName" : {
-            "maxLength" : 40,
-            "minLength" : 0,
-            "type" : "string"
-          },
           "hairType" : {
             "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
             "type" : "string"
@@ -305,7 +300,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "budgetTier", "email", "firstName", "hairType", "inspiration", "length", "neighborhood", "pastIssues", "pastIssuesNote", "service", "texture" ]
+        "required" : [ "budgetTier", "email", "hairType", "inspiration", "length", "neighborhood", "pastIssues", "pastIssuesNote", "service", "texture" ]
       },
       "IntakeControllerCreated" : {
         "properties" : {
@@ -418,18 +413,21 @@
           "photoUrl" : {
             "type" : "string"
           },
+          "retakeAllowed" : {
+            "type" : "boolean"
+          },
           "service" : {
             "type" : "string"
           },
           "stage" : {
-            "enum" : [ "PHOTO_NEEDED", "RECEIVED", "MATCHING", "READY", "CLOSED" ],
+            "enum" : [ "PHOTO_NEEDED", "RECEIVED", "MATCHING", "READY", "CLOSED", "FAILED" ],
             "type" : "string"
           },
           "texture" : {
             "type" : "string"
           }
         },
-        "required" : [ "asks", "createdAt", "emailChangeAllowed", "emailHint", "firstName", "hairType", "length", "matches", "photoDeleted", "photoDeletesAt", "photoKeptDays", "photoUploaded", "photoUrl", "service", "stage", "texture" ]
+        "required" : [ "asks", "createdAt", "emailChangeAllowed", "emailHint", "firstName", "hairType", "length", "matches", "photoDeleted", "photoDeletesAt", "photoKeptDays", "photoUploaded", "photoUrl", "retakeAllowed", "service", "stage", "texture" ]
       },
       "IntakeServiceSettings" : {
         "properties" : {
