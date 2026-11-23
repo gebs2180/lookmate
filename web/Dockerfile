@@ -15,7 +15,7 @@ RUN test -n "$VITE_AUTH0_DOMAIN" && test -n "$VITE_AUTH0_CLIENT_ID" && test -n "
     || { echo "Set VITE_AUTH0_DOMAIN, VITE_AUTH0_CLIENT_ID and VITE_AUTH0_AUDIENCE build args" >&2; exit 1; }
 RUN npm run build
 
-FROM caddy:2.10
+FROM caddy:2.11
 # Caddy faces the internet, so it runs as its own user (security review 2026-10-26, #8). It still binds 80 and 443:
 # the image gives the binary cap_net_bind_service, and compose.prod.yml keeps only that capability. A fixed uid so
 # the deploy's chown of the existing caddy-data and caddy-config volumes can name it (10001:10001).
