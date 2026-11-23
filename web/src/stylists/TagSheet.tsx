@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { apiPath, useApi } from '../api'
+import { apiPath } from '../api'
+import { useApi } from '../useApi'
 import { message } from '../format'
 import {
   HAIR_TYPES,

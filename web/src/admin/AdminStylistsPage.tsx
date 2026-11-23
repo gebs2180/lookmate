@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
-import { apiPath, useApi, type CreatedInvite, type Org } from '../api'
+import { apiPath, type CreatedInvite, type Org } from '../api'
+import { useApi } from '../useApi'
 import { message } from '../format'
 import '../stylists/stylists.css'
 import { PLATFORM_LABEL, type AdminStylist } from '../stylists/types'

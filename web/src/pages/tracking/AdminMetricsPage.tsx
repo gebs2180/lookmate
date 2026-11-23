@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
-import { useApi, type Metrics } from '../../api'
+import { type Metrics } from '../../api'
+import { useApi } from '../../useApi'
 import { label, percent } from '../../format'
 import { Loading, PageError } from '../../ui'
 import { useLoad } from '../../useLoad'

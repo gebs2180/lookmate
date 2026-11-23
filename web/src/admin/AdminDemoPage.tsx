@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from 'react'
 import { Link } from 'react-router'
-import { uploadToStorage, useApi } from '../api'
+import { uploadToStorage } from '../api'
+import { useApi } from '../useApi'
 import { message } from '../format'
 import type { AdminStylist, Location } from '../stylists/types'
 import { Loading, PageError } from '../ui'

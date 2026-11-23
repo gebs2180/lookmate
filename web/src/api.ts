@@ -1,13 +1,10 @@
-import { useAuth0 } from '@auth0/auth0-react'
-import { useCallback } from 'react'
 import type { components } from './api.gen'
 import type { Practice } from './stylists/types'
 
-// Hand-written API types for the scaffold. As endpoints land, prefer the generated ones in api.gen.ts
-// (docs/api-types.md): `npm run api:types` after the backend rewrites openapi.json.
+// API types come from api.gen.ts (`npm run api:types` after the backend rewrites openapi.json). The generated types
+// don't mark nullable fields, so where the API sends null they're narrowed here; everything else is the generated type.
 
 export type OrgType = 'STYLIST'
-export const ORG_TYPE_LABEL: Record<OrgType, string> = { STYLIST: 'Stylist' }
 
 export type Membership = { orgId: string; orgName: string; orgType: OrgType; role: string }
 
@@ -25,17 +22,6 @@ export type CreatedInvite = { id: string; token: string; acceptPath: string; exp
 export type OpenInvite = { id: string; createdAt: string; expiresAt: string }
 export type OrgMember = { id: string; email: string | null; role: string; joinedAt: string }
 export type InvitePreview = { orgName: string; orgType: OrgType; role: string; expiresAt: string; usable: boolean }
-
-export function shortDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-}
-
-export function parseMoney(text: string): number {
-  const plain = text.replace(/[$,\s]/g, '')
-  return /^\d+(\.\d{1,2})?$/.test(plain) ? Number(plain) : NaN
-}
-
-export { money, percent } from './format'
 
 export type UploadSlot = {
   photoId: string
@@ -61,78 +47,6 @@ export function apiPath(strings: TemplateStringsArray, ...values: (string | numb
   return strings.reduce((out, s, i) => out + s + (i < values.length ? encodeURIComponent(values[i]) : ''), '')
 }
 
-/** Auth0 errors that mean the session is gone and only a new login helps. */
-const LOGIN_ERRORS = new Set(['login_required', 'missing_refresh_token', 'invalid_grant', 'consent_required'])
-
-/** Fetch wrapper that adds the access token and turns problem-detail responses into ApiError; a lost session goes back to login. */
-export function useApi() {
-  const { getAccessTokenSilently, loginWithRedirect } = useAuth0()
-
-  return useCallback(
-    async <T,>(method: string, path: string, body?: unknown): Promise<T> => {
-      const relogin = async () => {
-        // A backend that rejects every token (no issuer configured, wrong audience) would loop through
-        // login forever: redirect at most once a minute, otherwise just report the 401.
-        const key = 'lookmate.reloginAt'
-        let last = 0
-        try {
-          last = Number(sessionStorage.getItem(key) ?? 0)
-          sessionStorage.setItem(key, String(Date.now()))
-        } catch {
-          // storage blocked: redirect anyway
-        }
-        if (Date.now() - last < 60_000) {
-          throw new ApiError(401, 'Not signed in: the API rejected your login. Check the API issuer and audience settings.')
-        }
-        await loginWithRedirect({ appState: { returnTo: window.location.pathname + window.location.search } })
-      }
-      const token = await getAccessTokenSilently().catch(async (e: unknown) => {
-        if (LOGIN_ERRORS.has((e as { error?: string }).error ?? '')) {
-          await relogin()
-          throw new ApiError(401, 'Your session has ended. Redirecting to log in…')
-        }
-        throw e
-      })
-      const response = await reach(
-        () =>
-          fetch(path, {
-            method,
-            headers: {
-              Authorization: `Bearer ${token}`,
-              ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
-            },
-            body: body === undefined ? undefined : JSON.stringify(body),
-          }),
-        UNREACHABLE,
-      )
-      if (response.status === 401) {
-        await relogin()
-        throw new ApiError(401, 'Your session has ended. Redirecting to log in…')
-      }
-      if (!response.ok) {
-        let detail =
-          response.status === 403
-            ? "You don't have access to this page."
-            : response.status === 404
-              ? "We couldn't find that."
-              : `${method} ${path} failed: ${response.status}`
-        let code: string | undefined
-        try {
-          const problem = await response.json()
-          detail = problem.detail ?? problem.title ?? detail
-          code = typeof problem.code === 'string' ? problem.code : undefined
-        } catch {
-          // not JSON
-        }
-        throw new ApiError(response.status, detail, code)
-      }
-      const text = await response.text()
-      return (text ? JSON.parse(text) : undefined) as T
-    },
-    [getAccessTokenSilently, loginWithRedirect],
-  )
-}
-
 export const UNREACHABLE = "Couldn't reach Combpatible. Check your connection and try again."
 export const UPLOAD_FAILED = "The photo didn't upload. Check your connection and try again."
 
@@ -140,7 +54,7 @@ export const UPLOAD_FAILED = "The photo didn't upload. Check your connection and
  * A fetch that never reached the server (offline, blocked, dropped) rejects with the browser's own
  * TypeError, e.g. "Failed to fetch"; people see `message` instead.
  */
-async function reach(request: () => Promise<Response>, message: string): Promise<Response> {
+export async function reach(request: () => Promise<Response>, message: string): Promise<Response> {
   try {
     return await request()
   } catch (e) {
@@ -157,9 +71,6 @@ export async function uploadToStorage(slot: UploadSlot, file: Blob): Promise<voi
     throw new ApiError(response.status, `The photo didn't upload (storage answered ${response.status}). Please try again.`)
   }
 }
-
-// Review (admin): identification and condition
-
 
 // Client intake (signed out): /find and /m/:token. Types from the API description (api.gen.ts).
 
@@ -193,17 +104,29 @@ export async function publicApi<T>(method: string, path: string, body?: unknown)
     UNREACHABLE,
   )
   if (!response.ok) {
-    let detail = response.status === 404 ? "We couldn't find that." : `Something went wrong (${response.status}). Please try again.`
-    let code: string | undefined
-    try {
-      const problem = await response.json()
-      detail = problem.detail ?? problem.title ?? detail
-      code = typeof problem.code === 'string' ? problem.code : undefined
-    } catch {
-      // not JSON
-    }
-    throw new ApiError(response.status, detail, code)
+    throw await problemError(
+      response,
+      response.status === 404 ? "We couldn't find that." : `Something went wrong (${response.status}). Please try again.`,
+    )
   }
+  return readBody<T>(response)
+}
+
+/** An ApiError from a failed response: the problem detail's text and `code` when the body is one, else the fallback. */
+export async function problemError(response: Response, fallback: string): Promise<ApiError> {
+  let detail = fallback
+  let code: string | undefined
+  try {
+    const problem = await response.json()
+    detail = problem.detail ?? problem.title ?? fallback
+    code = typeof problem.code === 'string' ? problem.code : undefined
+  } catch {
+    // not JSON
+  }
+  return new ApiError(response.status, detail, code)
+}
+
+export async function readBody<T>(response: Response): Promise<T> {
   const text = await response.text()
   return (text ? JSON.parse(text) : undefined) as T
 }
@@ -212,74 +135,61 @@ export async function publicApi<T>(method: string, path: string, body?: unknown)
 export type HairType = 'STRAIGHT' | 'WAVY' | 'CURLY' | 'COILY'
 export type MatchRequestStatus = 'NEW' | 'MATCHING' | 'IN_REVIEW' | 'PUBLISHED' | 'CLOSED' | 'FAILED'
 
-export type MatchQueueItem = {
-  id: string
+type ReviewSchemas = components['schemas']
+
+export type MatchQueueItem = Omit<
+  ReviewSchemas['ReviewServiceQueueItem'],
+  'status' | 'statusReason' | 'service' | 'hairType' | 'texture' | 'length' | 'firstName'
+> & {
   status: MatchRequestStatus
   statusReason: string | null
-  market: string
   service: string | null
   hairType: HairType | null
   texture: string | null
   length: string | null
   firstName: string | null
-  createdAt: string
-  candidates: number
 }
 
-export type MatchRequestView = {
-  id: string
+export type MatchRequestView = Omit<
+  ReviewSchemas['ReviewServiceRequestView'],
+  'status' | 'statusReason' | 'service' | 'hairType' | 'texture' | 'length' | 'budgetTier' | 'neighborhood' | 'notes' | 'firstName' | 'publishedAt'
+> & {
   status: MatchRequestStatus
   statusReason: string | null
-  market: string
   service: string | null
   hairType: HairType | null
   texture: string | null
   length: string | null
   budgetTier: number | null
   neighborhood: string | null
-  pastIssues: string[]
   notes: string | null
   firstName: string | null
-  createdAt: string
   publishedAt: string | null
-  inspirationDeleted: boolean
 }
 
-export type EvidencePhoto = { id: string; url: string; service: string | null; hairType: string | null }
+export type EvidencePhoto = Omit<ReviewSchemas['ReviewServiceEvidencePhoto'], 'service' | 'hairType'> & {
+  service: string | null
+  hairType: string | null
+}
 
-export type MatchView = {
-  id: string
-  orgId: string
+export type MatchView = Omit<
+  ReviewSchemas['ReviewServiceMatchView'],
+  'stylistName' | 'locationName' | 'instagram' | 'finalRank' | 'adminNote' | 'source' | 'evidence'
+> & {
   stylistName: string | null
   locationName: string | null
   instagram: string | null
-  stylistLive: boolean
-  score: number
-  reason: string
-  systemRank: number
   finalRank: number | null
-  hidden: boolean
-  adminOverride: boolean
   adminNote: string | null
   source: 'SYSTEM' | 'ADMIN'
   evidence: EvidencePhoto[]
 }
 
 export type MatchReview = { request: MatchRequestView; inspirationUrl: string | null; matches: MatchView[] }
-export type StylistOption = { orgId: string; displayName: string; locationName: string | null; alreadyMatched: boolean }
+export type StylistOption = Omit<ReviewSchemas['ReviewServiceStylistOption'], 'locationName'> & { locationName: string | null }
 
-export type FairnessRow = {
+export type FairnessRow = Omit<ReviewSchemas['CandidateQueriesFairnessRow'], 'hairType' | 'meanTopScore'> & {
   hairType: HairType | 'UNKNOWN'
-  requests: number
-  failed: number
-  ranked: number
-  reviewedByAdmin: number
-  published: number
-  noSystemMatches: number
-  withAdminChanges: number
-  shownMatches: number
-  clickedRequests: number
-  bookedRequests: number
   meanTopScore: number | null
 }
 export type FairnessReport = { market: string; since: string; rows: FairnessRow[] }

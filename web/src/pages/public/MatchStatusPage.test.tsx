@@ -91,6 +91,13 @@ describe('MatchStatusPage', () => {
     expect(previous).toBeDisabled()
   })
 
+  it('offers a different photo when the first could not be read', async () => {
+    show(200, { ...BASE, stage: 'FAILED' })
+    expect(await screen.findByRole('heading', { name: /couldn't read your photo/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /browse all stylists/i })).toBeInTheDocument()
+    expect(screen.getByText('Add a different photo')).toBeInTheDocument()
+  })
+
   it('shows where the request is and when the photo goes', async () => {
     const fetch = show(200, BASE)
     expect(await screen.findByRole('heading', { name: "Ada, here's your request" })).toBeInTheDocument()
@@ -98,7 +105,6 @@ describe('MatchStatusPage', () => {
     expect(screen.getByText('Request received').closest('li')).toHaveAttribute('aria-current', 'step')
     expect(screen.getByText(/We delete it on/)).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Your inspiration photo' })).toHaveAttribute('referrerpolicy', 'no-referrer')
-    expect(document.querySelector('meta[name="referrer"]')).toHaveAttribute('content', 'no-referrer')
   })
 
   it('lists the matches once ready, as suggestions, with tracked book links that send no referrer', async () => {

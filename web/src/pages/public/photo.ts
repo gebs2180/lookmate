@@ -15,16 +15,19 @@ export async function preparePhoto(file: File): Promise<Blob> {
   try {
     if (typeof createImageBitmap === 'function' && typeof document !== 'undefined') {
       const bitmap = await createImageBitmap(file)
-      const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height))
-      const canvas = document.createElement('canvas')
-      canvas.width = Math.round(bitmap.width * scale)
-      canvas.height = Math.round(bitmap.height * scale)
-      const context = canvas.getContext('2d')
-      if (context) {
-        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+      try {
+        const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height))
+        const canvas = document.createElement('canvas')
+        canvas.width = Math.round(bitmap.width * scale)
+        canvas.height = Math.round(bitmap.height * scale)
+        const context = canvas.getContext('2d')
+        if (context) {
+          context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+          const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.88))
+          if (blob) return blob
+        }
+      } finally {
         bitmap.close()
-        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.88))
-        if (blob) return blob
       }
     }
   } catch {

@@ -4,7 +4,6 @@ import { Chip, EmptyState, Loading, PageError } from '../../ui'
 import { useLoad } from '../../useLoad'
 import { StylistCard } from './StylistCard'
 import { HAIR_TYPES, SERVICES, labelOf } from './quiz'
-import { useNoReferrer } from './useNoReferrer'
 
 /**
  * Every live stylist, for clients to pick from themselves (recommendations are suggestions, CLAUDE.md). Reached from
@@ -17,7 +16,6 @@ export function DirectoryPage() {
   const service = params.get('service') ?? ''
   const hairType = params.get('hairType') ?? ''
   const page = Math.max(0, Number(params.get('page') ?? 0) || 0)
-  useNoReferrer()
 
   const { data, error } = useLoad(() => {
     const query = new URLSearchParams()
@@ -73,7 +71,7 @@ export function DirectoryPage() {
       </p>
       <Filters service={service} hairType={hairType} onChange={filter} />
 
-      {error && <PageError message={error} />}
+      {error && <PageError inline message={error} />}
       {!error && !data && <Loading />}
       {data && data.stylists.length === 0 && (
         <EmptyState title="No stylists match these filters yet.">

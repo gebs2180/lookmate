@@ -1,6 +1,7 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useId, useMemo, useState, type FormEvent } from 'react'
 import { useParams } from 'react-router'
-import { apiPath, useApi, type DirectoryClick, type MatchEventView, type RecentMatch, type RecordedEvent, type StylistMatch } from '../../api'
+import { apiPath, type DirectoryClick, type MatchEventView, type RecentMatch, type RecordedEvent, type StylistMatch } from '../../api'
+import { useApi } from '../../useApi'
 import { label, message } from '../../format'
 import { Loading, PageError } from '../../ui'
 import { useLoad } from '../../useLoad'
@@ -53,6 +54,7 @@ function DirectoryBookings() {
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
+  const [voiding, setVoiding] = useState<DirectoryClick | null>(null)
 
   async function record(c: DirectoryClick, type: 'BOOKED' | 'REBOOKED') {
     setBusy(true)
@@ -69,26 +71,11 @@ function DirectoryBookings() {
     }
   }
 
-  async function voidBooking(c: DirectoryClick) {
-    const reason = window.prompt('Why is this booking being voided?')
-    if (!reason?.trim() || !c.bookedEventId) return
-    setBusy(true)
-    setActionError(null)
-    try {
-      await api('POST', apiPath`/api/admin/events/${c.bookedEventId}/void`, { reason: reason.trim() })
-      reload()
-    } catch (err) {
-      setActionError(message(err))
-    } finally {
-      setBusy(false)
-    }
-  }
-
   return (
     <section className="metric-section" aria-labelledby="rb-directory-title">
       <h2 id="rb-directory-title">Picked from the directory</h2>
       <p className="muted">Clients who clicked Book on a stylist they found in the directory, newest first. Record a booking here when one came of it.</p>
-      {error && <PageError message={error} />}
+      {error && <PageError inline message={error} />}
       {actionError && <p className="error" role="alert">{actionError}</p>}
       {saved && <p className="tracking-saved" role="status">{saved}</p>}
       {!error && !clicks && <Loading />}
@@ -123,7 +110,7 @@ function DirectoryBookings() {
                         <button className="link" onClick={() => record(c, 'REBOOKED')} disabled={busy}>
                           Record a rebook
                         </button>{' '}
-                        <button className="link" onClick={() => voidBooking(c)} disabled={busy}>
+                        <button className="link" onClick={() => setVoiding(c)} disabled={busy}>
                           Void
                         </button>
                       </>
@@ -138,6 +125,18 @@ function DirectoryBookings() {
             </tbody>
           </table>
         </div>
+      )}
+      {voiding?.bookedEventId && (
+        <VoidForm
+          key={voiding.bookedEventId}
+          path={apiPath`/api/admin/events/${voiding.bookedEventId}/void`}
+          label={`Void the booking for ${voiding.clientFirstName ?? 'the client'} with ${voiding.stylistName ?? 'the stylist'}`}
+          onDone={() => {
+            setVoiding(null)
+            reload()
+          }}
+          onCancel={() => setVoiding(null)}
+        />
       )}
     </section>
   )
@@ -170,6 +169,7 @@ function BookingEntry({ paths, admin }: { paths: Paths; admin: boolean }) {
   const [version, setVersion] = useState(0)
 
   const rows: Row[] = (matches ?? []).map((m) => m as Row)
+  // A match the list no longer shows (another search) is not picked, so a booking never lands on a row nobody can see.
   const selected = rows.find((m) => m.matchId === matchId)
 
   function refresh() {
@@ -179,7 +179,7 @@ function BookingEntry({ paths, admin }: { paths: Paths; admin: boolean }) {
 
   async function submit(e: FormEvent) {
     e.preventDefault()
-    if (!matchId) {
+    if (!selected) {
       setSaveError('Pick the match the booking came from.')
       return
     }
@@ -189,7 +189,7 @@ function BookingEntry({ paths, admin }: { paths: Paths; admin: boolean }) {
     try {
       // A date alone means midday in the user's own time zone, safely inside that day.
       const occurredAt = date ? new Date(`${date}T12:00:00`).toISOString() : undefined
-      const recorded = await api<RecordedEvent>('POST', paths.events(matchId), { type, note: note.trim() || undefined, occurredAt })
+      const recorded = await api<RecordedEvent>('POST', paths.events(selected.matchId), { type, note: note.trim() || undefined, occurredAt })
       setSaved(`Recorded a ${label(recorded.type)} for ${selected?.clientFirstName ?? 'the client'}${selected?.stylistName ? ` with ${selected.stylistName}` : ''}.`)
       setNote('')
       refresh()
@@ -217,6 +217,7 @@ function BookingEntry({ paths, admin }: { paths: Paths; admin: boolean }) {
           onSubmit={(e) => {
             e.preventDefault()
             setQuery(search.trim())
+            setMatchId('')
           }}
         >
           <div className="field">
@@ -258,7 +259,7 @@ function BookingEntry({ paths, admin }: { paths: Paths; admin: boolean }) {
                           type="radio"
                           name="match"
                           value={m.matchId}
-                          checked={matchId === m.matchId}
+                          checked={selected?.matchId === m.matchId}
                           onChange={() => setMatchId(m.matchId)}
                           aria-label={`${m.clientFirstName ?? 'Client'}, published ${new Date(m.publishedAt).toLocaleDateString()}`}
                         />
@@ -313,7 +314,7 @@ function BookingEntry({ paths, admin }: { paths: Paths; admin: boolean }) {
         </div>
       </form>
 
-      {matchId && <MatchEvents key={`${matchId}-${version}`} path={paths.events(matchId)} voidPath={paths.voidEvent} admin={admin} onChange={refresh} />}
+      {selected && <MatchEvents key={`${selected.matchId}-${version}`} path={paths.events(selected.matchId)} voidPath={paths.voidEvent} admin={admin} onChange={refresh} />}
     </>
   )
 }
@@ -333,26 +334,6 @@ function MatchEvents({
   const api = useApi()
   const { data: events, error } = useLoad(() => api<MatchEventView[]>('GET', path), [api, path])
   const [voiding, setVoiding] = useState<string | null>(null)
-  const [reason, setReason] = useState('')
-  const [voidError, setVoidError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-
-  async function confirmVoid(e: FormEvent) {
-    e.preventDefault()
-    if (!voiding) return
-    setBusy(true)
-    setVoidError(null)
-    try {
-      await api('POST', voidPath(voiding), { reason: reason.trim() })
-      setVoiding(null)
-      setReason('')
-      onChange()
-    } catch (err) {
-      setVoidError(message(err))
-    } finally {
-      setBusy(false)
-    }
-  }
 
   if (error) return <p className="error" role="alert">{error}</p>
   if (!events) return <Loading />
@@ -404,22 +385,58 @@ function MatchEvents({
       )}
 
       {voiding && (
-        <form className="form" onSubmit={confirmVoid} aria-label="Void an event">
-          <div className="field">
-            <label htmlFor="rb-void-reason" className="field-label">Why is this being voided?</label>
-            <input id="rb-void-reason" required maxLength={2000} value={reason} onChange={(e) => setReason(e.target.value)} />
-          </div>
-          {voidError && <p className="error" role="alert">{voidError}</p>}
-          <div className="actions">
-            <button type="submit" disabled={busy || !reason.trim()} aria-busy={busy}>
-              Void it
-            </button>
-            <button type="button" className="link" onClick={() => setVoiding(null)}>
-              Cancel
-            </button>
-          </div>
-        </form>
+        <VoidForm
+          key={voiding}
+          path={voidPath(voiding)}
+          label="Void an event"
+          onDone={() => {
+            setVoiding(null)
+            onChange()
+          }}
+          onCancel={() => setVoiding(null)}
+        />
       )}
     </section>
+  )
+}
+
+/** Asks why, then voids: one form for every void, with the reason capped at what the API accepts (2000 characters). */
+function VoidForm({ path, label, onDone, onCancel }: { path: string; label: string; onDone: () => void; onCancel: () => void }) {
+  const api = useApi()
+  const [reason, setReason] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    if (busy || !reason.trim()) return
+    setBusy(true)
+    setError(null)
+    try {
+      await api('POST', path, { reason: reason.trim() })
+      onDone()
+    } catch (err) {
+      setError(message(err))
+      setBusy(false)
+    }
+  }
+
+  const id = useId()
+  return (
+    <form className="form" onSubmit={submit} aria-label={label}>
+      <div className="field">
+        <label htmlFor={id} className="field-label">Why is this being voided?</label>
+        <input id={id} required maxLength={2000} value={reason} onChange={(e) => setReason(e.target.value)} autoFocus />
+      </div>
+      {error && <p className="error" role="alert">{error}</p>}
+      <div className="actions">
+        <button type="submit" disabled={busy || !reason.trim()} aria-busy={busy}>
+          Void it
+        </button>
+        <button type="button" className="link" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </form>
   )
 }

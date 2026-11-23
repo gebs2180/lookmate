@@ -1,12 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
-import {
-  apiPath,
-  useApi,
-  type MatchReview,
-  type MatchView,
-  type StylistOption,
-} from '../../api'
+import { ApiError, apiPath, type MatchReview, type MatchView, type StylistOption } from '../../api'
+import { useApi } from '../../useApi'
 import { label, message, shortDate } from '../../format'
 import { ASKS, labelOf } from '../public/quiz'
 import { Chip, Field, Loading, PageError } from '../../ui'
@@ -14,9 +9,9 @@ import { useLoad } from '../../useLoad'
 import './matching.css'
 
 /**
- * One request's review (brief, Must have 5): the client's inspiration photo and answers beside the ranked stylists and
- * the portfolio photos that earned each match. The reviewer reorders, hides, adds and notes, then publishes; only then
- * does the client see the list.
+ * One request's review: the client's inspiration photo and answers beside the ranked stylists and the portfolio photos
+ * that earned each match. The admin reorders, hides, adds and notes. Matching publishes by itself (the review switch is
+ * off), so this is mostly the after-the-fact view; with the switch on, a request waits here in IN_REVIEW to be published.
  */
 export function MatchReviewPage() {
   const { id = '' } = useParams()
@@ -37,14 +32,19 @@ export function MatchReviewPage() {
   const matches = current.matches
   const visible = matches.filter((m) => !m.hidden).length
 
-  async function act(run: () => Promise<MatchReview>) {
+  /** Runs one change and shows the result; false (with the error on screen) when it failed. */
+  async function act(run: () => Promise<MatchReview>, after?: (result: MatchReview) => void): Promise<boolean> {
     setActionError(null)
     setBusy(true)
     try {
-      setReview(await run())
+      const result = await run()
+      setReview(result)
+      after?.(result)
+      return true
     } catch (e) {
       setActionError(message(e))
-      if ((e as { code?: string }).code === 'NOT_IN_REVIEW') reload()
+      if (e instanceof ApiError && e.code === 'NOT_IN_REVIEW') reload()
+      return false
     } finally {
       setBusy(false)
     }
@@ -63,16 +63,7 @@ export function MatchReviewPage() {
 
   async function publish() {
     if (!window.confirm(`Publish ${visible} stylist${visible === 1 ? '' : 's'} to the client? If they gave an email, they'll get a link.`)) return
-    setActionError(null)
-    setBusy(true)
-    try {
-      setReview(await api<MatchReview>('POST', apiPath`/api/admin/match-requests/${id}/publish`))
-      setPublished(true)
-    } catch (e) {
-      setActionError(message(e))
-    } finally {
-      setBusy(false)
-    }
+    return act(() => api<MatchReview>('POST', apiPath`/api/admin/match-requests/${id}/publish`), () => setPublished(true))
   }
 
   const r = current.request
@@ -107,7 +98,7 @@ export function MatchReviewPage() {
         <aside className="panel">
           <h2>The look</h2>
           {current.inspirationUrl ? (
-            <img className="inspiration" src={current.inspirationUrl} alt="The client's inspiration photo" />
+            <img className="inspiration" src={current.inspirationUrl} referrerPolicy="no-referrer" alt="The client's inspiration photo" />
           ) : (
             <p className="muted">The inspiration photo has been deleted (retention).</p>
           )}
@@ -220,7 +211,7 @@ function Candidate({
       {m.evidence.length > 0 ? (
         <div className="evidence">
           {m.evidence.map((p) => (
-            <img key={p.id} src={p.url} loading="lazy"
+            <img key={p.id} src={p.url} loading="lazy" referrerPolicy="no-referrer"
               alt={`${name}'s portfolio photo: ${[p.service, p.hairType].filter(Boolean).map((v) => label(v!)).join(' on ')}`} />
           ))}
         </div>
@@ -256,7 +247,7 @@ function Candidate({
   )
 }
 
-function AddStylist({ requestId, busy, onAdd }: { requestId: string; busy: boolean; onAdd: (orgId: string, note: string | null) => void }) {
+function AddStylist({ requestId, busy, onAdd }: { requestId: string; busy: boolean; onAdd: (orgId: string, note: string | null) => Promise<boolean> }) {
   const api = useApi()
   const [open, setOpen] = useState(false)
   const [orgId, setOrgId] = useState('')
@@ -297,10 +288,12 @@ function AddStylist({ requestId, busy, onAdd }: { requestId: string; busy: boole
           </Field>
           <button
             disabled={busy || !orgId}
-            onClick={() => {
-              onAdd(orgId, null)
-              setOrgId('')
-              setOpen(false)
+            onClick={async () => {
+              // Stays open when the add fails, so the choice isn't lost and the error (shown above the list) has context.
+              if (await onAdd(orgId, null)) {
+                setOrgId('')
+                setOpen(false)
+              }
             }}
           >
             Add

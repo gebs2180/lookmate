@@ -1,11 +1,12 @@
 import { Link } from 'react-router'
-import { useApi, type Me } from '../api'
+import { type Me } from '../api'
+import { useApi } from '../useApi'
 import { Loading, PageError } from '../ui'
 import { useLoad } from '../useLoad'
 
 /**
- * Signed-in landing page. Scaffold only: shows who you are, so the Auth0 wiring can be checked. Stylists get their
- * profile and portfolio here, the admin the matches monitor (CLAUDE.md).
+ * Signed-in landing page: who you are, and the way on. Stylists get their profile and portfolio, the admin the matches
+ * monitor.
  */
 export function HomePage() {
   const api = useApi()

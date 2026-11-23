@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { apiPath, useApi, type InvitePreview } from '../api'
+import { apiPath, type InvitePreview } from '../api'
+import { useApi } from '../useApi'
 import { message } from '../format'
 import { Loading, PageError } from '../ui'
 import { useLoad } from '../useLoad'
@@ -28,7 +29,7 @@ export function InvitePage() {
     }
   }
 
-  if (error) return <PageError message={`This invite link is not valid. ${error}`} />
+  if (error) return <PageError message={`We couldn't open this invite. ${error}`} />
   if (!invite) return <Loading />
 
   return (

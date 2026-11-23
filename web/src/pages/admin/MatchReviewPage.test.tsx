@@ -144,4 +144,19 @@ describe('MatchReviewPage', () => {
     expect(JSON.parse(fetch.mock.calls[2][1].body)).toEqual({ orgId: 'org-b', note: null })
     expect(await screen.findByRole('heading', { name: 'Bo' })).toBeInTheDocument()
   })
+
+  it('keeps the add-stylist form open and shows the error when adding fails', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(respond(200, review([], 'PUBLISHED')))
+      .mockResolvedValueOnce(respond(200, [{ orgId: 'org-b', displayName: 'Bo', locationName: null, alreadyMatched: false }]))
+      .mockResolvedValueOnce(respond(500, { detail: 'Could not add that stylist.' }))
+    vi.stubGlobal('fetch', fetch)
+    show()
+    await userEvent.click(await screen.findByRole('button', { name: 'Add a stylist by hand' }))
+    await userEvent.selectOptions(await screen.findByLabelText('Stylist'), 'org-b')
+    await userEvent.click(screen.getByRole('button', { name: 'Add' }))
+    expect(await screen.findByText('Could not add that stylist.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Stylist')).toHaveValue('org-b')
+  })
 })

@@ -25,12 +25,16 @@ export function useRouteFocus() {
     let focused = firstLoad
     const sync = () => {
       const h1 = document.querySelector('main h1')
-      if (!h1) return
+      if (!h1) return false
       document.title = `${h1.textContent} · Combpatible`
       if (!focused) focused = focusHeading()
+      return focused
     }
-    sync()
-    const observer = new MutationObserver(sync)
+    // Once the heading is found and focused the job is done: stop watching every DOM change on the page.
+    if (sync()) return
+    const observer = new MutationObserver(() => {
+      if (sync()) observer.disconnect()
+    })
     observer.observe(document.body, { childList: true, subtree: true, characterData: true })
     return () => observer.disconnect()
   }, [pathname, hash, navigationType, firstLoad])

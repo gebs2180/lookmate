@@ -5,7 +5,6 @@ import { Strand, type StrandShape } from '../../strand/Strand'
 import { useLoopRunning } from '../../strand/motion'
 import { useLoad } from '../../useLoad'
 import { InkRise } from './InkRise'
-import { useNoReferrer } from './useNoReferrer'
 
 /** When a fade-up starts, after the headline has risen. */
 const delay = (ms: number) => ({ '--d': `${ms}ms` }) as CSSProperties
@@ -18,7 +17,6 @@ const SHAPE_NAMES: Record<StrandShape, string> = { STRAIGHT: 'Straight', WAVY: '
  */
 export function Landing({ onStylistLogin }: { onStylistLogin: () => void }) {
   const [shape, setShape] = useState<StrandShape>('STRAIGHT')
-  useNoReferrer()
   return (
     <main className="landing">
       <HeroStrip />
