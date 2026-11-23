@@ -61,7 +61,7 @@ class IntakeFlowTest {
         @Primary
         ClientMatchList testMatchList() {
             return id -> List.of(new ClientMatch(UUID.randomUUID(), UUID.randomUUID(), 1, "Curl Studio", "Short North",
-                    "12 similar cuts on curly hair", List.of(), "curlstudio", false));
+                    "12 similar cuts on curly hair", List.of(), "curlstudio", false, false));
         }
     }
 

@@ -1,5 +1,6 @@
 package com.lookmate.app.matching;
 
+import com.lookmate.app.stylists.HairType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -101,7 +102,7 @@ class CandidateQueries {
                 .param("request", requestId).param("model", model).param("market", market).param("service", service)
                 .param("types", hairTypes.stream().map(Enum::name).toList())
                 .query((rs, n) -> new Scoring.PhotoMatch(rs.getObject("id", UUID.class), rs.getObject("org_id", UUID.class),
-                        HairType.parse(rs.getString("hair_type")), rs.getDouble("similarity")))
+                        HairTypes.parse(rs.getString("hair_type")), rs.getDouble("similarity")))
                 .list();
     }
 
@@ -148,8 +149,41 @@ class CandidateQueries {
                 .list();
     }
 
-    /** Per client hair type (null as UNKNOWN), for the fairness report. Clicks and bookings come from match_event. */
-    record FairnessRow(String hairType, long requests, long failed, long reviewed, long published, long noSystemMatches,
+    /**
+     * IN_REVIEW requests to publish once review is switched off, oldest first: those with no match (published empty)
+     * or at least one visible one. A request whose matches are all hidden waits for the admin and is left out, so it
+     * can't fill the batch (review #24).
+     */
+    List<UUID> reviewsToPublish(int limit) {
+        return jdbc.sql("""
+                        select r.id from match_request r
+                        where r.status = 'IN_REVIEW'
+                          and (not exists (select 1 from match m where m.match_request_id = r.id)
+                               or exists (select 1 from match m where m.match_request_id = r.id and not m.hidden))
+                        order by r.created_at, r.id
+                        limit :limit
+                        """)
+                .param("limit", limit).query(UUID.class).list();
+    }
+
+    /**
+     * Whether the request's current inspiration photo has an embedding for the model: one made from an earlier photo
+     * (before a retake) has another hash and doesn't count.
+     */
+    boolean inspirationEmbedded(UUID requestId, String model) {
+        return Boolean.TRUE.equals(jdbc.sql("""
+                        select exists (select 1 from match_request_embedding e join match_request r on r.id = e.match_request_id
+                                       where e.match_request_id = :id and e.model = :model and e.inspiration_sha256 = r.inspiration_sha256)
+                        """)
+                .param("id", requestId).param("model", model).query(Boolean.class).single());
+    }
+
+    /**
+     * Per client hair type (null as UNKNOWN), for the fairness report. Clicks and bookings come from match_event.
+     * {@code ranked}: lists the ranker finished (in review, published or closed); {@code reviewedByAdmin}: lists a
+     * person published, which with review off is only those waiting from before (review #27).
+     */
+    record FairnessRow(String hairType, long requests, long failed, long ranked, long reviewedByAdmin, long published, long noSystemMatches,
                        long withAdminChanges, long shownMatches, long clickedRequests, long bookedRequests, Double meanTopScore) {
     }
 
@@ -158,7 +192,8 @@ class CandidateQueries {
                         select coalesce(c.hair_type, 'UNKNOWN') as hair_type,
                           count(*) as requests,
                           count(*) filter (where r.status = 'FAILED') as failed,
-                          count(*) filter (where r.status in ('IN_REVIEW', 'PUBLISHED', 'CLOSED')) as reviewed,
+                          count(*) filter (where r.status in ('IN_REVIEW', 'PUBLISHED', 'CLOSED')) as ranked,
+                          count(*) filter (where r.reviewed_by is not null) as reviewed_by_admin,
                           count(*) filter (where r.published_at is not null) as published,
                           count(*) filter (where r.status in ('IN_REVIEW', 'PUBLISHED', 'CLOSED')
                             and not exists (select 1 from match m where m.match_request_id = r.id and m.source = 'SYSTEM')) as no_system_matches,
@@ -175,7 +210,7 @@ class CandidateQueries {
                         """)
                 .param("market", market).param("since", Timestamp.from(since))
                 .query((rs, n) -> new FairnessRow(rs.getString("hair_type"), rs.getLong("requests"), rs.getLong("failed"),
-                        rs.getLong("reviewed"), rs.getLong("published"), rs.getLong("no_system_matches"), rs.getLong("with_admin_changes"),
+                        rs.getLong("ranked"), rs.getLong("reviewed_by_admin"), rs.getLong("published"), rs.getLong("no_system_matches"), rs.getLong("with_admin_changes"),
                         rs.getLong("shown_matches"), rs.getLong("clicked"), rs.getLong("booked"),
                         rs.getObject("mean_top_score") == null ? null : rs.getDouble("mean_top_score")))
                 .list();

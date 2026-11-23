@@ -272,7 +272,8 @@ export type FairnessRow = {
   hairType: HairType | 'UNKNOWN'
   requests: number
   failed: number
-  reviewed: number
+  ranked: number
+  reviewedByAdmin: number
   published: number
   noSystemMatches: number
   withAdminChanges: number

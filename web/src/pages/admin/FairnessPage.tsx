@@ -69,8 +69,8 @@ export function FairnessTable({ report }: { report: FairnessReport }) {
                 <tr key={r.hairType}>
                   <th scope="row">{label(r.hairType)}</th>
                   <td>{r.requests}</td>
-                  <td>{share(r.noSystemMatches, r.reviewed)}</td>
-                  <td>{share(r.withAdminChanges, r.reviewed)}</td>
+                  <td>{share(r.noSystemMatches, r.ranked)}</td>
+                  <td>{share(r.withAdminChanges, r.ranked)}</td>
                   <td>{r.published}</td>
                   <td>{r.shownMatches}</td>
                   <td>{share(r.clickedRequests, r.published)}</td>

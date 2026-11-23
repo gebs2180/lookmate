@@ -1,5 +1,6 @@
 package com.lookmate.app.matching;
 
+import com.lookmate.app.stylists.HairType;
 import java.util.Arrays;
 import java.util.List;
 

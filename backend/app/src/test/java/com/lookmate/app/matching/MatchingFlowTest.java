@@ -15,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.UUID;
@@ -80,6 +81,10 @@ class MatchingFlowTest {
     private EmbeddingProvider provider;
     @Autowired
     private TransactionTemplate tx;
+    @Autowired
+    private EmbeddingWorker worker;
+    @Autowired
+    private EmbeddingStore store;
 
     /** Each test has its own market: the tests share a database, and matching never crosses markets. */
     private String market;
@@ -264,7 +269,104 @@ class MatchingFlowTest {
     }
 
     private int attempts(UUID request) {
-        return jdbc.sql("select attempts from embedding_attempt where subject_id = ?").params(request).query(Integer.class).single();
+        return jdbc.sql("select embed_attempts from match_request_attempt where match_request_id = ?").params(request)
+                .query(Integer.class).single();
+    }
+
+    /**
+     * Review #23 and group A's retakes: a ranking that throws is counted and retried when intake hands the request back,
+     * then FAILED; a retake (new photo, new hash) is embedded again and ranked, and its tries start over.
+     */
+    @Test
+    void aRankingThatFailsIsRetriedThenFailsAndARetakeIsEmbeddedAgain() {
+        UUID org = stylist("Wavy Hands", market, "LIVE");
+        photo(org, "CUT", "WAVY", LOOK);
+        UUID request = request("WAVY", "CUT", bytes("first photo"), token(), null);
+        String trigger = "fail_rank_" + request.toString().replace("-", "");
+        jdbc.sql(("create function %s() returns trigger language plpgsql as $$ begin "
+                + "if new.match_request_id = '%s' then raise exception 'ranking broke'; end if; return new; end $$").formatted(trigger, request))
+                .update();
+        jdbc.sql("create trigger %s before insert on match for each row execute function %s()".formatted(trigger, trigger)).update();
+        try {
+            job.runOnce();
+            assertThat(statusOf(request)).isEqualTo("MATCHING");
+            assertThat(reasonOf(request)).isEqualTo(Ranker.NOT_RANKED + " (attempt 1); trying again later");
+            assertThat(rankAttempts(request)).isEqualTo(1);
+            jdbc.sql("update match_request set updated_at = now() - interval '1 hour' where id = ?").params(request).update();
+            job.runOnce();
+            assertThat(statusOf(request)).isEqualTo("FAILED");
+            assertThat(reasonOf(request)).isEqualTo(Ranker.NOT_RANKED);
+        } finally {
+            jdbc.sql("drop trigger %s on match".formatted(trigger)).update();
+            jdbc.sql("drop function %s()".formatted(trigger)).update();
+        }
+        String before = inspirationVector(request);
+
+        // A retake as intake leaves it: NEW, a new photo with a new hash.
+        BLOBS.objects.put("inspiration/" + request + ".jpg", bytes("second photo"));
+        jdbc.sql("update match_request set status = 'NEW', status_reason = null, inspiration_sha256 = 'retake' where id = ?")
+                .params(request).update();
+        job.runOnce();
+        assertThat(statusOf(request)).isEqualTo("IN_REVIEW");
+        assertThat(inspirationVector(request)).isNotEqualTo(before);
+        assertThat(jdbc.sql("select inspiration_sha256 from match_request_embedding where match_request_id = ?").params(request)
+                .query(String.class).single()).isEqualTo("retake");
+        assertThat(jdbc.sql("select count(*) from match_request_attempt where match_request_id = ?").params(request)
+                .query(Integer.class).single()).isZero();
+    }
+
+    /**
+     * Review #8: the provider call runs outside the claiming transaction, each photo is saved on its own, and a photo
+     * that can't be saved backs off without undoing the others or being claimed again at once. A claimed photo's lease
+     * keeps other passes off it.
+     */
+    @Test
+    void aPortfolioPhotoThatCantBeSavedBacksOffWithoutHoldingUpTheRest() {
+        UUID org = stylist("Batch Stylist", market, "LIVE");
+        for (int i = 0; i < 3; i++) {
+            photo(org, "CUT", "WAVY", bytes("good " + i + UUID.randomUUID()));
+        }
+        UUID bad = photo(org, "CUT", "WAVY", bytes("bad " + UUID.randomUUID()));
+        String trigger = "fail_save_" + bad.toString().replace("-", "");
+        jdbc.sql(("create function %s() returns trigger language plpgsql as $$ begin "
+                + "if new.photo_id = '%s' then raise exception 'disk full'; end if; return new; end $$").formatted(trigger, bad)).update();
+        jdbc.sql("create trigger %s before insert on portfolio_photo_embedding for each row execute function %s()".formatted(trigger, trigger))
+                .update();
+        try {
+            while (worker.portfolioBatch() > 0) {
+                // until nothing is left to embed
+            }
+        } finally {
+            jdbc.sql("drop trigger %s on portfolio_photo_embedding".formatted(trigger)).update();
+            jdbc.sql("drop function %s()".formatted(trigger)).update();
+        }
+        assertThat(jdbc.sql("""
+                        select count(*) from portfolio_photo p join portfolio_photo_embedding e on e.photo_id = p.id
+                        where p.org_id = ?
+                        """).params(org).query(Integer.class).single()).isEqualTo(3);
+        Map<String, Object> attempt = jdbc.sql("select attempts, last_error from embedding_attempt where subject_id = ?").params(bad)
+                .query().singleRow();
+        assertThat(attempt.get("attempts")).isEqualTo(1);
+        assertThat((String) attempt.get("last_error")).startsWith("save:").contains("disk full");
+        assertThat(ids(tx.execute(s -> queries.claimPortfolioPhotosToEmbed(provider.model(), Instant.now(), 5, 1000)))).doesNotContain(bad);
+
+        UUID leased = photo(org, "CUT", "WAVY", bytes("leased " + UUID.randomUUID()));
+        store.lease(leased, provider.model(), Instant.now().plusSeconds(600), Instant.now());
+        assertThat(ids(tx.execute(s -> queries.claimPortfolioPhotosToEmbed(provider.model(), Instant.now(), 5, 1000)))).doesNotContain(leased);
+    }
+
+    private int rankAttempts(UUID request) {
+        return jdbc.sql("select rank_attempts from match_request_attempt where match_request_id = ?").params(request)
+                .query(Integer.class).single();
+    }
+
+    private String reasonOf(UUID request) {
+        return jdbc.sql("select status_reason from match_request where id = ?").params(request).query(String.class).single();
+    }
+
+    private String inspirationVector(UUID request) {
+        return jdbc.sql("select embedding::text from match_request_embedding where match_request_id = ?").params(request)
+                .query(String.class).single();
     }
 
     @Test
@@ -313,7 +415,7 @@ class MatchingFlowTest {
         return org;
     }
 
-    private void photo(UUID org, String service, String hairType, byte[] image) {
+    private UUID photo(UUID org, String service, String hairType, byte[] image) {
         UUID id = UUID.randomUUID();
         String key = "portfolio/" + org + "/" + id + ".jpg";
         BLOBS.objects.put(key, image);
@@ -324,6 +426,7 @@ class MatchingFlowTest {
                         """)
                 .params(id, org, key, image.length, service, hairType, ++photos, uploader, Timestamp.from(Instant.now().plusMillis(photos)))
                 .update();
+        return id;
     }
 
     /** A request as intake leaves it once the inspiration photo is confirmed: NEW. Null image: unreadable. */
