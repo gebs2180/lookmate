@@ -53,6 +53,13 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
   and whether they offer a consultation. All optional. **Profile only:** no filters, nothing in ranking or matching. No
   political or identity labels. Quiet appointments are the client's choice, not a stylist label. See
   [docs/modules/stylists.md](docs/modules/stylists.md) and [docs/research/beyond-the-hair.md](docs/research/beyond-the-hair.md).
+- **Service finder: "Not sure what to book?"** (Zach, 2026-11-22). A quiz that ends in the service to book or "book a
+  consultation first". It is driven by rules a partner stylist writes and tests, never by AI. It's a separate `consult`
+  module that no other module depends on, so it can break out later. Pilot: the partner's own link plus the general
+  Combpatible button, both on the partner's ruleset, with Salon Lofts stylists only. The partner owns their rules and
+  Combpatible licenses them, in a one-page agreement. Answers go to the stylist only if the client ticks the box.
+  Charging stylists a membership is allowed later, at about 10 weekly users; "no payments" still covers clients. See
+  [docs/research/service-finder.md](docs/research/service-finder.md).
 
 ## Defaults to confirm (ask before changing; record the answer here)
 
