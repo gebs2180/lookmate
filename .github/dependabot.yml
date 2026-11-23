@@ -11,6 +11,11 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
+  # The base images (review 2026-11-22, #20): Temurin, Caddy, postgres:18 for the backup runner, and the Postgres
+  # image in deploy/compose.prod.yml.
+  - package-ecosystem: docker
+    directories: [/backend, /web, /deploy/backup]
+    schedule: { interval: weekly }
   - package-ecosystem: docker-compose
-    directory: /
+    directory: /deploy
     schedule: { interval: weekly }

@@ -50,10 +50,44 @@ class DeployConfigTest {
     }
 
     @Test
-    void inviteTokensStayOutOfTheAccessLog() throws Exception {
-        // An invite link is a key to an org for a week, and the token is in the path.
+    void linkTokensStayOutOfTheAccessLog() throws Exception {
+        // An invite link is a key to an org for a week and a client's link the key to their request; the tokens are in
+        // the path. Review 2026-11-22, #14: the page /invite/<token> was logged in full. Java's regex reads this
+        // pattern as Caddy's (Go RE2) does.
         String caddy = Files.readString(REPO.resolve("deploy/Caddyfile"));
-        assertThat(caddy).contains("request>uri regexp");
+        Matcher filter = Pattern.compile("request>uri regexp \"([^\"]+)\" \"([^\"]+)\"").matcher(caddy);
+        assertThat(filter.find()).as("a request>uri regexp filter").isTrue();
+        Pattern tokenPath = Pattern.compile(filter.group(1));
+        String replacement = filter.group(2).replace("${1}", "$1");
+        for (String uri : new String[] {"/invite/tok123", "/api/invites/tok123/accept", "/m/tok123",
+                "/api/public/match-requests/tok123", "/api/public/book/tok123?s=1", "/api/public/book-stylist/tok123"}) {
+            assertThat(tokenPath.matcher(uri).replaceFirst(replacement)).as(uri).doesNotContain("tok123");
+        }
+        assertThat(tokenPath.matcher("/stylists/abc").find()).isFalse();
+    }
+
+    @Test
+    void aClientPageSendsNoReferrer() throws Exception {
+        // Review 2026-11-22, #46: a click from /m/<token> to a stylist's booking page mustn't carry the token. The
+        // site-wide policy is kept off /m/* so it can't overwrite this one.
+        String caddy = Files.readString(REPO.resolve("deploy/Caddyfile"));
+        assertThat(caddy).contains("header /m/* Referrer-Policy no-referrer",
+                "@notClientLink not path /m/*", "header @notClientLink Referrer-Policy strict-origin-when-cross-origin");
+        int start = caddy.indexOf("\n\theader {");
+        String siteHeaders = caddy.substring(start, caddy.indexOf("\n\t}", start));
+        assertThat(siteHeaders).doesNotContain("Referrer-Policy");
+    }
+
+    @Test
+    void theBackendAndBackupRunnerRunWithoutPrivileges() throws Exception {
+        // Review 2026-11-22, #21.
+        String compose = Files.readString(REPO.resolve("deploy/compose.prod.yml"));
+        String backend = compose.substring(compose.indexOf("\n  backend:"), compose.indexOf("\n  caddy:"));
+        String backup = compose.substring(compose.indexOf("\n  backup:"), compose.indexOf("\nvolumes:"));
+        for (String service : new String[] {backend, backup}) {
+            assertThat(service).contains("security_opt: [no-new-privileges:true]", "cap_drop: [ALL]", "mem_limit:");
+        }
+        assertThat(backend).contains("read_only: true", "- /tmp");
     }
 
     @Test
