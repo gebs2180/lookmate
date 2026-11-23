@@ -46,6 +46,41 @@ class PortfolioStorageTest {
     @Autowired
     private Stylists stylists;
 
+    @Autowired
+    private PendingUploadSweep sweep;
+
+    @Autowired
+    private PhotoRepository photoRows;
+
+    @Autowired
+    private org.springframework.jdbc.core.JdbcTemplate jdbc;
+
+    @Test
+    void anUploadNeverConfirmedIsSweptAfterTheLinkExpiredPlusAnHour() throws Exception {
+        TestApi api = new TestApi(mvc, security);
+        String orgId = api.stylistOrg("Sweep Suite", "auth0|sweep");
+        var me = api.user("auth0|sweep", List.of());
+        byte[] upload = TestImages.phoneJpeg(50);
+        String slot = api.postJson("/api/orgs/" + orgId + "/photos",
+                "{\"contentType\":\"image/jpeg\",\"sizeBytes\":" + upload.length + "}", me)
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        UUID photoId = UUID.fromString(JsonPath.read(slot, "$.photoId"));
+        Map<String, Object> headers = JsonPath.read(slot, "$.headers");
+        assertThat(api.put(JsonPath.read(slot, "$.url"), headers, upload)).isEqualTo(200);
+        String key = Photo.objectKey(UUID.fromString(orgId), photoId);
+
+        // Young: left alone, so a slow upload can still be confirmed.
+        sweep.run(java.time.Instant.now());
+        assertThat(blobs.head(TestcontainersConfiguration.BUCKET, key)).isPresent();
+        assertThat(photoRows.findById(photoId)).hasValueSatisfying(p -> assertThat(p.getStatus()).isEqualTo(Photo.Status.PENDING_UPLOAD));
+
+        jdbc.update("update portfolio_photo set created_at = now() - interval '3 hours' where id = ?", photoId);
+        assertThat(sweep.run(java.time.Instant.now())).isEqualTo(1);
+        assertThat(blobs.head(TestcontainersConfiguration.BUCKET, key)).isEmpty();
+        assertThat(photoRows.findById(photoId)).hasValueSatisfying(p -> assertThat(p.getStatus()).isEqualTo(Photo.Status.DELETED));
+        mvc.perform(post("/api/orgs/" + orgId + "/photos/" + photoId + "/confirm").with(me)).andExpect(status().isNotFound());
+    }
+
     @Test
     void aPhoneUploadIsStoredWithoutItsLocationAndServedBySignedLink() throws Exception {
         TestApi api = new TestApi(mvc, security);

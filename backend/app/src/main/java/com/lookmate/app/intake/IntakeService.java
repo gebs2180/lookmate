@@ -3,10 +3,13 @@ package com.lookmate.app.intake;
 import com.lookmate.app.api.ApiException;
 import com.lookmate.app.notify.ClientEmails;
 import com.lookmate.app.storage.BlobStore;
-import com.lookmate.app.storage.ImageGuard;
 import com.lookmate.app.storage.PhotoDecodes;
-import com.lookmate.app.storage.PhotoMetadata;
 import com.lookmate.app.storage.StorageProperties;
+import com.lookmate.app.storage.UploadCheck;
+import com.lookmate.app.stylists.HairLength;
+import com.lookmate.app.stylists.HairType;
+import com.lookmate.app.stylists.ServiceType;
+import com.lookmate.app.stylists.Texture;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -14,7 +17,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -41,8 +43,8 @@ class IntakeService {
      */
     enum Stage { PHOTO_NEEDED, RECEIVED, MATCHING, READY, CLOSED, FAILED }
 
-    record NewRequest(String email, Quiz.HairType hairType, Quiz.Texture texture, Quiz.Length length, Integer budgetTier,
-                      String neighborhood, Quiz.Service service, List<Quiz.PastIssue> pastIssues, String pastIssuesNote, String contentType,
+    record NewRequest(String email, HairType hairType, Texture texture, HairLength length, Integer budgetTier,
+                      String neighborhood, ServiceType service, List<Quiz.PastIssue> pastIssues, String pastIssuesNote, String contentType,
                       long sizeBytes) {
     }
 
@@ -77,12 +79,13 @@ class IntakeService {
     private final ClientEmails emails;
     private final ObjectProvider<ClientMatchList> matchList;
     private final PhotoDecodes decodes;
+    private final UploadCheck uploads;
     private final TransactionTemplate transaction;
     private final String defaultMarket;
     private final int photoDays;
 
     IntakeService(MatchRequestRows rows, BlobStore blobs, StorageProperties storage, IntakeProperties properties, ClientEmails emails,
-                  ObjectProvider<ClientMatchList> matchList, PhotoDecodes decodes, PlatformTransactionManager transactions,
+                  ObjectProvider<ClientMatchList> matchList, PhotoDecodes decodes, UploadCheck uploads, PlatformTransactionManager transactions,
                   InspirationRetention retention, @Value("${lookmate.default-market}") String defaultMarket) {
         this.rows = rows;
         this.blobs = blobs;
@@ -91,6 +94,7 @@ class IntakeService {
         this.emails = emails;
         this.matchList = matchList;
         this.decodes = decodes;
+        this.uploads = uploads;
         this.transaction = new TransactionTemplate(transactions);
         this.defaultMarket = defaultMarket;
         // The date the page promises comes from the job that keeps it (review 2026-11-22, finding 40).
@@ -193,29 +197,12 @@ class IntakeService {
         if (row.sha256() != null || row.inspirationDeletedAt() != null) {
             return new Checked(view(row), null);
         }
-        String bucket = storage.photoBucket();
-        BlobStore.StoredObject stored = blobs.head(bucket, row.objectKey()).orElseThrow(IntakeService::notUploaded);
-        if (stored.size() > storage.maxUploadBytes()) {
-            return new Checked(null, reject(row, "too large"));
+        UploadCheck.Result result = uploads.check(row.objectKey(), null, null).orElseThrow(IntakeService::notUploaded);
+        if (!result.accepted()) {
+            return new Checked(null, reject(row, result.refusal().name()));
         }
-        byte[] bytes = blobs.read(bucket, row.objectKey());
-        Optional<ImageGuard.Header> header = ImageGuard.safeHeader(bytes);
-        if (header.isEmpty()) {
-            return new Checked(null, reject(row, "not a JPEG or PNG within the size limits"));
-        }
-        byte[] clean = PhotoMetadata.strip(bytes);
-        if (clean == null || ImageGuard.safeHeader(clean).isEmpty()) {
-            // Never keep a photo whose metadata we couldn't take out.
-            return new Checked(null, reject(row, "metadata could not be removed"));
-        }
-        String contentType = "image/" + header.get().format();
-        if (!Arrays.equals(clean, bytes)) {
-            blobs.replace(bucket, row.objectKey(), clean, contentType);
-        }
-        Instant now = Instant.now();
-        rows.setInspirationReady(row.id(), contentType, clean.length, LinkTokens.sha256(clean), now);
-        log.info("Match request {}: inspiration photo confirmed ({}x{} {})", row.id(), header.get().width(), header.get().height(),
-                header.get().format());
+        rows.setInspirationReady(row.id(), result.contentType(), result.size(), result.sha256(), Instant.now());
+        log.info("Match request {}: inspiration photo confirmed ({}x{} {})", row.id(), result.width(), result.height(), result.format());
         return new Checked(view(rows.find(row.id()).orElseThrow()), null);
     }
 

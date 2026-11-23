@@ -32,11 +32,6 @@ class MemoryBlobStore implements BlobStore {
     }
 
     @Override
-    public boolean putIfAbsent(String bucket, String key, byte[] bytes, String contentType) {
-        return objects.putIfAbsent(key, bytes) == null;
-    }
-
-    @Override
     public void replace(String bucket, String key, byte[] bytes, String contentType) {
         objects.put(key, bytes);
     }

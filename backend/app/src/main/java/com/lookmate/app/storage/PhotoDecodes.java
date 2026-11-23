@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * The turns at decoding a full-size photo, shared by everything on this instance that decodes one (the
- * photo checks, our centering measurement): a 48 MP photo needs about 150 MB, so only
+ * portfolio and inspiration photo checks, {@link UploadCheck}): a 48 MP photo needs about 150 MB, so only
  * {@link StorageProperties#photoChecksAtOnce()} run at once, whoever asks. Fair, so a steady stream of
  * one kind can't starve the other.
  */

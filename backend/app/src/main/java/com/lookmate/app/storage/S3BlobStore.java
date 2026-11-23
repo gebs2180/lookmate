@@ -110,19 +110,6 @@ class S3BlobStore implements BlobStore, AutoCloseable {
     }
 
     @Override
-    public boolean putIfAbsent(String bucket, String key, byte[] bytes, String contentType) {
-        try {
-            client.putObject(r -> r.bucket(bucket).key(key).contentType(contentType).ifNoneMatch("*"), RequestBody.fromBytes(bytes));
-            return true;
-        } catch (S3Exception e) {
-            if (e.statusCode() == 412) {
-                return false;
-            }
-            throw e;
-        }
-    }
-
-    @Override
     public int deletePrefix(String bucket, String prefix) {
         if (prefix == null || prefix.isBlank() || !prefix.endsWith("/")) {
             throw new IllegalArgumentException("A prefix to delete must be a folder, ending in /: " + prefix);

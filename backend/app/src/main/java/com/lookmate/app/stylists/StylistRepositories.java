@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -50,6 +51,8 @@ interface PhotoRepository extends JpaRepository<Photo, UUID> {
     long countByOrgIdAndStatusAndCreatedAtAfter(UUID orgId, Photo.Status status, Instant after);
 
     long countByOrgIdAndCreatedAtAfter(UUID orgId, Instant after);
+
+    List<Photo> findByStatusAndCreatedAtBefore(Photo.Status status, Instant before, Pageable page);
 
     @Query("select count(p) from Photo p where p.orgId = :orgId and p.status = 'READY' and p.service is not null and p.hairType is not null")
     long countTaggedReady(@Param("orgId") UUID orgId);
