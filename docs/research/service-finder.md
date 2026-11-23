@@ -130,13 +130,43 @@ A new Spring Modulith module, **`consult`**, alongside `intake` and `matching`.
 lightening goal on coily hair with a recent relaxer must go to a consultation. The test cases cover each hair type,
 the same commitment matching makes.
 
+## Later: photos fill in answers
+
+Proposed 2026-11-22 (Zach asked; not decided). The client uploads "my hair now" and "what I want", and a vision model
+**fills in quiz answers**. It never names the service: the stylist's rules still decide, so the result stays
+something the stylist can test and stand behind.
+
+1. The model reads only what a photo shows: how light the hair is now and in the goal photo (the template's
+   `now_level` and `want_level`), colour all over or in pieces, root shadow or bright from the root, warm or cool,
+   length.
+2. The client confirms in plain words: "Looks like you want to go about 3 shades lighter, with soft painted
+   brightness. Right?" They can change any answer.
+3. The rules run as usual. The level-gap rules ("very dark to blonde → consultation") are where photos help most:
+   clients rarely know the gap, and it's the classic mismatch
+   ([Booksy](https://biz.booksy.com/blog/hairdressing-consultation-questions)).
+
+**What photos can't do:**
+- **Colour history is invisible.** Box dye, henna, relaxer and lightener drive the safety rules, so those questions
+  stay whatever the photos show.
+- **Inspiration photos lie.** Filters, ring lights and wigs make a level 7 look like a 9.
+- **Fairness.** Vision models read dark and coily hair less well, especially in poor light. Accuracy is measured per
+  hair type before the feature fills in anyone's answers.
+- **Privacy.** A current-hair photo usually shows a face. Same private bucket, presigned links and 30-day retention
+  as inspiration photos; the model runs on Bedrock in our own AWS account, nothing is used for training, and the
+  upload says so in one line the client accepts.
+
+**When:** not in step 1. In step 2, both uploads are optional. Photos reach the stylist only with the client's tick
+(decision 4), and are kept with the stylist's "right service" mark. That's the labelled set to test a model
+offline: do its levels agree with the stylist's, on every hair type? Only then does it fill in answers. Even if it
+never ships, stylists get the photos they'd otherwise ask for by text.
+
 ## Pilot plan
 
 | Step | What | Who | Size |
 |---|---|---|---|
 | 0 | Spreadsheet template ([service-finder-template.xlsx](service-finder-template.xlsx): questions, outcomes, rules, tests). They fill it in for their own menu | Us → partner | A day |
 | 1 | `consult` module, the partner's ruleset loaded, the client flow at `/c/<their-slug>`, the landing-page "Not sure what to book?" button running the same ruleset as a general version, tracked hand-off | Us | About a week across two sessions (backend, then web) |
-| 2 | Four weeks live on their link. They mark each finder client's booking as "right service / wrong service / needed a consult" | Partner | 4 weeks |
+| 2 | Four weeks live on their link. They mark each finder client's booking as "right service / wrong service / needed a consult". Optional "my hair now" and "what I want" photos are collected for the photo test (see above) | Partner | 4 weeks |
 | 3 | If the right-service rate is high, build the self-serve editor and invite 5 to 10 independent Salon Lofts stylists free | Us | About a week |
 | 4 | Charge for it only once about 10 stylists use it every week. A Stripe payment link off-app at first, no billing code | Zach | — |
 
