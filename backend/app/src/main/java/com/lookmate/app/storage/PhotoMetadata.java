@@ -19,7 +19,7 @@ import java.util.zip.CRC32;
  * are left out. The EXIF orientation is the one tag kept, written fresh, so the photo still shows the right way up.
  *
  * <p>The one copy of this in Combpatible: every module that stores an uploaded photo calls {@link #strip}. Ported from
- * pokemans' {@code ExactCopy.of}; its capture-time variant ({@code withoutLocation}) was not ported, nothing here
+ * pokemans' {@code ExactCopy.of}, without its capture-time variant: nothing here
  * needs a capture time.
  */
 public final class PhotoMetadata {

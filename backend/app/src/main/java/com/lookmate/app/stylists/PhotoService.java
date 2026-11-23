@@ -1,25 +1,20 @@
 package com.lookmate.app.stylists;
 
-import com.lookmate.app.storage.PhotoMetadata;
 import com.lookmate.app.api.ApiException;
 import com.lookmate.app.identity.Consents;
 import com.lookmate.app.identity.CurrentUser;
 import com.lookmate.app.identity.OrgAccess;
 import com.lookmate.app.identity.OrgType;
 import com.lookmate.app.storage.BlobStore;
-import com.lookmate.app.storage.ImageGuard;
 import com.lookmate.app.storage.PhotoDecodes;
 import com.lookmate.app.storage.StorageProperties;
+import com.lookmate.app.storage.UploadCheck;
 import java.net.URI;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -80,19 +75,21 @@ class PhotoService {
     private final BlobStore blobs;
     private final StorageProperties storage;
     private final PhotoDecodes decodes;
+    private final UploadCheck uploads;
     private final OrgAccess access;
     private final Consents consents;
     private final CurrentUser currentUser;
     private final ApplicationEventPublisher events;
     private final TransactionTemplate transaction;
 
-    PhotoService(PhotoRepository photos, BlobStore blobs, StorageProperties storage, PhotoDecodes decodes,
+    PhotoService(PhotoRepository photos, BlobStore blobs, StorageProperties storage, PhotoDecodes decodes, UploadCheck uploads,
                  OrgAccess access, Consents consents, CurrentUser currentUser, ApplicationEventPublisher events,
                  PlatformTransactionManager transactions) {
         this.photos = photos;
         this.blobs = blobs;
         this.storage = storage;
         this.decodes = decodes;
+        this.uploads = uploads;
         this.access = access;
         this.consents = consents;
         this.currentUser = currentUser;
@@ -168,28 +165,18 @@ class PhotoService {
             }
             return new Checked(view(photo), null);
         }
-        BlobStore.StoredObject stored = blobs.head(storage.photoBucket(), photo.getObjectKey())
+        UploadCheck.Result result = uploads.check(photo.getObjectKey(), photo.getSizeBytes(), ACCEPTED_TYPES.get(photo.getContentType()))
                 .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, StylistError.NOT_UPLOADED, "Nothing uploaded for this photo yet"));
-        if (stored.size() != photo.getSizeBytes()) {
-            return refuse(photo, StylistError.NOT_AN_IMAGE, "The upload wasn't the size it said it would be. Try again.");
+        if (!result.accepted()) {
+            return refuse(photo, StylistError.NOT_AN_IMAGE, switch (result.refusal()) {
+                case WRONG_SIZE, TOO_LARGE -> "The upload wasn't the size it said it would be. Try again.";
+                default -> "That file isn't a JPEG or PNG photo we can use.";
+            });
         }
-        byte[] bytes = blobs.read(storage.photoBucket(), photo.getObjectKey());
-        Optional<ImageGuard.Header> header = ImageGuard.safeHeader(bytes);
-        if (header.isEmpty() || !header.get().format().equals(ACCEPTED_TYPES.get(photo.getContentType()))) {
-            return refuse(photo, StylistError.NOT_AN_IMAGE, "That file isn't a JPEG or PNG photo we can use.");
-        }
-        String sha256 = sha256(bytes);
-        if (photos.existsByOrgIdAndSha256AndStatusInAndIdNot(orgId, sha256, KEPT, photo.getId())) {
+        if (photos.existsByOrgIdAndSha256AndStatusInAndIdNot(orgId, result.sha256(), KEPT, photo.getId())) {
             return refuse(photo, StylistError.DUPLICATE_PHOTO, "This photo is already in your portfolio.");
         }
-        byte[] clean = PhotoMetadata.strip(bytes);
-        if (clean == null) {
-            return refuse(photo, StylistError.NOT_AN_IMAGE, "That file isn't a JPEG or PNG photo we can use.");
-        }
-        if (!Arrays.equals(clean, bytes)) {
-            blobs.replace(storage.photoBucket(), photo.getObjectKey(), clean, photo.getContentType());
-        }
-        photo.ready(sha256, header.get().width(), header.get().height(), clean.length);
+        photo.ready(result.sha256(), result.width(), result.height(), result.size());
         events.publishEvent(new PortfolioPhotoReady(photo.getId(), orgId));
         return new Checked(view(photo), null);
     }
@@ -327,13 +314,5 @@ class PhotoService {
 
     static ResponseStatusException notFound() {
         return new ResponseStatusException(HttpStatus.NOT_FOUND, "Photo not found");
-    }
-
-    static String sha256(byte[] bytes) {
-        try {
-            return java.util.HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
     }
 }

@@ -6,9 +6,10 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Object storage port (HLD: {@code BlobStore}). Objects are written once and never replaced, with one exception:
- * {@link #replace}, which only takes the location out of a photo original. Nothing is deleted except by a
- * delete of a photo, a stylist or a client ({@link #deletePrefix}, {@link #delete}).
+ * Object storage port. Clients upload straight to storage with a presigned PUT, and objects are written once, with one
+ * exception: {@link #replace}, which swaps an uploaded photo for its copy without location and device metadata
+ * ({@link UploadCheck}). Nothing is deleted except a photo the stylist deleted, an upload that failed its check, or a
+ * client's inspiration photo when retention runs ({@link #delete}, {@link #deletePrefix}).
  */
 public interface BlobStore {
 
@@ -24,24 +25,19 @@ public interface BlobStore {
     byte[] read(String bucket, String key);
 
     /**
-     * Writes a server-made object (a derivative such as a thumbnail) unless the key already exists.
-     * Returns false if it existed: derivatives are deterministic, so a retry finds the same bytes there.
-     */
-    boolean putIfAbsent(String bucket, String key, byte[] bytes, String contentType);
-
-    /**
-     * Overwrites an existing object. Only for taking the location and device metadata out of a photo original
-     * (privacy review 2026-11-12), with the same pixels and capture time: everything else is written once.
+     * Overwrites an existing object. Only for taking the location and device metadata out of an uploaded photo
+     * (privacy review 2026-11-12), with the same pixels: everything else is written once.
      */
     void replace(String bucket, String key, byte[] bytes, String contentType);
 
     /**
-     * Deletes every object whose key starts with {@code prefix}, e.g. a stylist's folder. For deletions (admin, retention).
+     * Deletes every object whose key starts with {@code prefix}, e.g. a client's {@code intake/<request>/} folder when
+     * retention runs.
      * In a versioned bucket this leaves a delete marker over each object. Returns how many objects it deleted.
      */
     int deletePrefix(String bucket, String prefix);
 
-    /** Deletes one object; nothing happens if it isn't there. Only for the admin's hard delete. */
+    /** Deletes one object; nothing happens if it isn't there. For a deleted photo or an upload that failed its check. */
     void delete(String bucket, String key);
 
     /** A short-lived link for viewing one private object in the browser. */

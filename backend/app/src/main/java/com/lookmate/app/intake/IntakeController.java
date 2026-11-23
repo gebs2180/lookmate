@@ -1,6 +1,10 @@
 package com.lookmate.app.intake;
 
 import com.lookmate.app.storage.BlobStore;
+import com.lookmate.app.stylists.HairLength;
+import com.lookmate.app.stylists.HairType;
+import com.lookmate.app.stylists.ServiceType;
+import com.lookmate.app.stylists.Texture;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
@@ -37,12 +41,12 @@ class IntakeController {
      * appointment (QUIET_APPOINTMENT, HONEST_ADVICE); none of them affects ranking.
      */
     record CreateRequest(@Email @Size(max = 254) String email,
-                         @NotNull Quiz.HairType hairType,
-                         Quiz.Texture texture,
-                         Quiz.Length length,
+                         @NotNull HairType hairType,
+                         Texture texture,
+                         HairLength length,
                          @Min(1) @Max(4) Integer budgetTier,
                          @Size(max = 80) String neighborhood,
-                         @NotNull Quiz.Service service,
+                         @NotNull ServiceType service,
                          @Size(max = 12) List<Quiz.@NotNull PastIssue> pastIssues,
                          @Size(max = 500) String pastIssuesNote,
                          @NotNull @Valid PhotoFile inspiration) {
