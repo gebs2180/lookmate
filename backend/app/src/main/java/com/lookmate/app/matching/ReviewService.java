@@ -11,11 +11,14 @@ import com.lookmate.app.storage.StorageProperties;
 import com.lookmate.app.tracking.TrackingService;
 import java.net.URI;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -124,7 +127,7 @@ class ReviewService {
     Monitor monitor(String market, int limit) {
         List<MatchRequests.Request> recent = requests.recent(market, limit);
         Map<UUID, TrackingService.RequestActivity> activity = tracking.activity(recent.stream().map(MatchRequests.Request::id).toList());
-        Map<UUID, List<MatchRow>> rowsByRequest = new java.util.HashMap<>();
+        Map<UUID, List<MatchRow>> rowsByRequest = new HashMap<>();
         for (MatchRequests.Request r : recent) {
             rowsByRequest.put(r.id(), matches.forRequest(r.id()));
         }
@@ -193,7 +196,7 @@ class ReviewService {
         Instant now = clock.instant();
         matches.update(matchId, hidden, blankToNull(note), hidden != row.hidden(), now);
         if ("PUBLISHED".equals(status) && !hidden && row.finalRank() == null) {
-            int last = matches.forRequest(requestId).stream().map(MatchRow::finalRank).filter(java.util.Objects::nonNull)
+            int last = matches.forRequest(requestId).stream().map(MatchRow::finalRank).filter(Objects::nonNull)
                     .mapToInt(Integer::intValue).max().orElse(0);
             matches.setFinalRank(matchId, last + 1, true, now);
         }
@@ -283,7 +286,7 @@ class ReviewService {
         int rank = 0;
         for (MatchRow row : rows) {
             Integer finalRank = row.visible() ? ++rank : null;
-            if (!java.util.Objects.equals(finalRank, row.finalRank())) {
+            if (!Objects.equals(finalRank, row.finalRank())) {
                 matches.setFinalRank(row.id(), finalRank, false, now);
             }
         }
@@ -292,7 +295,7 @@ class ReviewService {
 
     @Transactional(readOnly = true)
     FairnessReport fairness(String market, int days) {
-        Instant since = clock.instant().minus(java.time.Duration.ofDays(days));
+        Instant since = clock.instant().minus(Duration.ofDays(days));
         return new FairnessReport(market, since, queries.fairness(market, since));
     }
 

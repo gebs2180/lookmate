@@ -76,7 +76,7 @@ class TrackingFixtures {
                         values (:id, :client, :market, 'CUT', :hash, :status, :published, :created, :created)
                         """)
                 .param("id", id).param("client", clientId).param("market", market)
-                .param("hash", TrackingService.hash(token))
+                .param("hash", hash(token))
                 .param("status", publishedAt == null ? "IN_REVIEW" : "PUBLISHED")
                 .param("published", publishedAt == null ? null : Timestamp.from(publishedAt))
                 .param("created", Timestamp.from(created)).update();
@@ -85,7 +85,7 @@ class TrackingFixtures {
                         insert into match_request_link (token_hash, match_request_id, purpose, created_at, expires_at)
                         values (:hash, :id, 'CREATED', :created, now() + interval '1 day')
                         """)
-                .param("hash", TrackingService.hash(token)).param("id", id).param("created", Timestamp.from(created)).update();
+                .param("hash", hash(token)).param("id", id).param("created", Timestamp.from(created)).update();
         return id;
     }
 
@@ -128,5 +128,15 @@ class TrackingFixtures {
     long count(UUID requestId, String type) {
         return jdbc.sql("select count(*) from match_event_live where match_request_id = :r and type = :t")
                 .param("r", requestId).param("t", type).query(Long.class).single();
+    }
+
+    /** SHA-256 hex of the token, as intake stores link tokens ({@code LinkTokens.hash}, package-private in intake). */
+    private static String hash(String token) {
+        try {
+            return java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(token.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }
