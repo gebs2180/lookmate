@@ -19,34 +19,25 @@ infrastructure, so a Combpatible deploy or outage can never touch Rawmark.
 `www.combpatible.app` redirects to it at Cloudflare (step 3), so the server only serves one name. `combpatible.com` was
 unregistered on 2026-11-20 but isn't bought; if it is later, it gets the same redirect.
 
-The rest of this file is pokemans' runbook with the names changed: the steps are the same.
+The runbook below is for this server. The setup was copied from pokemans, so the steps are the same, but this file is the one to follow.
 
+**Setup: one small Hetzner VPS running Docker Compose (Caddy, backend, Postgres, backup runner), with photos and backups in Cloudflare R2 and errors in Sentry's free plan. About $5–7 a month.**
 
-**Recommendation: one small Hetzner VPS running Docker Compose (Caddy, backend, Postgres, backup runner), with photos and backups in Cloudflare R2 and errors in Sentry's free plan. About $5–7 a month.** (pokemans' research, 2026-10-20; Rawmark has run this way since 2026-10-28.)
+## Why Hetzner and Compose
 
-## Options compared
-
-All four use Cloudflare R2 for photos (10 GB free, then $0.015/GB-month, no egress fees) and Sentry's free Developer plan for errors (one user, about 5k errors a month), so the comparison is about compute and Postgres.
-
-| | **Hetzner CX23 + Compose** (recommended) | Render | Fly.io | Railway |
-|---|---|---|---|---|
-| Compute | 2 vCPU, 4 GB, 40 GB disk: ~€4.49/mo with IPv4 (one source says €5.99) | Starter web service, 512 MB: $7. Too small for this JVM plus OpenCV; Standard (2 GB) is $25 | shared-cpu-1x 1 GB: ~$6.70 | Hobby $5/mo including $5 of usage; a 1 GB JVM uses more than that |
-| Postgres | In Compose on the same disk | Basic-256mb $6, Basic-1gb $19, with daily backups | Managed Postgres Basic $38 + storage; self-run "Fly Postgres" has no managed backups | Usage-billed; volume backups and point-in-time recovery reportedly need Pro ($20) |
-| Backups | Our nightly `pg_dump` and photo copy to R2 (`deploy/backup`), plus optional Hetzner snapshots (+20%) | Managed for Postgres; photos need our own copy job | Managed only on the $38 plan | Pro only |
-| HTTPS | Caddy gets Let's Encrypt certificates on its own | Built in | Built in | Built in |
-| Logs | `docker compose logs`, rotated; errors to Sentry | Dashboard, short retention on low plans | `fly logs`, short retention | Dashboard |
-| Beta cost/mo | **~$5–7** | ~$31–44 (Standard web + Basic PG) | ~$45+ managed, ~$10 self-run | ~$20–25 with backups |
-| Effort | Highest: you patch one Ubuntu box. About an hour for the first deploy with the steps below | Lowest | Medium (`fly.toml`, machines, volumes) | Low |
-
-Why Hetzner: pokemans' backend needs about 1 GB of memory (JVM, OpenCV, PDF rendering); Combpatible's is lighter (no OpenCV or PDFs, capped at 768 MB), and that is where PaaS pricing jumps. At beta size the VPS costs less than one PaaS Postgres plan, and the one Compose file also runs anywhere with Docker. The cost is that you look after the box: unattended security upgrades, our own backup job and a restore test. For a 6-week beta with a handful of users that is fine. Revisit if the beta becomes a product: Render (or a managed Postgres) is the upgrade path, and the Dockerfiles carry over unchanged.
-
-Not chosen: **Render**, unless your time matters more than ~$30/mo; it is the simplest PaaS here. **Fly.io**: managed Postgres alone costs $38. **Railway**: backups need the Pro plan, and usage billing has no cap by default.
+One small VPS is the cheapest setup that fits: the Combpatible backend is a light JVM (no OpenCV or PDFs, capped at
+768 MB), and the one Compose file also runs anywhere with Docker. At beta size the VPS costs less than a single PaaS
+Postgres plan (Render, Fly.io and Railway came to about $20 to $45 a month with Postgres and backups, against about $5 to $7 here). The cost is that
+you look after the box: unattended security upgrades, our own backup job and a restore test. Revisit if the pilot
+becomes a product: a managed host or managed Postgres is the upgrade path, and the Dockerfiles carry over unchanged.
+Photos go to Cloudflare R2 (10 GB free, then $0.015/GB-month, no egress fees) and errors to Sentry's free plan.
 
 ### Storage: why R2
 
 - Cheapest for this size: free up to 10 GB, no egress fees, and phones download photos for review.
 - It supports `If-None-Match: *` on PutObject, which our presigned uploads and crop writes rely on (an existing photo is never overwritten). Backblaze B2's S3 API wasn't confirmed to support this.
 - **No bucket versioning** (R2 doesn't implement it). The app never overwrites a photo, except once to take its location out ([data-retention.md](data-retention.md)), and the nightly backup copies the photo bucket into a separate bucket that it never deletes from. So a deleted photo can still be recovered up to the last nightly run. If versioning is a hard requirement, use AWS S3 instead (about $0.023/GB plus egress).
+- Retention: portfolio photos stay until the stylist or admin deletes them; client inspiration photos are deleted after 30 days, client contact details are cleared 365 days after the client's latest request, and client links expire after 90 days ([data-retention.md](data-retention.md)).
 - R2 rejects the AWS SDK's chunked uploads with a 403. The `prod` profile turns them off (`lookmate.storage.chunked-encoding: false`).
 
 ## What's in the repo
@@ -182,7 +173,7 @@ Generate `POSTGRES_PASSWORD` with `openssl rand -base64 32 | tr -d '/+='`. Keep 
 ### 6. Smoke test
 
 1. `https://<site address>/actuator/health` shows `{"status":"UP"}`, with a valid certificate.
-2. Log in as your ADMIN user (MFA). The home page shows your roles from `/api/me`.
+2. Log in as your ADMIN user. The home page shows your roles from `/api/me`. MFA is off on the pilot server while it uses the Auth0 dev tenant (`LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA=false` in its `.env`); turn it back on before real stylists join, using the steps in [auth.md](auth.md#production-to-do-before-the-pilot).
 3. As a stylist, upload a portfolio photo on your phone. A stored photo means the browser upload to R2 worked (CORS and `If-None-Match`). On the review page, the card crop appearing means the app's own writes to R2 work (non-chunked upload). A 403 at either point means the CORS rule or the token (step 3).
 4. Install the PWA from the phone's browser menu (needs HTTPS, which this is).
 
@@ -323,4 +314,4 @@ At most a day of data is lost (the last nightly backup), plus whatever Hetzner's
 
 The embedding provider, once chosen, is billed per use on its own account and is not counted here.
 
-After the beta, delete the server (billing stops by the hour) and, if wanted, the R2 buckets. Keep a final dump: the photos, predictions and grades are training data (CLAUDE.md, Store everything).
+After the beta, delete the server (billing stops by the hour) and, if wanted, the R2 buckets. Keep a final encrypted dump if Zach wants the data (retention still applies: [data-retention.md](data-retention.md)).

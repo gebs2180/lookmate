@@ -1,7 +1,7 @@
 # Redesign options: four directions for Combpatible
 
-Status: **decided 2026-11-20 (Zach): A. Lookbook, with D. Strand's motion made prominent.** Applied to `web/` on
-branch `claude/lookbook-redesign-232f2e`. This doc compares four full redesigns, each with a clickable phone prototype,
+Status: **decided 2026-11-20 (Zach): A. Lookbook, with D. Strand's motion made prominent.** Applied to `web/` and merged
+(gebs2180/lookmate#14). This doc compares four full redesigns, each with a clickable phone prototype,
 and recommends one; the audit below describes the app as it was before.
 
 Why now: the running app still wears Rawmark's "Ledger" theme, and Zach's verdict is that it looks too close to
@@ -69,7 +69,7 @@ general product knowledge.
 
 ## Audit
 
-What's live (`web/src`, run locally with the demo stylists):
+What was live before the redesign (the audit; `web/src` has since changed, so read this as history):
 
 - **It is Rawmark.** Manrope 800, navy and green, stacked full-width buttons, the Ledger card style. Nothing says
   beauty, and nothing says Combpatible.

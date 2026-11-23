@@ -96,7 +96,7 @@ lookmate:
     # A sent (or failed, skipped, cancelled) email loses its address, subject and bodies after this many days.
     email-content-days: 90
     # A client's inspiration photo is deleted from storage this many days after the request was made
-    # (CLAUDE.md, Privacy). The embedding and the match rows stay. Default to confirm.
+    # (CLAUDE.md, Non-negotiables: client photos are private and deleted on schedule). The embedding and the match rows stay. Default to confirm.
     inspiration-photo-days: 30
     # A client's email, phone, first name, neighborhood and note are cleared this many days after the latest request
     # made with that email address; the quiz codes stay for the fairness metrics (docs/data-retention.md).

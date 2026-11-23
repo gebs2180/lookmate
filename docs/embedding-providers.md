@@ -4,12 +4,12 @@
 
 Matching v1 needs an image-embedding model (brief, Must have 4). The code is ready for any provider behind
 `EmbeddingProvider` (`backend/app/.../matching`); only a deterministic fake runs now (`lookmate.matching.provider: fake`).
-Nothing below is wired or paid for. This is the open default in CLAUDE.md ("Embedding provider and model").
+Nothing below is wired or paid for yet: the AWS account is in progress. The decision is recorded in CLAUDE.md ("Defaults to confirm"); what's left is to wire it and set the threshold from the labelled set.
 
 ## What matters here
 
 - **Inputs are client face photos.** The provider must not keep them or train on them, and the terms must say so in
-  writing (CLAUDE.md, Privacy; docs/data-retention.md, "What the job can't reach"). For BIPA/Texas later, we must be able
+  writing (CLAUDE.md, Non-negotiables; docs/data-retention.md, "What the job can't reach"). For BIPA/Texas later, we must be able
   to say where the image went and that it's gone.
 - **Quality on textured hair** is the deciding test, not price: run the labelled set of curly and coily looks
   (docs/architecture.md, Matching v1) against each candidate before choosing.
@@ -35,13 +35,13 @@ pricing page before deciding.**
 Self-hosting SigLIP/CLIP (the other open default) stays an option behind the same interface: no third party sees the
 photos, but it needs a GPU or a slow CPU worker, which the single Hetzner VPS doesn't have.
 
-## Recommendation
+## Recommendation (adopted 2026-11-20)
 
 **Amazon Bedrock with Titan Multimodal Embeddings G1, after a quality check.** It has the clearest no-retention,
 no-training terms, it's the cheapest, and its 1024 dimensions suit a later HNSW index. Cohere Embed v4 is reachable
 on the same account, so we can compare two models with one contract.
 
-Before turning it on:
+Before turning it on (steps 1 to 3 are still to do; step 4 is done):
 
 1. Confirm price and data terms on AWS's own pages, and choose a US region.
 2. Build the labelled set: 20-30 inspiration looks across all four hair types, curly and coily included, each with
@@ -49,4 +49,4 @@ Before turning it on:
    Set `lookmate.matching.ranking.similar-threshold` from the result: thresholds don't carry over between models.
 3. Add `BedrockEmbeddingProvider` with `lookmate.matching.provider: bedrock`. It needs AWS credentials in
    `deploy/.env` (not requested yet).
-4. Record the decision in CLAUDE.md.
+4. ~~Record the decision in CLAUDE.md.~~ Done, 2026-11-20.

@@ -13,7 +13,7 @@ How long Combpatible keeps personal data, and what takes it out. The mechanism i
 | A client's link (`match_request_link`) | 90 days after it was sent | Stops working (404); the hash stays | `lookmate.intake.link-ttl: 90d` | Built |
 | A stylist's deleted photo | Gone from storage at once | Its encrypted backup copy is pruned by the nightly backup once the backup bucket's lock lets it go (`BACKUP_PHOTO_LOCK_DAYS`, 30 by default; 28 with the prefix lock rules in [hosting.md](hosting.md#3-r2-buckets-and-tokens)), here and off-site. The stylist terms promise 30 days, backups included | `BACKUP_PHOTO_LOCK_DAYS` | Built (`deploy/backup/backup.sh`, review 2026-11-22 #3) |
 
-## Biometric law (CLAUDE.md, Privacy)
+## Biometric law (CLAUDE.md, Non-negotiables)
 
 Ohio has no biometric privacy law; Illinois (BIPA) and Texas (CUBI) do. Image embeddings of a face can count as
 biometric identifiers there. Before Combpatible takes clients from either state: written consent at upload, a published

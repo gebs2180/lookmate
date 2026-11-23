@@ -118,8 +118,7 @@ every query is a small scan. What supports them:
 
 - Directory bookings are entered by the admin only; a stylist's own bookings page lists their matches, not directory
   picks.
-- No rate limit on `/api/public/book/**` yet (SecurityConfig says each public route rate-limits). `/viewed` falls under
-  intake's `/api/public/match-requests/**` limit and the directory's `/book-stylist/**` under its browse limit. The click dedupe and the
-  daily cap keep repeated clicks from skewing the metrics. Plan (agreed 2026-11-20): after the Phase 1 branches merge,
-  one in-memory per-IP limiter on `/api/public/**` (429 with Retry-After): "Book" 60/min, viewed 30/min, intake create
-  10/hour plus 20/day per IP (the per-email limits went with the optional email, 2026-11-20); Postgres-backed counters when there is a second app instance.
+- **Rate limits** are intake's `PublicRateLimit`, in memory per IP (so per instance; a second app container needs a
+  shared limit in Caddy or Postgres). Both Book routes (`/api/public/book/**` and `/api/public/book-stylist/**`) share
+  the directory's `browse-per-minute` bucket (60); `/viewed` falls under intake's `reads-per-minute`. The click dedupe and the daily cap
+  still keep repeated clicks from skewing the metrics.

@@ -53,8 +53,9 @@ cd web; npm.cmd run dev
 The backend applies the Flyway migrations (including `create extension vector`) and creates the photo bucket on
 startup. Every other default in `application.yml` points at the compose services. Locally, matching uses the fake
 embedding provider and emails are off (`NOTIFY_EMAIL_ENABLED` unset), so a client's results appear in place on `/find`
-and no email is sent. Production uses the `prod` profile, which reads everything from the environment, and MFA is on
-there ([hosting.md](hosting.md), [auth.md](auth.md#production-to-do-before-the-pilot)).
+and no email is sent. Production uses the `prod` profile, which reads everything from the environment, and MFA is meant to be on
+there. The pilot server runs with it off while it uses the Auth0 dev tenant; the steps to turn it back on before real
+stylists join are in [auth.md](auth.md#production-to-do-before-the-pilot).
 
 ## Smoke test
 
