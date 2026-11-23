@@ -22,6 +22,7 @@ const BASE: ClientView = {
   photoUrl: 'https://storage.test/view',
   emailHint: null,
   emailChangeAllowed: true,
+  retakeAllowed: false,
   asks: [],
   matches: [],
 }

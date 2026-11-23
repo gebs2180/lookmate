@@ -7,11 +7,7 @@ import java.time.temporal.ChronoUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,11 +25,16 @@ public class ClientContactRetention {
 
     private static final Logger log = LoggerFactory.getLogger(ClientContactRetention.class);
 
+    /** The per-address cap looks back a day; its log of hashed addresses is kept two. */
+    private static final Duration EMAIL_USE_KEEP = Duration.ofDays(2);
+
     private final JdbcClient jdbc;
+    private final MatchRequestRows rows;
     private final Duration keep;
 
-    ClientContactRetention(JdbcClient jdbc, @Value("${lookmate.retention.client-contact-days:365}") int days) {
+    ClientContactRetention(JdbcClient jdbc, MatchRequestRows rows, @Value("${lookmate.retention.client-contact-days:365}") int days) {
         this.jdbc = jdbc;
+        this.rows = rows;
         this.keep = Duration.of(days, ChronoUnit.DAYS);
     }
 
@@ -52,29 +53,9 @@ public class ClientContactRetention {
                 .param("now", Timestamp.from(now))
                 .param("cutoff", cutoff)
                 .update();
-        log.info("Retention: anonymised {} client(s) with no request in {} days", anonymised, keep.toDays());
+        int pruned = rows.pruneEmailUses(now.minus(EMAIL_USE_KEEP));
+        log.info("Retention: anonymised {} client(s) with no request in {} days; forgot {} address use(s)", anonymised, keep.toDays(),
+                pruned);
         return anonymised;
-    }
-
-    /** Daily, with retention on (the default); tests call {@link #run} directly. */
-    @Configuration(proxyBeanMethods = false)
-    @EnableScheduling
-    @ConditionalOnBooleanProperty("lookmate.retention.enabled")
-    static class Job {
-
-        private final ClientContactRetention retention;
-
-        Job(ClientContactRetention retention) {
-            this.retention = retention;
-        }
-
-        @Scheduled(cron = "${lookmate.retention.cron:0 15 4 * * *}", zone = "UTC")
-        void run() {
-            try {
-                retention.run(Instant.now());
-            } catch (RuntimeException e) {
-                log.error("Client contact retention failed", e);
-            }
-        }
     }
 }

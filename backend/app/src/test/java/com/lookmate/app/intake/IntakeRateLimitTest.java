@@ -86,11 +86,11 @@ class IntakeRateLimitTest {
 
     @Test
     void browsingTheDirectoryFromOneAddressIsLimitedOnItsOwn() throws Exception {
-        // The directory and its Book links share one bucket, separate from intake's.
+        // The directory and both kinds of Book link share one bucket, separate from intake's (review 2026-11-22, finding 15).
         mvc.perform(get("/api/public/match-requests/" + LinkTokens.newToken()).with(from("192.0.2.9"))).andExpect(status().isNotFound());
         mvc.perform(get("/api/public/stylists").with(from("192.0.2.9"))).andExpect(status().isOk());
         mvc.perform(get("/api/public/stylists?page=1").with(from("192.0.2.9"))).andExpect(status().isOk());
-        mvc.perform(get("/api/public/book-stylist/" + LinkTokens.newToken() + "/" + java.util.UUID.randomUUID()).with(from("192.0.2.9")))
+        mvc.perform(get("/api/public/book/" + LinkTokens.newToken() + "/" + java.util.UUID.randomUUID()).with(from("192.0.2.9")))
                 .andExpect(status().isNotFound());
         mvc.perform(get("/api/public/stylists").with(from("192.0.2.9")))
                 .andExpect(status().isTooManyRequests())

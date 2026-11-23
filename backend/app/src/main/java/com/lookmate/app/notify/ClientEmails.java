@@ -107,6 +107,21 @@ public class ClientEmails {
         return notifier.cancelPending(matchRequestId, Template.MATCHES_READY, VIEWED_FIRST, now) > 0;
     }
 
+    static final String ADDRESS_REPLACED = "the client replaced the address before it went";
+
+    /**
+     * The client gave a different address: every email about the request that hasn't gone yet is cancelled, so the old
+     * (perhaps mistyped) address doesn't get their private link. The caller queues the link to the new one. Returns how
+     * many were cancelled.
+     */
+    public int cancelPendingForAddressChange(UUID matchRequestId, Instant now) {
+        int cancelled = 0;
+        for (Template template : List.of(Template.MATCH_LIST_LINK, Template.MATCHES_READY, Template.PICKS_ADDED)) {
+            cancelled += notifier.cancelPending(matchRequestId, template, ADDRESS_REPLACED, now);
+        }
+        return cancelled;
+    }
+
     private static String greeting(String firstName) {
         return firstName == null || firstName.isBlank() ? "Hi there," : "Hi " + firstName.strip() + ",";
     }

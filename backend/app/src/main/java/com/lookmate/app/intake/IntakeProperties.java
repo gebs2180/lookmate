@@ -14,6 +14,8 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param matchingStuckAfter              a MATCHING request untouched this long is offered to the matching worker again
  * @param matchesReadyEmailDelay          how long the "matches ready" email waits before it goes; it isn't sent if the client
  *                                        opens their list first (a client still on their page sees the results arrive)
+ * @param confirmWait                     how long a client's photo confirm waits for a decode turn ({@code PhotoDecodes})
+ *                                        before answering 503 {@code BUSY}
  * @param rateLimit                       per-IP limits on the public endpoints (in memory: per instance)
  */
 @ConfigurationProperties("lookmate.intake")
@@ -22,6 +24,7 @@ record IntakeProperties(@DefaultValue("90d") Duration linkTtl,
                         @DefaultValue("5") int maxLinkEmailsPerAddressPerDay,
                         @DefaultValue("15m") Duration matchingStuckAfter,
                         @DefaultValue("5m") Duration matchesReadyEmailDelay,
+                        @DefaultValue("20s") Duration confirmWait,
                         @DefaultValue RateLimit rateLimit) {
 
     /**
@@ -29,7 +32,7 @@ record IntakeProperties(@DefaultValue("90d") Duration linkTtl,
      * @param createsPerDay   new requests one IP may make a day (on top of the hourly limit)
      * @param emailsPerHour   emails one IP may add to requests an hour ({@code POST /api/public/match-requests/{token}/email})
      * @param readsPerMinute  other calls (status, upload slots, confirms) one IP may make a minute
-     * @param browsePerMinute the public stylist directory and its Book links, per IP a minute
+     * @param browsePerMinute the public stylist directory and the Book links (match and directory), per IP a minute
      */
     record RateLimit(@DefaultValue("10") int createsPerHour, @DefaultValue("20") int createsPerDay,
                      @DefaultValue("5") int emailsPerHour, @DefaultValue("60") int readsPerMinute,

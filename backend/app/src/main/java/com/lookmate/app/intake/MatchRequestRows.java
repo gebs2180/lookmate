@@ -27,7 +27,7 @@ class MatchRequestRows {
         }
     }
 
-    record NewRequest(UUID clientId, UUID requestId, String market, String email, String firstName, String hairType, String texture,
+    record NewRequest(UUID clientId, UUID requestId, String market, String email, String hairType, String texture,
                       String length, Integer budgetTier, String neighborhood, List<String> pastIssues, String notes, String service,
                       String objectKey, String contentType, long sizeBytes, String tokenHash, Instant expiresAt, Instant now) {
     }
@@ -48,13 +48,12 @@ class MatchRequestRows {
 
     void insert(NewRequest n) {
         jdbc.sql("""
-                        insert into client (id, email, first_name, hair_type, texture, length, budget_tier, neighborhood, market,
+                        insert into client (id, email, hair_type, texture, length, budget_tier, neighborhood, market,
                           past_issues, notes, created_at, email_set_at, email_changes)
-                        values (:id, :email, :firstName, :hairType, :texture, :length, :budget, :neighborhood, :market,
+                        values (:id, :email, :hairType, :texture, :length, :budget, :neighborhood, :market,
                           string_to_array(:issues, ','), :notes, :now, :emailSetAt, :emailChanges)""")
                 .param("id", n.clientId())
                 .param("email", n.email())
-                .param("firstName", n.firstName())
                 .param("hairType", n.hairType())
                 .param("texture", n.texture())
                 .param("length", n.length())
@@ -142,16 +141,26 @@ class MatchRequestRows {
         jdbc.sql("select pg_advisory_xact_lock(hashtext(lower(:email)))").param("email", email).query().listOfRows();
     }
 
-    /** Requests other than {@code except} that had this address set since {@code since}. */
-    int emailsSetSince(String email, UUID exceptClient, Instant since) {
-        return jdbc.sql("""
-                        select count(*) from client
-                        where email is not null and lower(email) = lower(:email) and email_set_at > :since and id <> :except""")
-                .param("email", email)
-                .param("except", exceptClient)
+    /** How many times an address with this hash was set on a request since {@code since}, on any request. */
+    int emailUsesSince(String addressHash, Instant since) {
+        return jdbc.sql("select count(*) from client_email_use where address_hash = :hash and used_at > :since")
+                .param("hash", addressHash)
                 .param("since", ts(since))
                 .query(Integer.class)
                 .single();
+    }
+
+    /** Counts one more link email to the address with this hash. */
+    void logEmailUse(String addressHash, Instant now) {
+        jdbc.sql("insert into client_email_use (address_hash, used_at) values (:hash, :now)")
+                .param("hash", addressHash)
+                .param("now", ts(now))
+                .update();
+    }
+
+    /** Forgets the address uses older than {@code before}. Returns how many went. */
+    int pruneEmailUses(Instant before) {
+        return jdbc.sql("delete from client_email_use where used_at < :before").param("before", ts(before)).update();
     }
 
     /** Sets (or replaces) the client's email and counts the change. */
@@ -210,6 +219,22 @@ class MatchRequestRows {
                 .param("size", sizeBytes)
                 .param("now", ts(now))
                 .update();
+    }
+
+    /**
+     * A FAILED request whose photo couldn't be read starts again: back to NEW, waiting for a new photo in the same slot.
+     * Returns whether it was FAILED.
+     */
+    boolean resetForRetake(UUID id, String contentType, long sizeBytes, Instant now) {
+        return jdbc.sql("""
+                        update match_request set status = 'NEW', status_reason = null, inspiration_sha256 = null,
+                          inspiration_content_type = :type, inspiration_size_bytes = :size, updated_at = :now
+                        where id = :id and status = 'FAILED' and inspiration_deleted_at is null""")
+                .param("id", id)
+                .param("type", contentType)
+                .param("size", sizeBytes)
+                .param("now", ts(now))
+                .update() == 1;
     }
 
     void setInspirationReady(UUID id, String contentType, long sizeBytes, String sha256, Instant now) {

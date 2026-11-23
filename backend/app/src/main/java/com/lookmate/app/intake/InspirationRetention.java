@@ -9,10 +9,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -40,6 +36,11 @@ public class InspirationRetention {
         this.keep = Duration.of(days, ChronoUnit.DAYS);
     }
 
+    /** How many days a photo is kept: the client's page promises the date this gives. */
+    public int days() {
+        return (int) keep.toDays();
+    }
+
     /** Returns how many requests had their photo deleted. */
     public int run(Instant now) {
         Instant cutoff = now.minus(keep);
@@ -57,27 +58,5 @@ public class InspirationRetention {
         }
         log.info("Retention: deleted the inspiration photos of {} request(s) older than {} days", deleted, keep.toDays());
         return deleted;
-    }
-
-    /** Daily, with retention on (the default); tests call {@link #run} directly. */
-    @Configuration(proxyBeanMethods = false)
-    @EnableScheduling
-    @ConditionalOnBooleanProperty("lookmate.retention.enabled")
-    static class Job {
-
-        private final InspirationRetention retention;
-
-        Job(InspirationRetention retention) {
-            this.retention = retention;
-        }
-
-        @Scheduled(cron = "${lookmate.retention.cron:0 15 4 * * *}", zone = "UTC")
-        void run() {
-            try {
-                retention.run(Instant.now());
-            } catch (RuntimeException e) {
-                log.error("Inspiration photo retention failed", e);
-            }
-        }
     }
 }
