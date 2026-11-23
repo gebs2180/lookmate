@@ -37,7 +37,7 @@ port=55432
 # The image runs as postgres; a run started as root (`run --user root`) drops to it for the server.
 if (( EUID == 0 )); then
   chown postgres "$work"
-  as_pg() { gosu postgres "$@"; }
+  as_pg() { setpriv --reuid=postgres --regid=postgres --init-groups "$@"; }
 else
   as_pg() { "$@"; }
 fi
