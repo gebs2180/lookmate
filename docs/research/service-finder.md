@@ -1,6 +1,6 @@
 # Service finder: telling clients what to book
 
-Research and a proposal, 2026-11-22. Nothing here is built yet: Zach decides first (see the open questions at the end).
+Research and a proposal, 2026-11-22. Nothing here is built yet. Zach's decisions are at the end.
 
 **Where the idea came from.** A working stylist we know through Salon Lofts asked for it, for their own salon:
 
@@ -97,7 +97,7 @@ does.
      combination of answers reaches no outcome. That's how a stylist changes their logic without breaking it.
 3. The stylist gets **one link** for their Instagram bio and their booking page's "new clients" note.
 4. **Optional:** a short summary of the client's answers emailed to the stylist when the client presses Book. This
-   saves the stylist the five-minute intake call. Open question 4 asks whether to build it, because it sends client data to a
+   saves the stylist the five-minute intake call. Decided: only when the client ticks a box on the Book screen, because it sends client data to a
    third party.
 
 **Why rules and not AI.** A stylist can read rules, test them, and stand behind them in the chair. An LLM's "you should
@@ -135,7 +135,7 @@ the same commitment matching makes.
 | Step | What | Who | Size |
 |---|---|---|---|
 | 0 | Spreadsheet template (questions, outcomes, rules, tests). They fill it in for their own menu | Us → partner | A day |
-| 1 | `consult` module, the partner's ruleset loaded, the client flow at `/c/<their-slug>`, the landing-page button, tracked hand-off | Us | About a week across two sessions (backend, then web) |
+| 1 | `consult` module, the partner's ruleset loaded, the client flow at `/c/<their-slug>`, the landing-page "Not sure what to book?" button running the same ruleset as a general version, tracked hand-off | Us | About a week across two sessions (backend, then web) |
 | 2 | Four weeks live on their link. They mark each finder client's booking as "right service / wrong service / needed a consult" | Partner | 4 weeks |
 | 3 | If the right-service rate is high, build the self-serve editor and invite 5 to 10 independent Salon Lofts stylists free | Us | About a week |
 | 4 | Charge for it only once about 10 stylists use it every week. A Stripe payment link off-app at first, no billing code | Zach | — |
@@ -148,17 +148,19 @@ the same commitment matching makes.
 - the stylist's time saved, by their own estimate;
 - how many finder clients go on to use find-my-stylist.
 
-## Open questions for Zach
+## Decisions (Zach, 2026-11-22)
 
-1. **Name and button text:** "Not sure what to book?" (proposed), "Find my service", or "Free consultation"?
-2. **Partner terms:** a one-page agreement covering who owns their questions and rules (the stylist, with a licence for Combpatible
-   to use the rules as the default set), and credit in the tool. "Free haircuts for life" is a fine fee; write the
-   ownership down anyway.
-3. **Generic or per stylist first?** This proposal runs their ruleset on their link, plus a generic version on Combpatible
-   based on theirs. Should the generic version wait until they're happy with theirs?
-4. **Answers emailed to the stylist:** that's client data going to a third party. It needs the client's explicit OK on
-   the Book screen. Do it in the pilot or not?
-5. **Charging stylists:** CLAUDE.md's "no payments" non-negotiable is about clients. Charging pros a membership is a
-   new decision for the CLAUDE.md Decisions list, and not needed until step 4.
-6. **Beyond Salon Lofts:** a finder for any independent stylist reaches past the Columbus Salon Lofts pilot. Keep it
-   Salon Lofts-only at first, as matching is?
+1. **Button text:** "Not sure what to book?" "Book a consultation" stays a possible result; nothing promises a person.
+2. **Ownership:** the partner stylist owns their questions and rules. Combpatible gets a licence to use them as the
+   default set, with credit in the tool. It goes in a one-page agreement before step 1 ships, whatever the fee.
+3. **Both at once:** step 1 ships the partner's own link **and** the general version behind the Combpatible button,
+   both running the partner's ruleset. The general version's results drop the partner's prices and booking links and
+   hand off to find-my-stylist instead.
+4. **Answers to the stylist: yes, only with the client's OK.** A tick box on the Book screen, unticked by default.
+   Without it, nothing is sent.
+5. **Charging stylists: yes, later.** It's recorded as a decision now. Build it only once about 10 stylists use the
+   finder every week, and start with a Stripe payment link off the app. The "no payments" non-negotiable still covers
+   clients.
+6. **Salon Lofts only at first,** the same as matching.
+
+Still open: a lawyer's look at the partner agreement, alongside the stylist terms.
