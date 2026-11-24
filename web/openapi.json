@@ -254,6 +254,177 @@
         },
         "required" : [ "acceptedAt", "text", "version" ]
       },
+      "ConsultAdminControllerRulesetVersion" : {
+        "properties" : {
+          "credit" : {
+            "type" : "string"
+          },
+          "current" : {
+            "type" : "boolean"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "outcomes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "publishedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "questions" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "rules" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "source" : {
+            "type" : "string"
+          },
+          "tests" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "version" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "credit", "current", "id", "name", "outcomes", "publishedAt", "questions", "rules", "source", "tests", "version" ]
+      },
+      "ConsultControllerAnswers" : {
+        "properties" : {
+          "answers" : {
+            "additionalProperties" : {
+              "items" : {
+                "type" : "string"
+              },
+              "type" : "array"
+            },
+            "type" : "object"
+          }
+        },
+        "required" : [ "answers" ]
+      },
+      "ConsultControllerBookClick" : {
+        "properties" : {
+          "shareAnswers" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "shareAnswers" ]
+      },
+      "ConsultServiceFinder" : {
+        "properties" : {
+          "channel" : {
+            "enum" : [ "GENERAL", "PARTNER" ],
+            "type" : "string"
+          },
+          "credit" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "questions" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ConsultServiceQuestion"
+            },
+            "type" : "array"
+          },
+          "rulesetVersion" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "channel", "credit", "name", "questions", "rulesetVersion" ]
+      },
+      "ConsultServiceOutcome" : {
+        "properties" : {
+          "bookingUrl" : {
+            "type" : "string"
+          },
+          "fromPrice" : {
+            "type" : "number"
+          },
+          "hours" : {
+            "type" : "number"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "enum" : [ "BOOK", "CONSULTATION" ],
+            "type" : "string"
+          },
+          "serviceName" : {
+            "type" : "string"
+          },
+          "serviceType" : {
+            "type" : "string"
+          },
+          "whatToExpect" : {
+            "type" : "string"
+          },
+          "why" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "bookingUrl", "fromPrice", "hours", "id", "kind", "serviceName", "serviceType", "whatToExpect", "why" ]
+      },
+      "ConsultServiceQuestion" : {
+        "properties" : {
+          "answers" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "help" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "multiple" : {
+            "type" : "boolean"
+          },
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "answers", "help", "id", "multiple", "text" ]
+      },
+      "ConsultServiceResult" : {
+        "properties" : {
+          "channel" : {
+            "enum" : [ "GENERAL", "PARTNER" ],
+            "type" : "string"
+          },
+          "credit" : {
+            "type" : "string"
+          },
+          "outcome" : {
+            "$ref" : "#/components/schemas/ConsultServiceOutcome"
+          },
+          "rulesetVersion" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "sessionId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "channel", "credit", "outcome", "rulesetVersion", "sessionId" ]
+      },
       "IntakeControllerCreateRequest" : {
         "properties" : {
           "budgetTier" : {
@@ -1551,6 +1722,152 @@
         },
         "required" : [ "alreadyMatched", "displayName", "locationName", "orgId" ]
       },
+      "Ruleset" : {
+        "properties" : {
+          "credit" : {
+            "type" : "string"
+          },
+          "format" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "outcomes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RulesetOutcome"
+            },
+            "type" : "array"
+          },
+          "questions" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RulesetQuestion"
+            },
+            "type" : "array"
+          },
+          "rules" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RulesetRule"
+            },
+            "type" : "array"
+          },
+          "tests" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RulesetTestCase"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "credit", "format", "name", "outcomes", "questions", "rules", "tests" ]
+      },
+      "RulesetCondition" : {
+        "properties" : {
+          "answer" : {
+            "type" : "string"
+          },
+          "question" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "answer", "question" ]
+      },
+      "RulesetOutcome" : {
+        "properties" : {
+          "bookingUrl" : {
+            "type" : "string"
+          },
+          "fromPrice" : {
+            "type" : "number"
+          },
+          "hours" : {
+            "type" : "number"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "enum" : [ "BOOK", "CONSULTATION" ],
+            "type" : "string"
+          },
+          "serviceName" : {
+            "type" : "string"
+          },
+          "serviceType" : {
+            "type" : "string"
+          },
+          "whatToExpect" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "bookingUrl", "fromPrice", "hours", "id", "kind", "serviceName", "serviceType", "whatToExpect" ]
+      },
+      "RulesetQuestion" : {
+        "properties" : {
+          "answers" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "help" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "multiple" : {
+            "type" : "boolean"
+          },
+          "stored" : {
+            "type" : "boolean"
+          },
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "answers", "help", "id", "multiple", "stored", "text" ]
+      },
+      "RulesetRule" : {
+        "properties" : {
+          "note" : {
+            "type" : "string"
+          },
+          "outcome" : {
+            "type" : "string"
+          },
+          "when" : {
+            "items" : {
+              "$ref" : "#/components/schemas/RulesetCondition"
+            },
+            "type" : "array"
+          },
+          "why" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "note", "outcome", "when", "why" ]
+      },
+      "RulesetTestCase" : {
+        "properties" : {
+          "answers" : {
+            "additionalProperties" : {
+              "items" : {
+                "type" : "string"
+              },
+              "type" : "array"
+            },
+            "type" : "object"
+          },
+          "expected" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "answers", "expected", "name" ]
+      },
       "StylistControllerAdminStylistView" : {
         "properties" : {
           "bookingPlatform" : {
@@ -2009,6 +2326,80 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/admin/consult/rulesets" : {
+      "get" : {
+        "operationId" : "list_1",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ConsultAdminControllerRulesetVersion"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "consult-admin-controller" ]
+      },
+      "post" : {
+        "operationId" : "upload",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Ruleset"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConsultAdminControllerRulesetVersion"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "consult-admin-controller" ]
+      }
+    },
+    "/api/admin/consult/rulesets/{version}" : {
+      "get" : {
+        "operationId" : "get_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "version",
+          "required" : true,
+          "schema" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Ruleset"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "consult-admin-controller" ]
+      }
+    },
     "/api/admin/events/{eventId}/void" : {
       "post" : {
         "operationId" : "voidEvent_1",
@@ -3743,7 +4134,7 @@
     },
     "/api/public/book/{token}/{matchId}" : {
       "get" : {
-        "operationId" : "book",
+        "operationId" : "book_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "token",
@@ -3766,6 +4157,163 @@
           }
         },
         "tags" : [ "public-tracking-controller" ]
+      }
+    },
+    "/api/public/consult/c/{slug}/finder" : {
+      "get" : {
+        "operationId" : "partnerFinder",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "slug",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConsultServiceFinder"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "consult-controller" ]
+      }
+    },
+    "/api/public/consult/c/{slug}/sessions" : {
+      "post" : {
+        "operationId" : "partnerSubmit",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "slug",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConsultControllerAnswers"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConsultServiceResult"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "consult-controller" ]
+      }
+    },
+    "/api/public/consult/finder" : {
+      "get" : {
+        "operationId" : "finder",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConsultServiceFinder"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "consult-controller" ]
+      }
+    },
+    "/api/public/consult/sessions" : {
+      "post" : {
+        "operationId" : "submit",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConsultControllerAnswers"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConsultServiceResult"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "consult-controller" ]
+      }
+    },
+    "/api/public/consult/sessions/{id}/book" : {
+      "post" : {
+        "operationId" : "book",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConsultControllerBookClick"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "consult-controller" ]
+      }
+    },
+    "/api/public/consult/sessions/{id}/find-stylist" : {
+      "post" : {
+        "operationId" : "findStylist",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "consult-controller" ]
       }
     },
     "/api/public/intake/settings" : {
