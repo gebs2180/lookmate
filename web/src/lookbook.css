@@ -1304,6 +1304,77 @@ button.link-button:active:not(:disabled) {
   color: var(--ink-2);
 }
 
+/* ---------- Service finder, "Not sure what to book?" (consult/ConsultPage.tsx) ---------- */
+
+.consult-result h1 {
+  font-size: 2.5rem;
+  line-height: 1.05;
+  margin: var(--space-1) 0;
+  animation: fade-up 520ms var(--ease-out) 180ms both;
+}
+
+.consult-result h1 em {
+  color: var(--accent);
+}
+
+.consult-strand {
+  color: var(--marker);
+  margin: var(--space-2) 0 0;
+}
+
+.consult-strand .strand {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+}
+
+.consult-service {
+  font: italic 400 1.375rem/1.2 var(--serif);
+  margin: 0;
+}
+
+.consult-facts {
+  font-weight: 600;
+  margin: var(--space-1) 0 0;
+}
+
+.consult-why {
+  margin-top: var(--space-4);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--rule);
+}
+
+.consult-why h2 {
+  margin: 0 0 var(--space-1);
+}
+
+.consult-why p {
+  margin: 0;
+}
+
+.consult-confirm {
+  margin-top: var(--space-4);
+  font: italic 400 1.125rem/1.3 var(--serif);
+}
+
+.consult-actions {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.consult-actions p {
+  margin: 0;
+}
+
+.consult-share {
+  align-items: flex-start;
+}
+
+.landing-cta .landing-consult {
+  margin-top: var(--space-1);
+}
+
 /* ---------- Reduced motion: cuts instead of wipes, lines already drawn, nothing looping ---------- */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1317,6 +1388,7 @@ button.link-button:active:not(:disabled) {
   .cover-photo .frame img,
   .sheet-frames i,
   .question legend h1,
+  .consult-result h1,
   .inspiration-preview,
   .landing-strand figcaption {
     animation: none !important;

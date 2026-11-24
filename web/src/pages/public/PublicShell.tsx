@@ -1,10 +1,14 @@
-import { Suspense } from 'react'
+import { lazy, Suspense } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router'
 import { BrandMark } from '../../strand/Strand'
 import { Loading, NotFound, RouteErrorBoundary } from '../../ui'
 import { DirectoryPage } from './DirectoryPage'
 import { FindPage } from './FindPage'
 import { MatchStatusPage } from './MatchStatusPage'
+
+// The service finder is its own module (consult), loaded only when a client opens it.
+const GeneralConsultPage = lazy(() => import('../../consult/ConsultPage').then((m) => ({ default: m.GeneralConsultPage })))
+const PartnerConsultPage = lazy(() => import('../../consult/ConsultPage').then((m) => ({ default: m.PartnerConsultPage })))
 
 /** Clients never sign in (CLAUDE.md): their pages render outside the signed-in shell, with no login at all. */
 export function PublicShell() {
@@ -27,6 +31,8 @@ export function PublicShell() {
               <Route path="/m/:token" element={<MatchStatusPage />} />
               <Route path="/m/:token/stylists" element={<DirectoryPage />} />
               <Route path="/stylists" element={<DirectoryPage />} />
+              <Route path="/consult" element={<GeneralConsultPage />} />
+              <Route path="/c/:slug" element={<PartnerConsultPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

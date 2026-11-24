@@ -76,6 +76,31 @@ async function answerEverything({ asks = false } = {}) {
 }
 
 describe('FindPage', () => {
+  it('starts with the service picked when the service finder hands one over', () => {
+    stubApi()
+    render(
+      <MemoryRouter initialEntries={['/find?service=BALAYAGE']}>
+        <Routes>
+          <Route path="/find" element={<FindPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    expect(screen.getByLabelText('Balayage')).toBeChecked()
+    expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled()
+  })
+
+  it('ignores a service it does not offer', () => {
+    stubApi()
+    render(
+      <MemoryRouter initialEntries={['/find?service=NONSENSE']}>
+        <Routes>
+          <Route path="/find" element={<FindPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
+  })
+
   it('says the photo is deleted on a schedule, without a number, until the setting loads', () => {
     render(<PrivacyNote keptDays={null} />)
     expect(screen.getByText(/we delete it on a set schedule/)).toBeInTheDocument()

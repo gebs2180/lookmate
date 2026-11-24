@@ -43,6 +43,9 @@ export function Landing({ onStylistLogin }: { onStylistLogin: () => void }) {
         <Link className="button block" to="/find">
           Find my stylist
         </Link>
+        <Link className="button secondary block landing-consult" to="/consult">
+          Not sure what to book?
+        </Link>
         <Link className="landing-browse" to="/stylists">
           or browse every stylist
         </Link>
