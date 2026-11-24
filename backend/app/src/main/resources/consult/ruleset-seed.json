@@ -1,0 +1,1519 @@
+{
+  "format": 1,
+  "name": "Not sure what to book?",
+  "credit": null,
+  "questions": [
+    {
+      "id": "hair_type",
+      "text": "Which is closest to your natural hair?",
+      "multiple": false,
+      "help": "We show a photo of each type next to the answer.",
+      "stored": true,
+      "answers": [
+        "Straight",
+        "Wavy",
+        "Curly",
+        "Coily"
+      ]
+    },
+    {
+      "id": "length",
+      "text": "How long is your hair right now?",
+      "multiple": false,
+      "help": null,
+      "stored": true,
+      "answers": [
+        "Above chin",
+        "Chin to shoulders",
+        "Past shoulders",
+        "Mid-back or longer"
+      ]
+    },
+    {
+      "id": "now_level",
+      "text": "How light is your hair now, at the roots?",
+      "multiple": false,
+      "help": "Show a swatch photo for each, on several hair types. Later, a photo of their hair could fill this in.",
+      "stored": true,
+      "answers": [
+        "Black or darkest brown",
+        "Dark brown",
+        "Medium or light brown",
+        "Dark blonde",
+        "Light blonde or lighter"
+      ]
+    },
+    {
+      "id": "goal",
+      "text": "What do you want your colour to do?",
+      "multiple": false,
+      "help": null,
+      "stored": true,
+      "answers": [
+        "Add brighter pieces",
+        "Go lighter all over",
+        "Go darker or richer",
+        "Cover my grey",
+        "Fix a colour I don't like",
+        "Refresh the colour I have",
+        "No colour, just a cut"
+      ]
+    },
+    {
+      "id": "want_level",
+      "text": "How light do you want it?",
+      "multiple": false,
+      "help": "Show the same 5 swatch photos. Later, a photo of the look they want could fill this in.",
+      "stored": true,
+      "answers": [
+        "Black or darkest brown",
+        "Dark brown",
+        "Medium or light brown",
+        "Dark blonde",
+        "Light blonde or lighter"
+      ]
+    },
+    {
+      "id": "look",
+      "text": "Which look is closer to what you want?",
+      "multiple": false,
+      "help": "Photo idea: a balayage next to foil highlights.",
+      "stored": true,
+      "answers": [
+        "Soft and blended, grows out gently",
+        "Bright and even from the root",
+        "Not sure, help me choose"
+      ]
+    },
+    {
+      "id": "history",
+      "text": "What has been on your hair in the last 2 years?",
+      "multiple": true,
+      "help": "Clients can tick more than one.",
+      "stored": true,
+      "answers": [
+        "Nothing, it's my natural colour",
+        "Salon colour",
+        "Box dye from a shop",
+        "Bleach or lightener",
+        "Henna",
+        "Relaxer, perm or keratin treatment"
+      ]
+    },
+    {
+      "id": "upkeep",
+      "text": "How often do you want to come in for colour?",
+      "multiple": false,
+      "help": null,
+      "stored": true,
+      "answers": [
+        "Every 6 to 8 weeks",
+        "Every 3 to 4 months",
+        "Twice a year or less"
+      ]
+    },
+    {
+      "id": "reaction",
+      "text": "Have you ever had a reaction to hair colour, like itching, burning or swelling?",
+      "multiple": false,
+      "help": "Only routes to a consultation. Combpatible never stores this answer.",
+      "stored": false,
+      "answers": [
+        "No",
+        "Yes",
+        "Not sure"
+      ]
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "CONSULT_SAFETY",
+      "kind": "CONSULTATION",
+      "serviceName": "Colour consultation + patch test",
+      "serviceType": "COLOR",
+      "hours": 0.25,
+      "fromPrice": 0,
+      "bookingUrl": null,
+      "whatToExpect": "Your stylist does a quick patch test first, so your colour appointment is safe for you."
+    },
+    {
+      "id": "CONSULT_CORRECTION",
+      "kind": "CONSULTATION",
+      "serviceName": "Colour correction consultation",
+      "serviceType": "COLOR",
+      "hours": 0.5,
+      "fromPrice": 0,
+      "bookingUrl": null,
+      "whatToExpect": "Changing colour that's already on your hair takes a plan. Your stylist looks at your hair and gives you the plan and the price."
+    },
+    {
+      "id": "CONSULT_CHANGE",
+      "kind": "CONSULTATION",
+      "serviceName": "New client colour consultation",
+      "serviceType": "COLOR",
+      "hours": 0.25,
+      "fromPrice": 0,
+      "bookingUrl": null,
+      "whatToExpect": "A bigger change is best planned together, in person, before the colour appointment."
+    },
+    {
+      "id": "BALAYAGE_PARTIAL",
+      "kind": "BOOK",
+      "serviceName": "Partial balayage + toner",
+      "serviceType": "BALAYAGE",
+      "hours": 2.5,
+      "fromPrice": 150,
+      "bookingUrl": null,
+      "whatToExpect": "Hand-painted brightness around your face and top layer. Soft regrowth: most clients come back in 3 to 4 months."
+    },
+    {
+      "id": "BALAYAGE_FULL",
+      "kind": "BOOK",
+      "serviceName": "Full balayage + toner",
+      "serviceType": "BALAYAGE",
+      "hours": 3.5,
+      "fromPrice": 220,
+      "bookingUrl": null,
+      "whatToExpect": "Hand-painted brightness through all your hair, blended at the root so it grows out gently."
+    },
+    {
+      "id": "HIGHLIGHTS_PARTIAL",
+      "kind": "BOOK",
+      "serviceName": "Partial foil highlights",
+      "serviceType": "HIGHLIGHTS",
+      "hours": 2,
+      "fromPrice": 120,
+      "bookingUrl": null,
+      "whatToExpect": "Foils on the top and sides for brightness that starts at the root. Plan to come back every 6 to 8 weeks."
+    },
+    {
+      "id": "HIGHLIGHTS_FULL",
+      "kind": "BOOK",
+      "serviceName": "Full foil highlights",
+      "serviceType": "HIGHLIGHTS",
+      "hours": 3,
+      "fromPrice": 180,
+      "bookingUrl": null,
+      "whatToExpect": "Foils through all your hair for even, bright colour from the root. Plan to come back every 6 to 8 weeks."
+    },
+    {
+      "id": "ALL_OVER",
+      "kind": "BOOK",
+      "serviceName": "All-over colour",
+      "serviceType": "COLOR",
+      "hours": 1.5,
+      "fromPrice": 90,
+      "bookingUrl": null,
+      "whatToExpect": "One colour from root to ends."
+    },
+    {
+      "id": "ROOT_TOUCHUP",
+      "kind": "BOOK",
+      "serviceName": "Root touch-up (grey coverage)",
+      "serviceType": "COLOR",
+      "hours": 1.25,
+      "fromPrice": 75,
+      "bookingUrl": null,
+      "whatToExpect": "Colour on the new growth to cover grey, matched to the rest of your hair."
+    },
+    {
+      "id": "GLOSS",
+      "kind": "BOOK",
+      "serviceName": "Gloss / toner refresh",
+      "serviceType": "COLOR",
+      "hours": 1,
+      "fromPrice": 60,
+      "bookingUrl": null,
+      "whatToExpect": "Brings back shine and tone to the colour you already have."
+    },
+    {
+      "id": "CUT",
+      "kind": "BOOK",
+      "serviceName": "Haircut",
+      "serviceType": "CUT",
+      "hours": 1,
+      "fromPrice": 55,
+      "bookingUrl": null,
+      "whatToExpect": "A cut and style."
+    }
+  ],
+  "rules": [
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "No colour, just a cut"
+        }
+      ],
+      "outcome": "CUT",
+      "why": null,
+      "note": "Cut-only clients skip the colour logic."
+    },
+    {
+      "when": [
+        {
+          "question": "reaction",
+          "answer": "Yes"
+        }
+      ],
+      "outcome": "CONSULT_SAFETY",
+      "why": "You've had a reaction to colour before.",
+      "note": "Safety first, above everything else."
+    },
+    {
+      "when": [
+        {
+          "question": "reaction",
+          "answer": "Not sure"
+        }
+      ],
+      "outcome": "CONSULT_SAFETY",
+      "why": "You weren't sure about a past reaction.",
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Fix a colour I don't like"
+        }
+      ],
+      "outcome": "CONSULT_CORRECTION",
+      "why": null,
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "history",
+          "answer": "Henna"
+        }
+      ],
+      "outcome": "CONSULT_CORRECTION",
+      "why": "Henna can react with salon colour.",
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "history",
+          "answer": "Box dye from a shop"
+        },
+        {
+          "question": "goal",
+          "answer": "Add brighter pieces"
+        }
+      ],
+      "outcome": "CONSULT_CORRECTION",
+      "why": "Box dye can lift unevenly with lightener.",
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "history",
+          "answer": "Box dye from a shop"
+        },
+        {
+          "question": "goal",
+          "answer": "Go lighter all over"
+        }
+      ],
+      "outcome": "CONSULT_CORRECTION",
+      "why": "Box dye can lift unevenly with lightener.",
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "now_level",
+          "answer": "Black or darkest brown"
+        },
+        {
+          "question": "want_level",
+          "answer": "Dark blonde"
+        }
+      ],
+      "outcome": "CONSULT_CHANGE",
+      "why": "Going from very dark to blonde takes more than one appointment. Let's plan it together.",
+      "note": "Level gap: a jump of 3 or more steps on this scale goes to a consultation, whatever the goal."
+    },
+    {
+      "when": [
+        {
+          "question": "now_level",
+          "answer": "Black or darkest brown"
+        },
+        {
+          "question": "want_level",
+          "answer": "Light blonde or lighter"
+        }
+      ],
+      "outcome": "CONSULT_CHANGE",
+      "why": "Going from very dark to blonde takes more than one appointment. Let's plan it together.",
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "now_level",
+          "answer": "Dark brown"
+        },
+        {
+          "question": "want_level",
+          "answer": "Light blonde or lighter"
+        }
+      ],
+      "outcome": "CONSULT_CHANGE",
+      "why": "Going from dark brown to light blonde takes more than one appointment. Let's plan it together.",
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "history",
+          "answer": "Relaxer, perm or keratin treatment"
+        },
+        {
+          "question": "goal",
+          "answer": "Add brighter pieces"
+        }
+      ],
+      "outcome": "CONSULT_CHANGE",
+      "why": "Lightener on relaxed, permed or keratin-treated hair needs a strand test first.",
+      "note": "Fairness: covers textured hair that is chemically straightened."
+    },
+    {
+      "when": [
+        {
+          "question": "history",
+          "answer": "Relaxer, perm or keratin treatment"
+        },
+        {
+          "question": "goal",
+          "answer": "Go lighter all over"
+        }
+      ],
+      "outcome": "CONSULT_CHANGE",
+      "why": "Lightener on relaxed, permed or keratin-treated hair needs a strand test first.",
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Go lighter all over"
+        }
+      ],
+      "outcome": "CONSULT_CHANGE",
+      "why": "Going lighter all over is a big change.",
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Add brighter pieces"
+        },
+        {
+          "question": "look",
+          "answer": "Not sure, help me choose"
+        }
+      ],
+      "outcome": "CONSULT_CHANGE",
+      "why": "Your stylist will help you pick between balayage and highlights.",
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Add brighter pieces"
+        },
+        {
+          "question": "look",
+          "answer": "Bright and even from the root"
+        },
+        {
+          "question": "upkeep",
+          "answer": "Twice a year or less"
+        }
+      ],
+      "outcome": "CONSULT_CHANGE",
+      "why": "Bright colour from the root needs a visit every 6 to 8 weeks. Let's find a look that fits your schedule.",
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Add brighter pieces"
+        },
+        {
+          "question": "look",
+          "answer": "Soft and blended, grows out gently"
+        },
+        {
+          "question": "length",
+          "answer": "Above chin"
+        }
+      ],
+      "outcome": "BALAYAGE_PARTIAL",
+      "why": null,
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Add brighter pieces"
+        },
+        {
+          "question": "look",
+          "answer": "Soft and blended, grows out gently"
+        },
+        {
+          "question": "length",
+          "answer": "Chin to shoulders"
+        }
+      ],
+      "outcome": "BALAYAGE_PARTIAL",
+      "why": null,
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Add brighter pieces"
+        },
+        {
+          "question": "look",
+          "answer": "Soft and blended, grows out gently"
+        }
+      ],
+      "outcome": "BALAYAGE_FULL",
+      "why": null,
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Add brighter pieces"
+        },
+        {
+          "question": "look",
+          "answer": "Bright and even from the root"
+        },
+        {
+          "question": "length",
+          "answer": "Above chin"
+        }
+      ],
+      "outcome": "HIGHLIGHTS_PARTIAL",
+      "why": null,
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Add brighter pieces"
+        },
+        {
+          "question": "look",
+          "answer": "Bright and even from the root"
+        }
+      ],
+      "outcome": "HIGHLIGHTS_FULL",
+      "why": null,
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Cover my grey"
+        },
+        {
+          "question": "history",
+          "answer": "Nothing, it's my natural colour"
+        }
+      ],
+      "outcome": "ALL_OVER",
+      "why": "First-time grey coverage starts with colour all over.",
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Cover my grey"
+        }
+      ],
+      "outcome": "ROOT_TOUCHUP",
+      "why": null,
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Go darker or richer"
+        },
+        {
+          "question": "history",
+          "answer": "Bleach or lightener"
+        }
+      ],
+      "outcome": "CONSULT_CORRECTION",
+      "why": "Going darker over lightened hair usually needs a filler step first.",
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Go darker or richer"
+        }
+      ],
+      "outcome": "ALL_OVER",
+      "why": null,
+      "note": null
+    },
+    {
+      "when": [
+        {
+          "question": "goal",
+          "answer": "Refresh the colour I have"
+        }
+      ],
+      "outcome": "GLOSS",
+      "why": null,
+      "note": null
+    },
+    {
+      "when": [],
+      "outcome": "CONSULT_CHANGE",
+      "why": "We'd like to see your hair first.",
+      "note": "Catch-all. Keep this as the last rule."
+    }
+  ],
+  "tests": [
+    {
+      "name": "Straight, long, wants soft brightness",
+      "answers": {
+        "hair_type": [
+          "Straight"
+        ],
+        "length": [
+          "Past shoulders"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Soft and blended, grows out gently"
+        ],
+        "history": [
+          "Salon colour"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "BALAYAGE_FULL"
+    },
+    {
+      "name": "Wavy bob, wants bright from the root",
+      "answers": {
+        "hair_type": [
+          "Wavy"
+        ],
+        "length": [
+          "Above chin"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Bright and even from the root"
+        ],
+        "history": [
+          "Nothing, it's my natural colour"
+        ],
+        "upkeep": [
+          "Every 6 to 8 weeks"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "HIGHLIGHTS_PARTIAL"
+    },
+    {
+      "name": "Coily, relaxed, wants brighter pieces",
+      "answers": {
+        "hair_type": [
+          "Coily"
+        ],
+        "length": [
+          "Chin to shoulders"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Soft and blended, grows out gently"
+        ],
+        "history": [
+          "Relaxer, perm or keratin treatment"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CHANGE"
+    },
+    {
+      "name": "Curly, natural, wants soft brightness",
+      "answers": {
+        "hair_type": [
+          "Curly"
+        ],
+        "length": [
+          "Past shoulders"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Soft and blended, grows out gently"
+        ],
+        "history": [
+          "Nothing, it's my natural colour"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "BALAYAGE_FULL"
+    },
+    {
+      "name": "Box dye, wants lighter all over",
+      "answers": {
+        "hair_type": [
+          "Straight"
+        ],
+        "length": [
+          "Chin to shoulders"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Go lighter all over"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Bright and even from the root"
+        ],
+        "history": [
+          "Box dye from a shop"
+        ],
+        "upkeep": [
+          "Every 6 to 8 weeks"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CORRECTION"
+    },
+    {
+      "name": "Regular grey coverage",
+      "answers": {
+        "hair_type": [
+          "Wavy"
+        ],
+        "length": [
+          "Past shoulders"
+        ],
+        "now_level": [
+          "Dark brown"
+        ],
+        "goal": [
+          "Cover my grey"
+        ],
+        "want_level": [
+          "Dark brown"
+        ],
+        "look": [
+          "Not sure, help me choose"
+        ],
+        "history": [
+          "Salon colour"
+        ],
+        "upkeep": [
+          "Every 6 to 8 weeks"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "ROOT_TOUCHUP"
+    },
+    {
+      "name": "Grey, unsure about a past reaction",
+      "answers": {
+        "hair_type": [
+          "Curly"
+        ],
+        "length": [
+          "Above chin"
+        ],
+        "now_level": [
+          "Dark brown"
+        ],
+        "goal": [
+          "Cover my grey"
+        ],
+        "want_level": [
+          "Dark brown"
+        ],
+        "look": [
+          "Not sure, help me choose"
+        ],
+        "history": [
+          "Nothing, it's my natural colour"
+        ],
+        "upkeep": [
+          "Every 6 to 8 weeks"
+        ],
+        "reaction": [
+          "Not sure"
+        ]
+      },
+      "expected": "CONSULT_SAFETY"
+    },
+    {
+      "name": "Cut only, henna on the hair",
+      "answers": {
+        "hair_type": [
+          "Coily"
+        ],
+        "length": [
+          "Mid-back or longer"
+        ],
+        "now_level": [
+          "Dark brown"
+        ],
+        "goal": [
+          "No colour, just a cut"
+        ],
+        "history": [
+          "Henna"
+        ],
+        "reaction": [
+          "Yes"
+        ]
+      },
+      "expected": "CUT"
+    },
+    {
+      "name": "Two history answers: darker over bleach",
+      "answers": {
+        "hair_type": [
+          "Straight"
+        ],
+        "length": [
+          "Past shoulders"
+        ],
+        "now_level": [
+          "Dark blonde"
+        ],
+        "goal": [
+          "Go darker or richer"
+        ],
+        "want_level": [
+          "Dark brown"
+        ],
+        "look": [
+          "Soft and blended, grows out gently"
+        ],
+        "history": [
+          "Salon colour",
+          "Bleach or lightener"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CORRECTION"
+    },
+    {
+      "name": "Refresh, twice a year",
+      "answers": {
+        "hair_type": [
+          "Wavy"
+        ],
+        "length": [
+          "Chin to shoulders"
+        ],
+        "now_level": [
+          "Dark brown"
+        ],
+        "goal": [
+          "Refresh the colour I have"
+        ],
+        "want_level": [
+          "Dark brown"
+        ],
+        "look": [
+          "Soft and blended, grows out gently"
+        ],
+        "history": [
+          "Salon colour"
+        ],
+        "upkeep": [
+          "Twice a year or less"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "GLOSS"
+    },
+    {
+      "name": "Bright from the root, low upkeep",
+      "answers": {
+        "hair_type": [
+          "Straight"
+        ],
+        "length": [
+          "Past shoulders"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Bright and even from the root"
+        ],
+        "history": [
+          "Salon colour"
+        ],
+        "upkeep": [
+          "Twice a year or less"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CHANGE"
+    },
+    {
+      "name": "Coily, natural, wants richer colour",
+      "answers": {
+        "hair_type": [
+          "Coily"
+        ],
+        "length": [
+          "Chin to shoulders"
+        ],
+        "now_level": [
+          "Dark blonde"
+        ],
+        "goal": [
+          "Go darker or richer"
+        ],
+        "want_level": [
+          "Dark brown"
+        ],
+        "look": [
+          "Not sure, help me choose"
+        ],
+        "history": [
+          "Nothing, it's my natural colour"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "ALL_OVER"
+    },
+    {
+      "name": "Had a reaction before",
+      "answers": {
+        "hair_type": [
+          "Straight"
+        ],
+        "length": [
+          "Past shoulders"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Go lighter all over"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Bright and even from the root"
+        ],
+        "history": [
+          "Salon colour"
+        ],
+        "upkeep": [
+          "Every 6 to 8 weeks"
+        ],
+        "reaction": [
+          "Yes"
+        ]
+      },
+      "expected": "CONSULT_SAFETY"
+    },
+    {
+      "name": "Wants a colour fixed",
+      "answers": {
+        "hair_type": [
+          "Wavy"
+        ],
+        "length": [
+          "Chin to shoulders"
+        ],
+        "now_level": [
+          "Dark brown"
+        ],
+        "goal": [
+          "Fix a colour I don't like"
+        ],
+        "want_level": [
+          "Dark brown"
+        ],
+        "look": [
+          "Not sure, help me choose"
+        ],
+        "history": [
+          "Box dye from a shop"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CORRECTION"
+    },
+    {
+      "name": "Henna, wants a refresh",
+      "answers": {
+        "hair_type": [
+          "Curly"
+        ],
+        "length": [
+          "Past shoulders"
+        ],
+        "now_level": [
+          "Dark brown"
+        ],
+        "goal": [
+          "Refresh the colour I have"
+        ],
+        "want_level": [
+          "Dark brown"
+        ],
+        "look": [
+          "Soft and blended, grows out gently"
+        ],
+        "history": [
+          "Henna"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CORRECTION"
+    },
+    {
+      "name": "Box dye, wants brighter pieces",
+      "answers": {
+        "hair_type": [
+          "Coily"
+        ],
+        "length": [
+          "Above chin"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Soft and blended, grows out gently"
+        ],
+        "history": [
+          "Box dye from a shop"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CORRECTION"
+    },
+    {
+      "name": "Keratin, wants lighter all over",
+      "answers": {
+        "hair_type": [
+          "Wavy"
+        ],
+        "length": [
+          "Past shoulders"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Go lighter all over"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Bright and even from the root"
+        ],
+        "history": [
+          "Salon colour",
+          "Relaxer, perm or keratin treatment"
+        ],
+        "upkeep": [
+          "Every 6 to 8 weeks"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CHANGE"
+    },
+    {
+      "name": "Natural, wants lighter all over",
+      "answers": {
+        "hair_type": [
+          "Curly"
+        ],
+        "length": [
+          "Mid-back or longer"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Go lighter all over"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Soft and blended, grows out gently"
+        ],
+        "history": [
+          "Nothing, it's my natural colour"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CHANGE"
+    },
+    {
+      "name": "Brighter pieces, unsure which look",
+      "answers": {
+        "hair_type": [
+          "Coily"
+        ],
+        "length": [
+          "Past shoulders"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Not sure, help me choose"
+        ],
+        "history": [
+          "Salon colour"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CHANGE"
+    },
+    {
+      "name": "Short curly, soft brightness",
+      "answers": {
+        "hair_type": [
+          "Curly"
+        ],
+        "length": [
+          "Above chin"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Soft and blended, grows out gently"
+        ],
+        "history": [
+          "Salon colour"
+        ],
+        "upkeep": [
+          "Twice a year or less"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "BALAYAGE_PARTIAL"
+    },
+    {
+      "name": "Coily, shoulder length, soft brightness",
+      "answers": {
+        "hair_type": [
+          "Coily"
+        ],
+        "length": [
+          "Chin to shoulders"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Soft and blended, grows out gently"
+        ],
+        "history": [
+          "Nothing, it's my natural colour"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "BALAYAGE_PARTIAL"
+    },
+    {
+      "name": "First time covering grey",
+      "answers": {
+        "hair_type": [
+          "Straight"
+        ],
+        "length": [
+          "Chin to shoulders"
+        ],
+        "now_level": [
+          "Dark brown"
+        ],
+        "goal": [
+          "Cover my grey"
+        ],
+        "want_level": [
+          "Dark brown"
+        ],
+        "look": [
+          "Not sure, help me choose"
+        ],
+        "history": [
+          "Nothing, it's my natural colour"
+        ],
+        "upkeep": [
+          "Every 6 to 8 weeks"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "ALL_OVER"
+    },
+    {
+      "name": "Long straight, bright from the root",
+      "answers": {
+        "hair_type": [
+          "Straight"
+        ],
+        "length": [
+          "Mid-back or longer"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Bright and even from the root"
+        ],
+        "history": [
+          "Salon colour"
+        ],
+        "upkeep": [
+          "Every 6 to 8 weeks"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "HIGHLIGHTS_FULL"
+    },
+    {
+      "name": "Skipped the look question",
+      "answers": {
+        "hair_type": [
+          "Wavy"
+        ],
+        "length": [
+          "Past shoulders"
+        ],
+        "now_level": [
+          "Medium or light brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "history": [
+          "Salon colour"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CHANGE"
+    },
+    {
+      "name": "Coily, black, wants light blonde pieces",
+      "answers": {
+        "hair_type": [
+          "Coily"
+        ],
+        "length": [
+          "Past shoulders"
+        ],
+        "now_level": [
+          "Black or darkest brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Light blonde or lighter"
+        ],
+        "look": [
+          "Soft and blended, grows out gently"
+        ],
+        "history": [
+          "Nothing, it's my natural colour"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CHANGE"
+    },
+    {
+      "name": "Straight, black, wants dark blonde",
+      "answers": {
+        "hair_type": [
+          "Straight"
+        ],
+        "length": [
+          "Chin to shoulders"
+        ],
+        "now_level": [
+          "Black or darkest brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Bright and even from the root"
+        ],
+        "history": [
+          "Salon colour"
+        ],
+        "upkeep": [
+          "Every 6 to 8 weeks"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CHANGE"
+    },
+    {
+      "name": "Curly, dark brown, wants light blonde",
+      "answers": {
+        "hair_type": [
+          "Curly"
+        ],
+        "length": [
+          "Past shoulders"
+        ],
+        "now_level": [
+          "Dark brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Light blonde or lighter"
+        ],
+        "look": [
+          "Soft and blended, grows out gently"
+        ],
+        "history": [
+          "Salon colour"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "CONSULT_CHANGE"
+    },
+    {
+      "name": "Wavy, dark brown, wants dark blonde pieces",
+      "answers": {
+        "hair_type": [
+          "Wavy"
+        ],
+        "length": [
+          "Past shoulders"
+        ],
+        "now_level": [
+          "Dark brown"
+        ],
+        "goal": [
+          "Add brighter pieces"
+        ],
+        "want_level": [
+          "Dark blonde"
+        ],
+        "look": [
+          "Soft and blended, grows out gently"
+        ],
+        "history": [
+          "Salon colour"
+        ],
+        "upkeep": [
+          "Every 3 to 4 months"
+        ],
+        "reaction": [
+          "No"
+        ]
+      },
+      "expected": "BALAYAGE_FULL"
+    }
+  ]
+}

@@ -42,9 +42,11 @@ variables (`AUTH0_DOMAIN`, `AUTH0_SPA_CLIENT_ID`, `AUTH0_AUDIENCE`) to be set.
 ## In progress
 
 - **Service finder** ("Not sure what to book?"): research and decisions are in
-  [research/service-finder.md](research/service-finder.md). **Next:** the partner stylist fills in
-  [research/service-finder-template.xlsx](research/service-finder-template.xlsx). Then pilot step 1, the `consult`
-  module (rules a partner writes and tests, never AI; no other module depends on it).
+  [research/service-finder.md](research/service-finder.md). The backend half of pilot step 1, the `consult` module, is
+  built and running on our own example ruleset converted from the template
+  ([modules/consult.md](modules/consult.md)). The partner is Jason (Salon Lofts). His filled-in sheet loads through
+  the admin upload, with no code change. **Next:** the web half: the quiz at `/c/<slug>` and the general "Not sure
+  what to book?" button. Emailing the stylist the answers the client chooses to share is still a TODO.
 - **Deploy:** PRs #28 and #29 and everything after them are on `main` but not necessarily on the server. Zach deploys
   ([hosting.md](hosting.md#day-to-day)); don't deploy for him.
 - **Pilot server:** it uses the Auth0 dev tenant with admin MFA off (`LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA=false`), by

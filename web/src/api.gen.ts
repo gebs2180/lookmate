@@ -4,6 +4,38 @@
  */
 
 export interface paths {
+    "/api/admin/consult/rulesets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_1"];
+        put?: never;
+        post: operations["upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/consult/rulesets/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/events/{eventId}/void": {
         parameters: {
             query?: never;
@@ -763,9 +795,105 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["book"];
+        get: operations["book_1"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/consult/c/{slug}/finder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["partnerFinder"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/consult/c/{slug}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["partnerSubmit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/consult/finder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["finder"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/consult/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/consult/sessions/{id}/book": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["book"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/consult/sessions/{id}/find-stylist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["findStylist"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1033,6 +1161,72 @@ export interface components {
             acceptedAt: string;
             text: string;
             version: string;
+        };
+        ConsultAdminControllerRulesetVersion: {
+            credit: string;
+            current: boolean;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: int32 */
+            outcomes: number;
+            /** Format: date-time */
+            publishedAt: string;
+            /** Format: int32 */
+            questions: number;
+            /** Format: int32 */
+            rules: number;
+            source: string;
+            /** Format: int32 */
+            tests: number;
+            /** Format: int32 */
+            version: number;
+        };
+        ConsultControllerAnswers: {
+            answers: {
+                [key: string]: string[];
+            };
+        };
+        ConsultControllerBookClick: {
+            shareAnswers: boolean;
+        };
+        ConsultServiceFinder: {
+            /** @enum {string} */
+            channel: "GENERAL" | "PARTNER";
+            credit: string;
+            name: string;
+            questions: components["schemas"]["ConsultServiceQuestion"][];
+            /** Format: int32 */
+            rulesetVersion: number;
+        };
+        ConsultServiceOutcome: {
+            bookingUrl: string;
+            fromPrice: number;
+            hours: number;
+            id: string;
+            /** @enum {string} */
+            kind: "BOOK" | "CONSULTATION";
+            serviceName: string;
+            serviceType: string;
+            whatToExpect: string;
+            why: string;
+        };
+        ConsultServiceQuestion: {
+            answers: string[];
+            help: string;
+            id: string;
+            multiple: boolean;
+            text: string;
+        };
+        ConsultServiceResult: {
+            /** @enum {string} */
+            channel: "GENERAL" | "PARTNER";
+            credit: string;
+            outcome: components["schemas"]["ConsultServiceOutcome"];
+            /** Format: int32 */
+            rulesetVersion: number;
+            /** Format: uuid */
+            sessionId: string;
         };
         IntakeControllerCreateRequest: {
             /** Format: int32 */
@@ -1529,6 +1723,52 @@ export interface components {
             /** Format: uuid */
             orgId: string;
         };
+        Ruleset: {
+            credit: string;
+            /** Format: int32 */
+            format: number;
+            name: string;
+            outcomes: components["schemas"]["RulesetOutcome"][];
+            questions: components["schemas"]["RulesetQuestion"][];
+            rules: components["schemas"]["RulesetRule"][];
+            tests: components["schemas"]["RulesetTestCase"][];
+        };
+        RulesetCondition: {
+            answer: string;
+            question: string;
+        };
+        RulesetOutcome: {
+            bookingUrl: string;
+            fromPrice: number;
+            hours: number;
+            id: string;
+            /** @enum {string} */
+            kind: "BOOK" | "CONSULTATION";
+            serviceName: string;
+            serviceType: string;
+            whatToExpect: string;
+        };
+        RulesetQuestion: {
+            answers: string[];
+            help: string;
+            id: string;
+            multiple: boolean;
+            stored: boolean;
+            text: string;
+        };
+        RulesetRule: {
+            note: string;
+            outcome: string;
+            when: components["schemas"]["RulesetCondition"][];
+            why: string;
+        };
+        RulesetTestCase: {
+            answers: {
+                [key: string]: string[];
+            };
+            expected: string;
+            name: string;
+        };
         StylistControllerAdminStylistView: {
             /** @enum {string} */
             bookingPlatform: "BOOKSY" | "VAGARO" | "STYLESEAT" | "GLOSSGENIUS" | "SQUARE" | "OTHER";
@@ -1732,6 +1972,72 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultAdminControllerRulesetVersion"][];
+                };
+            };
+        };
+    };
+    upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Ruleset"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultAdminControllerRulesetVersion"];
+                };
+            };
+        };
+    };
+    get_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Ruleset"];
+                };
+            };
+        };
+    };
     voidEvent_1: {
         parameters: {
             query?: never;
@@ -2987,7 +3293,7 @@ export interface operations {
             };
         };
     };
-    book: {
+    book_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -3001,6 +3307,142 @@ export interface operations {
         responses: {
             /** @description OK */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    partnerFinder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultServiceFinder"];
+                };
+            };
+        };
+    };
+    partnerSubmit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsultControllerAnswers"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultServiceResult"];
+                };
+            };
+        };
+    };
+    finder: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultServiceFinder"];
+                };
+            };
+        };
+    };
+    submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConsultControllerAnswers"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ConsultServiceResult"];
+                };
+            };
+        };
+    };
+    book: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ConsultControllerBookClick"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    findStylist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -37,6 +37,13 @@ springdoc:
 lookmate:
   # The market new stylists and clients belong to unless they say otherwise (CLAUDE.md: Columbus first).
   default-market: columbus-oh
+  # Service finder, "Not sure what to book?" (docs/modules/consult.md).
+  consult:
+    # The partner stylist's link is /c/<partner-slug>; it gets prices and booking links, the general button doesn't.
+    partner-slug: ${CONSULT_PARTNER_SLUG:partner}
+    rate-limit:
+      submits-per-hour: 30
+      reads-per-minute: 60
   security:
     # Custom claim the provider adds to access tokens with the user's roles. Only ADMIN is read from it;
     # STYLIST comes from org membership in the database.
