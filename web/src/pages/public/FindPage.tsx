@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { publicApi, type IntakeSettings, type MatchRequestCreate, type MatchRequestCreated } from '../../api'
 import { Strand, type StrandShape } from '../../strand/Strand'
 import { useLoad } from '../../useLoad'
@@ -61,7 +61,9 @@ type Sent = { token: string; statusPath: string }
  * there after the reveal (CLAUDE.md, 2026-11-20).
  */
 export function FindPage() {
-  const [answers, setAnswers] = useState<Answers>(EMPTY)
+  // ?service=BALAYAGE starts with that service picked: the service finder's "Find a stylist for this" hands off here.
+  const [params] = useSearchParams()
+  const [answers, setAnswers] = useState<Answers>(() => ({ ...EMPTY, service: serviceFrom(params.get('service')) }))
   const [step, setStep] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -281,6 +283,11 @@ export function FindPage() {
       </p>
     </section>
   )
+}
+
+/** A service code from the URL, if it's one the quiz offers. */
+function serviceFrom(value: string | null): Service | null {
+  return SERVICES.find((o) => o.value === value)?.value ?? null
 }
 
 function Question({ legend, hint, children }: { legend: string; hint?: string; children: ReactNode }) {
