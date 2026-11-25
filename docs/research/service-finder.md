@@ -23,7 +23,8 @@ Read this with [brief.md](../brief.md), [architecture.md](../architecture.md),
 - **Pilot it on their salon first.** They're the design partner: their questions, service menu and booking links. Only
   after that, open it to other independent stylists.
 - **The pro membership is a business decision for later.** Don't build any billing until about 10 stylists use it every
-  week.
+  week. **Decided 2026-11-25 (Zach):** it's the only charge, paid by stylists, and covers every feature, the finder
+  included; nothing is sold separately.
 
 The client tool and the matching app feed each other. The finder answers "what do I book?" and matching answers "who
 should do it?". A finder result can lead straight into find-my-stylist with the service already chosen.

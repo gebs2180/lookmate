@@ -294,7 +294,7 @@ textured-hair set.
 | Bridal and event requests | Client | `intake` | M | Different flow (dates, trials, groups); out of the pilot |
 | Educational pages: "what is a curly cut", "balayage vs highlights" | Client | web | S | Content only; SEO; written with the partner |
 | Swipe browsing; AI try-on | Client | — | L | Already Phase 2 in the brief |
-| Stylist membership billing | — | — | — | Decided: later, about 10 weekly finder users, Stripe link off-app |
+| Stylist membership billing | — | — | — | Decided: later, about 10 weekly finder users, Stripe link off-app. The only charge, and it includes every feature (Zach, 2026-11-25) |
 
 ## Rejected: they break a non-negotiable
 
@@ -326,7 +326,8 @@ Answered 2026-11-25 by Zach: "I look moving forward with all of these."
    should not prevent them from matching." The stylist stays in matching and the directory; the match card shows the
    status and the wait. The 30-day confirm still applies.
 3. **Idea 4: never charge per client for clients from a stylist's own page?** **Agreed.** Zach: "never charge the
-   stylists". Whether that also rules out the later membership (CLAUDE.md, 2026-11-22) is still to confirm.
+   stylists" per client. Then (2026-11-25): the stylist membership is the only charge, and it includes every feature
+   we build, this page among them.
 4. **Idea 5: rebook reminder.** **Dropped.** Zach: "no reminder emails, that should come from the stylist directly."
 5. **Idea 6: who gets the check-in?** **All clients,** not a pilot of 100. Clients who gave an email get one email
    about 10 days after `BOOKED`; clients without one see the question on their link page instead, and still get no
