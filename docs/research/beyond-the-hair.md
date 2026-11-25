@@ -415,8 +415,9 @@ inputs).
    appointment covers it.
 8. **Lawyer.** Add to the terms review: practice labels and Columbus 2331, and whether Combpatible itself counts as a
    public accommodation for its directory filters.
-9. **Follow-up feedback (item 10)** needs the post-appointment email to exist first. Pilot it with the first 100
-   matched clients who gave an email?
+9. ~~**Follow-up feedback (item 10)**: pilot with the first 100 matched clients who gave an email?~~ **Decided
+   2026-11-25 (Zach): all clients.** Email for those who gave one, the link page for the rest. Built as idea 6 of
+   [feature-ideas.md](feature-ideas.md).
 
 ## Sources
 
