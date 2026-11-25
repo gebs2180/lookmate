@@ -41,12 +41,19 @@ variables (`AUTH0_DOMAIN`, `AUTH0_SPA_CLIENT_ID`, `AUTH0_AUDIENCE`) to be set.
 
 ## In progress
 
-- **Service finder** ("Not sure what to book?"): research and decisions are in
-  [research/service-finder.md](research/service-finder.md). The backend half of pilot step 1, the `consult` module, is
-  built and running on our own example ruleset converted from the template
-  ([modules/consult.md](modules/consult.md)). The partner is Jason (Salon Lofts). His filled-in sheet loads through
-  the admin upload, with no code change. **Next:** the web half: the quiz at `/c/<slug>` and the general "Not sure
-  what to book?" button. Emailing the stylist the answers the client chooses to share is still a TODO.
+- **Service finder** ("Not sure what to book?"): built (`consult` module and web) and live at `/consult` and
+  `/c/partner` since the 2026-11-24 deploy, on our example ruleset ([modules/consult.md](modules/consult.md)). Jason's
+  filled-in sheet loads through the admin upload, with no code change. Still open: the partner agreement (Zach), and
+  emailing the stylist the answers the client chooses to share (a TODO in `ConsultService.book`).
+- **Feature ideas** ([research/feature-ideas.md](research/feature-ideas.md), decided 2026-11-25): build ideas 1–4, 6
+  and 7; idea 5 dropped. Sessions, one module area each, merging in this order:
+  1. `stylists`: first-visit fields and notes (idea 1) and "taking new clients" (idea 3, never affects matching).
+     Migration V13.
+  2. `tracking` + `notify`: weekly digest with one-tap Booked/Rebooked (idea 2). Migration V14. Runs alongside 1.
+  3. After 1: public stylist page `/s/<slug>` (idea 4) and exact-duplicate photo refusal (idea 7, SHA part).
+  4. After 2: "did you get the look?" check-in for all clients (idea 6).
+  5. After real embeddings: near-duplicate photo queue (idea 7).
+  Generic first-visit notes: our draft in [research/first-visit-notes.md](research/first-visit-notes.md) until Jason's.
 - **Deploy:** PRs #28 and #29 and everything after them are on `main` but not necessarily on the server. Zach deploys
   ([hosting.md](hosting.md#day-to-day)); don't deploy for him.
 - **Pilot server:** it uses the Auth0 dev tenant with admin MFA off (`LOOKMATE_SECURITY_REQUIRE_ADMIN_MFA=false`), by
