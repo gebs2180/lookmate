@@ -33,6 +33,12 @@ interface StylistProfileRepository extends JpaRepository<StylistProfile, UUID> {
     List<StylistProfile> findByMarketAndStatusOrderByDisplayNameAsc(String market, ProfileStatus status);
 
     List<StylistProfile> findByDemoTrueAndStatus(ProfileStatus status);
+
+    Optional<StylistProfile> findBySlug(String slug);
+
+    boolean existsBySlug(String slug);
+
+    boolean existsBySlugAndOrgIdNot(String slug, UUID orgId);
 }
 
 interface PhotoRepository extends JpaRepository<Photo, UUID> {
@@ -61,6 +67,9 @@ interface PhotoRepository extends JpaRepository<Photo, UUID> {
     int maxPosition(@Param("orgId") UUID orgId);
 
     boolean existsByOrgIdAndSha256AndStatusInAndIdNot(UUID orgId, String sha256, Collection<Photo.Status> statuses, UUID id);
+
+    /** The same bytes kept by another stylist (index portfolio_photo_sha256, V15). */
+    boolean existsBySha256AndStatusInAndOrgIdNot(String sha256, Collection<Photo.Status> statuses, UUID orgId);
 
     Optional<Photo> findByIdAndStatus(UUID id, Photo.Status status);
 

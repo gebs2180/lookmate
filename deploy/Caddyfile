@@ -37,6 +37,17 @@
 		respond 404
 	}
 
+	# A stylist's own page (/s/<slug>) for link-preview bots: they don't run the PWA's JavaScript, so they get the
+	# backend's Open Graph tags (title, the stylist's portfolio image) instead. People get the PWA below.
+	@stylistPreview {
+		path_regexp slug ^/s/([a-z0-9-]{1,40})/?$
+		header_regexp bot User-Agent (?i)(facebookexternalhit|facebot|twitterbot|slackbot|whatsapp|discordbot|linkedinbot|telegrambot|pinterest|skypeuripreview|redditbot|applebot|embedly|iframely|googlebot|bingbot)
+	}
+	handle @stylistPreview {
+		rewrite * /api/public/stylists/preview/{re.slug.1}
+		reverse_proxy backend:8080
+	}
+
 	# The PWA. Hashed assets cache forever; the shell and service worker never, so a deploy shows up on reload.
 	handle {
 		root * /srv

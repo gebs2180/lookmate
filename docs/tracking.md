@@ -20,6 +20,7 @@ a correction is a new row (a `VOIDED` event, below).
 |---|---|---|
 | Client (link token) | `GET /api/public/book/{token}/{matchId}` | Records `CLICKED_BOOK` and answers `302` to the stylist's `booking_url` with `utm_source=combpatible&utm_medium=referral&utm_campaign=<market>&utm_content=<matchId>` |
 | Client (link token) | `GET /api/public/book-stylist/{token}/{orgId}` | Book on a stylist picked from the directory: records `CLICKED_BOOK` with `match_id` null and the stylist's `org_id`, attributed to the client's request (any status but CLOSED), and answers the same `302` with `utm_content=directory` |
+| Anyone | `GET /api/public/stylists/{orgId}/book?via=qr\|bio\|link` | Book from a stylist's own page (`/s/<slug>`): records a `profile_click` (V15: org, `via`, time; no client, no match) and answers `302` with `Referrer-Policy: no-referrer` to the stylist's `booking_url` with `utm_source=combpatible&utm_medium=referral&utm_campaign=<market>&utm_content=profile`. LIVE, non-demo stylists only, else 404. Not a `match_event`: these are the stylist's own clients and **never charged for** (source PROFILE) |
 | Client (link token) | `POST /api/public/match-requests/{token}/viewed` | Records `VIEWED` (whole list, `match_id` null), at most once per request per day, and tells intake (`clientViewedMatches`), which cancels a held "matches ready" email. `204` |
 | Admin | `GET /api/admin/metrics?market=&from=&to=` | The pilot table, weekly series, per-stylist and per-hair-type breakdowns |
 | Admin | `GET /api/admin/tracking/matches?market=&q=` | The 50 most recently published visible matches, to pick one for manual entry |
@@ -141,6 +142,7 @@ Voided events count nowhere. Range: `from`..`to` are inclusive dates in `lookmat
 | Stylist stats | For one org: matches shown (by publish time), clicks, bookings, rebooks (by event time), last 30 days and all time |
 
 | Clicks and bookings by source | `clicksBySource` and `bookingsBySource` in the totals: **recommended** (the event is on a match), **directory** (no match: picked from the directory), and **directoryAlsoRecommended** (of the directory ones, those where the same stylist was on that client's published list, ranked and not hidden). Range by event time |
+| Profile book clicks | `profileBookClicks`: clicks on Book from stylists' own pages (`profile_click`), by event time. Kept apart from recommended and directory clicks because they are never charged for |
 
 The exact numbers are pinned by `MetricsTest` on a hand-counted fixture.
 
@@ -162,6 +164,7 @@ every query is a small scan. What supports them:
 ## Not done here
 
 - **Rate limits** are intake's `PublicRateLimit`, in memory per IP (so per instance; a second app container needs a
-  shared limit in Caddy or Postgres). Both Book routes (`/api/public/book/**` and `/api/public/book-stylist/**`) share
+  shared limit in Caddy or Postgres). The Book routes (`/api/public/book/**`, `/api/public/book-stylist/**` and the stylist page's `/api/public/stylists/{orgId}/book`) share
   the directory's `browse-per-minute` bucket (60); `/viewed` falls under intake's `reads-per-minute`. The click dedupe and the daily cap
-  still keep repeated clicks from skewing the metrics.
+  still keep repeated clicks from skewing the metrics. Profile clicks have no dedupe beyond that limit: they count
+  visits to the stylist's booking page, and nobody is billed for them.

@@ -45,6 +45,13 @@ export const SERVICE_LABEL: Record<ServiceType, string> = {
   OTHER: 'Other',
 }
 
+export const HAIR_TYPE_LABEL: Record<HairType, string> = {
+  STRAIGHT: 'Straight',
+  WAVY: 'Wavy',
+  CURLY: 'Curly',
+  COILY: 'Coily',
+}
+
 export const PLATFORM_LABEL: Record<BookingPlatform, string> = {
   BOOKSY: 'Booksy',
   VAGARO: 'Vagaro',
@@ -84,6 +91,8 @@ export type Profile = {
   updatedAt: string
   /** A made-up stylist for the proof of concept. */
   demo: boolean
+  /** Their public page's address: combpatible.app/s/<slug>. */
+  slug: string
   practice: Practice
   /** When the new-client status was last set or confirmed. */
   newClientsConfirmedAt: string
@@ -103,6 +112,8 @@ export type ProfileRequest = {
   practice: PracticeRequest | null
   /** Left out or null: unchanged. Saving it counts as confirming it. */
   newClients?: NewClients | null
+  /** The public page's address; left out or null: unchanged. */
+  slug?: string | null
 }
 
 export type StylistHome = {
@@ -214,4 +225,33 @@ export type FirstVisitNote = { key: string; text: string }
 export function words(value: string) {
   const lower = value.replaceAll('_', ' ').toLowerCase()
   return lower.charAt(0).toUpperCase() + lower.slice(1)
+}
+
+/** One photo on a stylist's public page. */
+export type PagePhoto = {
+  photoId: string
+  url: string
+  service: ServiceType | null
+  hairType: HairType | null
+  before: boolean
+  width: number | null
+  height: number | null
+}
+
+/** A stylist's public page (/s/<slug>) or the directory's portfolio dialog. hairType null: untagged photos. */
+export type StylistPublicPage = {
+  orgId: string
+  /** Null for demo stylists: they have no page of their own. */
+  slug: string | null
+  displayName: string
+  locationName: string | null
+  city: string | null
+  bio: string | null
+  specialties: ServiceType[]
+  instagram: string | null
+  demo: boolean
+  practice: Practice
+  photoGroups: { hairType: HairType | null; photos: PagePhoto[] }[]
+  /** The "Not sure what to book?" link, only for the finder partner. */
+  finderPath: string | null
 }

@@ -11,6 +11,25 @@ const STYLIST: StylistView = {
   book: { href: '/api/public/book/t/m1' },
 }
 
+const PAGE = {
+  orgId: 'org-1',
+  slug: 'ana',
+  displayName: 'Ana',
+  locationName: null,
+  city: null,
+  bio: null,
+  specialties: [],
+  instagram: null,
+  demo: false,
+  practice: null,
+  photoGroups: [
+    { hairType: 'STRAIGHT', photos: [{ photoId: 's1', url: 'https://storage.test/s1', service: 'CUT', hairType: 'STRAIGHT', before: false, width: 1, height: 1 }] },
+    { hairType: 'WAVY', photos: [{ photoId: 'w1', url: 'https://storage.test/w1', service: 'CUT', hairType: 'WAVY', before: false, width: 1, height: 1 }] },
+    { hairType: 'COILY', photos: [{ photoId: 'c1', url: 'https://storage.test/c1', service: 'CUT', hairType: 'COILY', before: false, width: 1, height: 1 }] },
+  ],
+  finderPath: null,
+}
+
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
 }
@@ -18,21 +37,24 @@ function json(status: number, body: unknown) {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('Portfolio', () => {
-  it("fetches what to expect in the stylist's chair by orgId when the page doesn't have it (a client's picks)", async () => {
+  it("loads the stylist's page by orgId: what to expect in their chair, when the page doesn't have it (a client's picks)", async () => {
     const fetch = vi.fn(async () =>
       json(200, {
-        labels: ['GENDER_NEUTRAL_PRICING', 'SENSORY_FRIENDLY'],
-        languages: ['SOMALI', 'ARABIC'],
-        fromPrices: [{ service: 'BRAIDS', fromDollars: 1200 }],
-        consultation: null,
-        priceDependsOnHair: true,
+        ...PAGE,
+        practice: {
+          labels: ['GENDER_NEUTRAL_PRICING', 'SENSORY_FRIENDLY'],
+          languages: ['SOMALI', 'ARABIC'],
+          fromPrices: [{ service: 'BRAIDS', fromDollars: 1200 }],
+          consultation: null,
+          priceDependsOnHair: true,
+        },
       }),
     )
     vi.stubGlobal('fetch', fetch)
     render(<Portfolio stylist={{ ...STYLIST, orgId: 'org-1' }} onClose={() => {}} />)
 
     const practice = await screen.findByRole('region', { name: 'What to expect in their chair' })
-    expect(fetch).toHaveBeenCalledWith('/api/public/stylists/org-1/practice', expect.objectContaining({ method: 'GET' }))
+    expect(fetch).toHaveBeenCalledWith('/api/public/stylists/org-1', expect.objectContaining({ method: 'GET' }))
     expect(within(practice).getByText('Gender-neutral pricing')).toBeInTheDocument()
     expect(within(practice).getByText('Sensory-friendly on request')).toBeInTheDocument()
     expect(within(practice).getByText('Also speaks Somali and Arabic')).toBeInTheDocument()
@@ -49,8 +71,19 @@ describe('Portfolio', () => {
     expect(screen.queryByRole('region', { name: 'What to expect in their chair' })).not.toBeInTheDocument()
   })
 
-  it("doesn't fetch when the practice came with the page", () => {
-    const fetch = vi.fn()
+  it('shows the whole portfolio by hair type once it has loaded', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json(200, PAGE)))
+    render(<Portfolio stylist={{ ...STYLIST, orgId: 'org-1' }} onClose={() => {}} />)
+
+    const wavy = await screen.findByRole('region', { name: 'Wavy hair' })
+    expect(within(wavy).getByRole('img')).toHaveAttribute('src', 'https://storage.test/w1')
+    expect(screen.getByRole('region', { name: 'Coily hair' })).toBeInTheDocument()
+    // The hero is now the first photo of the first group.
+    expect(screen.getAllByRole('img')[0]).toHaveAttribute('src', 'https://storage.test/s1')
+  })
+
+  it('uses the practice that came with the page', async () => {
+    const fetch = vi.fn(async () => json(404, {}))
     vi.stubGlobal('fetch', fetch)
     render(
       <Portfolio
@@ -62,7 +95,7 @@ describe('Portfolio', () => {
         onClose={() => {}}
       />,
     )
-    expect(fetch).not.toHaveBeenCalled()
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalled())
     expect(screen.queryByRole('region', { name: 'What to expect in their chair' })).not.toBeInTheDocument()
     expect(screen.getByText('Taking new clients')).toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Before your first visit' })).not.toBeInTheDocument()

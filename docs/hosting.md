@@ -49,7 +49,7 @@ Photos go to Cloudflare R2 (10 GB free, then $0.015/GB-month, no egress fees) an
 | `.github/workflows/images.yml` | On every push to main, builds the backend, web and backup images and pushes them to GHCR (private) as `ghcr.io/gebs2180/lookmate-<name>:<commit SHA>` and `:main` |
 | `deploy/compose.prod.yml` | Caddy (ports 80/443), backend, Postgres 18 and backup, with log rotation. Only Caddy is reachable from outside. Runs the images tagged `deployed` |
 | `deploy/deploy.sh` | Deploys one commit's images (latest main by default), with a backup first and a health wait; also rolls back. See [Day to day](#day-to-day) |
-| `deploy/Caddyfile` | HTTPS, `/api/*` and `/actuator/health` proxied to the backend, other actuator paths answer 404, SPA fallback, cache headers, and a Content-Security-Policy naming `R2_ENDPOINT` (photos) and `AUTH0_DOMAIN` (login) |
+| `deploy/Caddyfile` | HTTPS, `/api/*` and `/actuator/health` proxied to the backend, other actuator paths answer 404, SPA fallback, link-preview bots on `/s/<slug>` sent to the backend's Open Graph page, cache headers, and a Content-Security-Policy naming `R2_ENDPOINT` (photos) and `AUTH0_DOMAIN` (login) |
 | `deploy/.env.example` | Every variable the stack reads. Copy it to `deploy/.env` on the server; `.env` is git-ignored |
 | `deploy/backup/` | Backup image (Postgres 18 tools, rclone, age), `schedule.sh` (daily), `backup.sh` (encrypts), `backup-check.sh` (on the server), `restore-test.sh` and `restore-photos.sh` (on your machine, with the key) |
 | `deploy/r2-cors.json` | CORS rule for the photo bucket (browsers upload straight to it) |
@@ -74,6 +74,7 @@ Compose sets these from `deploy/.env`; another host would set them directly.
 | `MATCHING_REVIEW_BEFORE_PUBLISH`, `MATCHING_WORKER_ENABLED` | no | Defaults `false` and `true` (CLAUDE.md: matching publishes automatically) |
 | `RETENTION_ENABLED`, `RETENTION_CRON` | no | Defaults `true` and `0 15 4 * * *` (server time) |
 | `TRACKING_TIME_ZONE` | no | Default `America/New_York` |
+| `STYLISTS_FINDER_ORG_ID` | no | The finder partner's organisation id: their `/s/<slug>` page shows "Not sure what to book?". Empty: no page does |
 | `SENTRY_DSN`, `SENTRY_ENVIRONMENT` | no | Without a DSN, Sentry is off |
 | `NOTIFY_EMAIL_ENABLED` + `RESEND_API_KEY`, and each feature's switch as it lands | no | Feature switches, all off by default (`docs/local-dev.md`). `deploy/compose.prod.yml` passes only the variables in this table to the backend, each defaulting to the app's own value, so a new setting needs a line there too. |
 

@@ -29,8 +29,9 @@ class ProfileService {
      * @param newClientsConfirmedAt when the new-client status ({@code practice.newClients}) was last set or confirmed
      * @param newClientsConfirmDue  true once that is older than {@code lookmate.stylists.new-clients-confirm-after}
      *                              (30 days): the dashboard asks "still accurate?"
+     * @param slug                  the page address: combpatible.app/s/<slug>
      */
-    record ProfileView(String displayName, UUID locationId, String market, String bio, List<ServiceType> specialties,
+    record ProfileView(String displayName, String slug, UUID locationId, String market, String bio, List<ServiceType> specialties,
                        String bookingUrl, BookingPlatform bookingPlatform, String instagram, Integer priceTier,
                        ProfileStatus status, Instant publishedAt, Instant updatedAt, boolean demo, Practice practice,
                        Instant newClientsConfirmedAt, boolean newClientsConfirmDue) {
@@ -49,10 +50,12 @@ class ProfileService {
      * @param practice   the whole "What to expect in my chair" section, first-visit notes included; null clears it (all
      *                   of it is optional)
      * @param newClients whether they're taking new clients; null leaves it as it is. Saving it counts as confirming it.
+     * @param slug       the page address (combpatible.app/s/<slug>); null or blank leaves it as it is, and a new profile
+     *                   gets one from the display name. Changing it breaks links to the old one.
      */
     record ProfileRequest(String displayName, UUID locationId, String bio, List<ServiceType> specialties,
                           String bookingUrl, String instagram, Integer priceTier, PracticeRequest practice,
-                          NewClientsRequest newClients) {
+                          NewClientsRequest newClients, String slug) {
     }
 
     /** As {@link Practice} without the new-client status, every field optional. */
@@ -119,8 +122,23 @@ class ProfileService {
         access.require(orgId, OrgType.STYLIST);
         consents.requireAccepted(orgId);
         StylistProfile.ProfileFields fields = fields(request);
+        String slug;
+        try {
+            slug = ProfileFieldRules.slug(request.slug());
+        } catch (ProfileFieldRules.Invalid e) {
+            throw invalid(e.getMessage());
+        }
         StylistProfile profile = profiles.findLocked(orgId).orElseGet(() -> new StylistProfile(orgId));
         profile.update(fields);
+        if (slug != null && !slug.equals(profile.getSlug())) {
+            if (profiles.existsBySlugAndOrgIdNot(slug, orgId)) {
+                throw new ApiException(HttpStatus.CONFLICT, StylistError.SLUG_TAKEN,
+                        "Another stylist already has combpatible.app/s/" + slug + ". Try adding your salon or a number.");
+            }
+            profile.setSlug(slug);
+        } else if (profile.getSlug() == null) {
+            profile.setSlug(freeSlug(ProfileFieldRules.slugFrom(fields.displayName())));
+        }
         if (request.newClients() != null) {
             profile.setNewClients(newClients(request.newClients()), Instant.now());
         }
@@ -192,6 +210,15 @@ class ProfileService {
             events.publishEvent(new StylistHidden(p.getOrgId()));
         }
         return live.size();
+    }
+
+    /** {@code base}, or base-2, base-3... whichever is free first. */
+    private String freeSlug(String base) {
+        String candidate = base;
+        for (int n = 2; profiles.existsBySlug(candidate); n++) {
+            candidate = base + "-" + n;
+        }
+        return candidate;
     }
 
     private boolean termsAccepted(UUID orgId) {
@@ -322,7 +349,7 @@ class ProfileService {
     ProfileView view(StylistProfile p) {
         Instant confirmed = p.getNewClientsConfirmedAt();
         boolean due = confirmed != null && confirmed.plus(properties.newClientsConfirmAfter()).isBefore(Instant.now());
-        return new ProfileView(p.getDisplayName(), p.getLocationId(), p.getMarket(), p.getBio(), p.getSpecialties(),
+        return new ProfileView(p.getDisplayName(), p.getSlug(), p.getLocationId(), p.getMarket(), p.getBio(), p.getSpecialties(),
                 p.getBookingUrl(), p.getBookingPlatform(), p.getInstagram(), p.getPriceTier(), p.getStatus(),
                 p.getPublishedAt(), p.getUpdatedAt(), p.isDemo(), p.getPractice(), confirmed, due);
     }

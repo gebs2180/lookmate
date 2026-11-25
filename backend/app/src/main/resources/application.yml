@@ -112,6 +112,10 @@ lookmate:
     # A profile can go LIVE once it has this many READY portfolio photos tagged with a service and hair type
     # (the brief asks for 10-20 photos; 3 lets a pilot stylist start while they add the rest).
     min-tagged-photos-to-publish: 3
+    # The partner stylist (their org id) whose own page, /s/<slug>, offers "Not sure what to book?", and where it goes:
+    # the partner's finder link. Unset: no stylist page shows it.
+    finder-org-id: ${STYLISTS_FINDER_ORG_ID:}
+    finder-path: /c/${CONSULT_PARTNER_SLUG:partner}
   matching:
     # Off (decided 2026-11-20): lists publish to the client as soon as they're ranked and the admin monitors them
     # afterwards. On: every list waits IN_REVIEW for the admin to publish it (the Phase 1 review queue).

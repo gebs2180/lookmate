@@ -23,6 +23,8 @@ final class BookingLinks {
     static final String MEDIUM = "referral";
     /** {@code utm_content} of a Book click from the stylist directory, which has no match. */
     static final String DIRECTORY = "directory";
+    /** {@code utm_content} of a Book click from the stylist's own page ({@code /s/<slug>}): source PROFILE, never charged for. */
+    static final String PROFILE = "profile";
 
     private BookingLinks() {
     }

@@ -7,10 +7,11 @@ import {
   hasPractice,
   languagesLine,
 } from '../../stylists/practice'
-import type { Practice } from '../../stylists/types'
+import { HAIR_TYPE_LABEL, type Practice, type StylistPublicPage } from '../../stylists/types'
 import { Chip } from '../../ui'
 import { FirstVisitBlock, NewClientsLine } from './FirstVisit'
-import { useFirstVisitNotes, usePractice, type Visit } from './useFirstVisit'
+import { useFirstVisitNotes, type Visit } from './useFirstVisit'
+import { useStylistPage } from './useStylistPage'
 
 /** One stylist as clients see them, wherever they appear: on the client's picks or in the directory. */
 export type StylistView = {
@@ -23,7 +24,7 @@ export type StylistView = {
   instagram: string | null
   /**
    * What to expect in their chair (profile only, never a filter or in ranking). The directory has it; a client's picks
-   * don't, so the portfolio fetches it by orgId when it's left out.
+   * don't, so the portfolio takes it from the stylist's page (fetched by orgId) when it's left out.
    */
   practice?: Practice | null
   orgId?: string
@@ -53,9 +54,10 @@ export function InstagramLink({ handle }: { handle: string | null }) {
 }
 
 /**
- * A stylist's work as a spread: the first photo full width, the rest two across, Book pinned to the bottom. Built from
- * the photos the page already has (there is no per-stylist endpoint), in a modal dialog so the page under it keeps its
- * place. Escape or Back closes it. startAt scrolls to a photo the client tapped.
+ * A stylist's work as a spread: the first photo full width, the rest two across, Book pinned to the bottom, in a modal
+ * dialog so the page under it keeps its place. It opens on the photos the page already has, then shows the whole
+ * portfolio grouped by hair type once the stylist's page has loaded (by orgId). Escape or Back closes it. startAt
+ * scrolls to a photo the client tapped.
  */
 export function Portfolio({ stylist, startAt = 0, onClose }: { stylist: StylistView; startAt?: number; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null)
@@ -71,9 +73,11 @@ export function Portfolio({ stylist, startAt = 0, onClose }: { stylist: StylistV
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const practice = usePractice(stylist.orgId, stylist.practice)
+  const page = useStylistPage(stylist.orgId)
+  const practice = stylist.practice !== undefined ? stylist.practice : page === undefined ? undefined : (page?.practice ?? null)
   const notes = useFirstVisitNotes(stylist.visit)
-  const [first, ...rest] = stylist.photoUrls
+  const grouped = page && page.photoGroups.length > 0 ? page.photoGroups : null
+  const [first, ...rest] = grouped ? [grouped[0].photos[0].url] : stylist.photoUrls
   const alt = (i: number) => `${stylist.name}'s work, photo ${i + 1}`
   return (
     <dialog
@@ -111,14 +115,18 @@ export function Portfolio({ stylist, startAt = 0, onClose }: { stylist: StylistV
       </div>
       <PracticeBlock name={stylist.name} practice={practice} />
       <FirstVisitBlock name={stylist.name} firstVisit={practice?.firstVisit} notes={notes} />
-      {rest.length > 0 && (
-        <div className="grid2">
-          {rest.map((url, i) => (
-            <div key={url} className="frame" style={{ '--i': i } as CSSProperties}>
-              <img src={url} alt={alt(i + 1)} referrerPolicy="no-referrer" loading="lazy" />
-            </div>
-          ))}
-        </div>
+      {grouped ? (
+        <PhotoGroups name={stylist.name} groups={grouped} skipFirst />
+      ) : (
+        rest.length > 0 && (
+          <div className="grid2">
+            {rest.map((url, i) => (
+              <div key={url} className="frame" style={{ '--i': i } as CSSProperties}>
+                <img src={url} alt={alt(i + 1)} referrerPolicy="no-referrer" loading="lazy" />
+              </div>
+            ))}
+          </div>
+        )
       )}
       <div className="stickybook">
         <div className="actions">
@@ -135,7 +143,7 @@ export function Portfolio({ stylist, startAt = 0, onClose }: { stylist: StylistV
  * What to expect in the stylist's chair: the labels they ticked, languages, from-prices and consultation. Shows only
  * what they gave, never a "No"; nothing at all when they gave nothing (or it couldn't be loaded).
  */
-function PracticeBlock({ name, practice }: { name: string; practice: Practice | null | undefined }) {
+export function PracticeBlock({ name, practice }: { name: string; practice: Practice | null | undefined }) {
   if (!hasPractice(practice)) return null
   const prices = fromPriceLine(practice)
   const speaks = languagesLine(practice.languages)
@@ -154,5 +162,53 @@ function PracticeBlock({ name, practice }: { name: string; practice: Practice | 
       {practice.consultation && <p>{CONSULTATION_PUBLIC[practice.consultation]}</p>}
       {practice.priceDependsOnHair && <p className="muted small">{PRICE_DEPENDS}</p>}
     </section>
+  )
+}
+
+/**
+ * The portfolio by hair type (straight, wavy, curly, coily, then untagged), two across. skipFirst: the first photo is
+ * already shown full width above. A heading per group only when there is more than one.
+ */
+export function PhotoGroups({
+  name,
+  groups,
+  skipFirst = false,
+}: {
+  name: string
+  groups: StylistPublicPage['photoGroups']
+  skipFirst?: boolean
+}) {
+  let n = 0
+  const headed = groups.length > 1
+  return (
+    <>
+      {groups.map((g, gi) => {
+        const photos = skipFirst && gi === 0 ? g.photos.slice(1) : g.photos
+        const title = g.hairType ? `${HAIR_TYPE_LABEL[g.hairType]} hair` : 'More work'
+        if (photos.length === 0) return null
+        return (
+          <section key={g.hairType ?? 'untagged'} className="pf-group" aria-label={headed ? title : undefined}>
+            {headed && <h3 className="eyebrow">{title}</h3>}
+            {photos.length > 0 && (
+              <div className="grid2">
+                {photos.map((p, i) => {
+                  n++
+                  return (
+                    <div key={p.photoId} className="frame" style={{ '--i': i } as CSSProperties}>
+                      <img
+                        src={p.url}
+                        alt={`${name}'s work${g.hairType ? ` on ${HAIR_TYPE_LABEL[g.hairType].toLowerCase()} hair` : ''}, photo ${n + (skipFirst ? 1 : 0)}${p.before ? ' (before)' : ''}`}
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+        )
+      })}
+    </>
   )
 }

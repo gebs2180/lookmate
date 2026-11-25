@@ -22,6 +22,10 @@ enum StylistError {
     NOT_AN_IMAGE,
     /** The same photo is already in the portfolio. */
     DUPLICATE_PHOTO,
+    /** The same photo is already in another stylist's portfolio. */
+    PHOTO_ELSEWHERE,
+    /** Another stylist already has that page address (slug). */
+    SLUG_TAKEN,
     /** Too many photos being checked at once on this server. */
     BUSY,
     /** The photo's state doesn't allow this (e.g. tagging a pending upload). */

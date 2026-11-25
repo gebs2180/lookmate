@@ -52,4 +52,26 @@ class ProfileFieldRulesTest {
     void refusesWhatIsntAHandle(String raw) {
         assertThatThrownBy(() -> ProfileFieldRules.instagram(raw)).isInstanceOf(ProfileFieldRules.Invalid.class);
     }
+
+    @ParameterizedTest
+    @CsvSource({"Ana-Curls, ana-curls", "https://combpatible.app/s/ana-curls/, ana-curls", "combpatible.app/s/jo2, jo2",
+            "'  abc  ', abc"})
+    void normalisesPageAddresses(String raw, String slug) {
+        assertThat(ProfileFieldRules.slug(raw)).isEqualTo(slug);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"ab", "-ana", "ana-", "ana curls", "ana_curls", "a2345678901234567890123456789012345678901", "<script>"})
+    void refusesWhatIsntAPageAddress(String raw) {
+        assertThatThrownBy(() -> ProfileFieldRules.slug(raw)).isInstanceOf(ProfileFieldRules.Invalid.class);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"Ana María López, ana-maria-lopez", "'  Curl Studio by Ana!! ', curl-studio-by-ana", "Jo, jo-stylist",
+            "'!!!', stylist", "Ẑoë O'Neil-Smith, zoe-o-neil-smith",
+            "A Very Long Salon Name That Goes On And On Forever, a-very-long-salon-name-that-goes-o"})
+    void makesAnAddressFromTheName(String name, String slug) {
+        assertThat(ProfileFieldRules.slugFrom(name)).isEqualTo(slug);
+        assertThat(ProfileFieldRules.slug(slug)).isEqualTo(slug);
+    }
 }
