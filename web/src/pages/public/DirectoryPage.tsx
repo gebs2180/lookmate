@@ -97,6 +97,7 @@ export function DirectoryPage() {
                 photoUrls={s.photoUrls}
                 instagram={s.instagram}
                 practice={s.practice}
+                visit={{ service: service || null, hairType: hairType || null }}
                 book={
                   token
                     ? { href: apiPath`/api/public/book-stylist/${token}/${s.orgId}` }

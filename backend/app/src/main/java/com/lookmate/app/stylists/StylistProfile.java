@@ -45,6 +45,14 @@ class StylistProfile extends AssignedIdEntity<UUID> {
     @MapKeyColumn(name = "service")
     @Column(name = "from_dollars")
     private Map<String, Integer> fromPrices = new HashMap<>();
+    /** The stylist's own first-visit facts and note (V13). */
+    private boolean colourConsultationFirst;
+    private boolean depositForNewClients;
+    private String firstVisitNote;
+    /** New-client status (V13): shown to clients only, never used in matching. */
+    private String newClients;
+    private Short newClientsWeeks;
+    private Instant newClientsConfirmedAt;
     @Enumerated(EnumType.STRING)
     private ProfileStatus status;
     private Instant publishedAt;
@@ -62,6 +70,8 @@ class StylistProfile extends AssignedIdEntity<UUID> {
         this.languages = new String[0];
         this.createdAt = Instant.now();
         this.updatedAt = createdAt;
+        this.newClients = NewClientStatus.TAKING.name();
+        this.newClientsConfirmedAt = createdAt;
     }
 
     /** The fields the stylist edits, already normalised and checked. */
@@ -87,7 +97,25 @@ class StylistProfile extends AssignedIdEntity<UUID> {
         this.priceDependsOnHair = practice.priceDependsOnHair();
         this.fromPrices.clear();
         practice.fromPrices().forEach(p -> fromPrices.put(p.service().name(), p.fromDollars()));
+        FirstVisit firstVisit = practice.firstVisit();
+        this.colourConsultationFirst = firstVisit.colourConsultationFirst();
+        this.depositForNewClients = firstVisit.depositForNewClients();
+        this.firstVisitNote = firstVisit.note();
         this.updatedAt = Instant.now();
+    }
+
+    /** Sets the new-client status; setting it counts as confirming it. */
+    void setNewClients(NewClients status, Instant now) {
+        this.newClients = status.status().name();
+        this.newClientsWeeks = status.weeksOut() == null ? null : status.weeksOut().shortValue();
+        this.newClientsConfirmedAt = now;
+        this.updatedAt = now;
+    }
+
+    /** "Still accurate": the status stands as it is, confirmed now. */
+    void confirmNewClients(Instant now) {
+        this.newClientsConfirmedAt = now;
+        this.updatedAt = now;
     }
 
     void publish() {
@@ -161,7 +189,17 @@ class StylistProfile extends AssignedIdEntity<UUID> {
                 .map(s -> new Practice.FromPrice(s, fromPrices.get(s.name())))
                 .toList();
         return new Practice(codes(practiceLabels, PracticeLabel.class), codes(languages, Language.class), prices,
-                consultation == null ? null : Consultation.valueOf(consultation), priceDependsOnHair);
+                consultation == null ? null : Consultation.valueOf(consultation), priceDependsOnHair,
+                new FirstVisit(colourConsultationFirst, depositForNewClients, firstVisitNote), getNewClients());
+    }
+
+    NewClients getNewClients() {
+        return new NewClients(newClients == null ? NewClientStatus.TAKING : NewClientStatus.valueOf(newClients),
+                newClientsWeeks == null ? null : newClientsWeeks.intValue());
+    }
+
+    Instant getNewClientsConfirmedAt() {
+        return newClientsConfirmedAt;
     }
 
     private static <E extends Enum<E>> List<E> codes(String[] values, Class<E> type) {

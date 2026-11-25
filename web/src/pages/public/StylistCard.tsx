@@ -1,6 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react'
 import { fromPriceLine } from '../../stylists/practice'
 import { Chip } from '../../ui'
+import { NewClientsLine } from './FirstVisit'
 import { BookLink, InstagramLink, Portfolio, type StylistView } from './Portfolio'
 
 /**
@@ -24,6 +25,7 @@ export function StylistCard({ index = 0, badge, ...stylist }: StylistView & { in
       {location && <p className="meta">{location}</p>}
       {specialties && specialties.length > 0 && <p className="meta">{specialties.join(' · ')}</p>}
       {prices && <p className="meta">{prices}</p>}
+      <NewClientsLine newClients={stylist.practice?.newClients} />
       {photoUrls.length > 0 && (
         <div className="thumbs">
           {photoUrls.slice(0, 4).map((url, i) => (

@@ -2,6 +2,9 @@ package com.lookmate.app.consult;
 
 import com.lookmate.app.api.ApiException;
 import com.lookmate.app.consult.ConsultSessions.Channel;
+import com.lookmate.app.stylists.FirstVisitNote;
+import com.lookmate.app.stylists.ServiceType;
+import com.lookmate.app.stylists.Stylists;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -51,9 +54,11 @@ class ConsultService {
      *                     general channel and when the partner hasn't given one (then there's no Book button)
      * @param whatToExpect what happens in the chair, or null
      * @param why          why the answers lead here; for a consultation, the reason one is needed
+     * @param firstVisitNotes the generic "Before your first visit" notes for {@code serviceType} (stylists module), at
+     *                     most four; with no service type, the notes for any visit
      */
     record Outcome(String id, Ruleset.Kind kind, String serviceName, String serviceType, BigDecimal hours,
-                   BigDecimal fromPrice, String bookingUrl, String whatToExpect, String why) {
+                   BigDecimal fromPrice, String bookingUrl, String whatToExpect, String why, List<String> firstVisitNotes) {
     }
 
     /** The result of a run. {@code sessionId} is the handle for the Book and find-a-stylist clicks. */
@@ -69,14 +74,16 @@ class ConsultService {
     private final ConsultRulesets rulesets;
     private final ConsultSessions sessions;
     private final ConsultProperties properties;
+    private final Stylists stylists;
     private final String market;
     private final Clock clock;
 
-    ConsultService(ConsultRulesets rulesets, ConsultSessions sessions, ConsultProperties properties,
+    ConsultService(ConsultRulesets rulesets, ConsultSessions sessions, ConsultProperties properties, Stylists stylists,
                    @Value("${lookmate.default-market}") String market, Optional<Clock> clock) {
         this.rulesets = rulesets;
         this.sessions = sessions;
         this.properties = properties;
+        this.stylists = stylists;
         this.market = market;
         this.clock = clock.orElse(Clock.systemUTC());
     }
@@ -148,7 +155,20 @@ class ConsultService {
         boolean partner = channel == Channel.PARTNER;
         return new Outcome(o.id(), o.kind(), o.serviceName(), o.serviceType(), o.hours(),
                 partner ? o.fromPrice() : null, partner ? tagged(o.bookingUrl(), market) : null,
-                o.whatToExpect(), result.rule().why());
+                o.whatToExpect(), result.rule().why(), firstVisitNotes(o.serviceType()));
+    }
+
+    /** The stylists module's generic first-visit notes for the outcome's service code (an unknown code counts as none). */
+    private List<String> firstVisitNotes(String serviceType) {
+        ServiceType service = null;
+        if (serviceType != null) {
+            try {
+                service = ServiceType.valueOf(serviceType);
+            } catch (IllegalArgumentException e) {
+                // The validator only allows known codes; a stale one just gets the notes for any visit.
+            }
+        }
+        return stylists.firstVisitNotes(service, null).stream().map(FirstVisitNote::text).toList();
     }
 
     /**

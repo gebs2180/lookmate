@@ -74,6 +74,8 @@ class ConsultFlowTest {
                 .andExpect(jsonPath("$.outcome.id").value("BALAYAGE_FULL"))
                 .andExpect(jsonPath("$.outcome.kind").value("BOOK"))
                 .andExpect(jsonPath("$.outcome.serviceType").value("BALAYAGE"))
+                .andExpect(jsonPath("$.outcome.firstVisitNotes[0]").value(org.hamcrest.Matchers.startsWith("Plan for a long appointment")))
+                .andExpect(jsonPath("$.outcome.firstVisitNotes.length()").value(3))
                 .andExpect(jsonPath("$.outcome.fromPrice").doesNotExist())
                 .andExpect(jsonPath("$.outcome.bookingUrl").doesNotExist());
         String id = TestApi.read(general, "$.sessionId");

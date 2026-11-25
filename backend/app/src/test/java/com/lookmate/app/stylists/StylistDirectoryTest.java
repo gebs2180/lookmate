@@ -95,7 +95,9 @@ class StylistDirectoryTest {
                 .andExpect(jsonPath("$..bookingPlatform").isEmpty())
                 .andExpect(jsonPath("$..email").isEmpty())
                 .andExpect(jsonPath("$..photoId").isEmpty())
-                .andExpect(jsonPath("$..status").isEmpty())
+                // The profile status stays private; the only "status" is the new-client one, shown on purpose.
+                .andExpect(jsonPath("$.stylists[*].status").isEmpty())
+                .andExpect(jsonPath("$..status").value(Matchers.everyItem(Matchers.is("TAKING"))))
                 .andReturn().getResponse().getContentAsString();
         assertThat(body).doesNotContain("booksy.com", hiddenKey, location.toString(), uploader.toString());
     }

@@ -25,9 +25,15 @@ class ProfileService {
     /** What still stands between the profile and LIVE. */
     enum Missing { TERMS, PROFILE, LOCATION, BOOKING_URL, TAGGED_PHOTOS }
 
+    /**
+     * @param newClientsConfirmedAt when the new-client status ({@code practice.newClients}) was last set or confirmed
+     * @param newClientsConfirmDue  true once that is older than {@code lookmate.stylists.new-clients-confirm-after}
+     *                              (30 days): the dashboard asks "still accurate?"
+     */
     record ProfileView(String displayName, UUID locationId, String market, String bio, List<ServiceType> specialties,
                        String bookingUrl, BookingPlatform bookingPlatform, String instagram, Integer priceTier,
-                       ProfileStatus status, Instant publishedAt, Instant updatedAt, boolean demo, Practice practice) {
+                       ProfileStatus status, Instant publishedAt, Instant updatedAt, boolean demo, Practice practice,
+                       Instant newClientsConfirmedAt, boolean newClientsConfirmDue) {
     }
 
     /**
@@ -39,14 +45,27 @@ class ProfileService {
                        int taggedPhotos, int minTaggedPhotos, int maxPhotos, List<Missing> missing) {
     }
 
-    /** {@code practice}: the whole "What to expect in my chair" section; null clears it (all of it is optional). */
+    /**
+     * @param practice   the whole "What to expect in my chair" section, first-visit notes included; null clears it (all
+     *                   of it is optional)
+     * @param newClients whether they're taking new clients; null leaves it as it is. Saving it counts as confirming it.
+     */
     record ProfileRequest(String displayName, UUID locationId, String bio, List<ServiceType> specialties,
-                          String bookingUrl, String instagram, Integer priceTier, PracticeRequest practice) {
+                          String bookingUrl, String instagram, Integer priceTier, PracticeRequest practice,
+                          NewClientsRequest newClients) {
     }
 
-    /** As {@link Practice}, every field optional. */
+    /** As {@link Practice} without the new-client status, every field optional. */
     record PracticeRequest(List<PracticeLabel> labels, List<Language> languages, List<PriceRequest> fromPrices,
-                           Consultation consultation, Boolean priceDependsOnHair) {
+                           Consultation consultation, Boolean priceDependsOnHair, FirstVisitRequest firstVisit) {
+    }
+
+    /** As {@link FirstVisit}, every field optional. */
+    record FirstVisitRequest(Boolean colourConsultationFirst, Boolean depositForNewClients, String note) {
+    }
+
+    /** As {@link NewClients}: {@code weeksOut} (1 to 26) is needed with TAKING_WITH_WAIT and ignored otherwise. */
+    record NewClientsRequest(NewClientStatus status, Integer weeksOut) {
     }
 
     record PriceRequest(ServiceType service, Integer fromDollars) {
@@ -102,6 +121,9 @@ class ProfileService {
         StylistProfile.ProfileFields fields = fields(request);
         StylistProfile profile = profiles.findLocked(orgId).orElseGet(() -> new StylistProfile(orgId));
         profile.update(fields);
+        if (request.newClients() != null) {
+            profile.setNewClients(newClients(request.newClients()), Instant.now());
+        }
         if (profile.getStatus() == ProfileStatus.LIVE) {
             List<Missing> missing = missing(profile, true, (int) photos.countTaggedReady(orgId));
             if (!missing.isEmpty()) {
@@ -138,6 +160,16 @@ class ProfileService {
             profile.hide();
             events.publishEvent(new StylistHidden(orgId));
         }
+        return view(profile);
+    }
+
+    /** "Still accurate?": confirms the new-client status as it stands. */
+    @Transactional
+    ProfileView confirmNewClients(UUID orgId) {
+        access.require(orgId, OrgType.STYLIST);
+        StylistProfile profile = profiles.findLocked(orgId)
+                .orElseThrow(() -> new ApiException(HttpStatus.CONFLICT, StylistError.NO_PROFILE, "Save your profile first"));
+        profile.confirmNewClients(Instant.now());
         return view(profile);
     }
 
@@ -233,7 +265,7 @@ class ProfileService {
      */
     private static Practice practice(PracticeRequest p, List<ServiceType> specialties) {
         if (p == null) {
-            return Practice.NONE;
+            return Practice.none(null);
         }
         List<PracticeLabel> labels = p.labels() == null ? List.of()
                 : p.labels().stream().filter(java.util.Objects::nonNull).distinct().toList();
@@ -252,7 +284,31 @@ class ProfileService {
             }
         }
         return new Practice(labels, languages, List.copyOf(prices.values()), p.consultation(),
-                Boolean.TRUE.equals(p.priceDependsOnHair()));
+                Boolean.TRUE.equals(p.priceDependsOnHair()), firstVisit(p.firstVisit()), null);
+    }
+
+    private static FirstVisit firstVisit(FirstVisitRequest f) {
+        if (f == null) {
+            return FirstVisit.NONE;
+        }
+        String note = LocationController.blankToNull(f.note());
+        if (note != null && note.length() > FirstVisit.MAX_NOTE) {
+            throw invalid("Keep the first-visit note under " + FirstVisit.MAX_NOTE + " characters");
+        }
+        return new FirstVisit(Boolean.TRUE.equals(f.colourConsultationFirst()), Boolean.TRUE.equals(f.depositForNewClients()), note);
+    }
+
+    private static NewClients newClients(NewClientsRequest r) {
+        if (r.status() == null) {
+            throw invalid("Say whether you're taking new clients");
+        }
+        if (r.status() != NewClientStatus.TAKING_WITH_WAIT) {
+            return new NewClients(r.status(), null);
+        }
+        if (r.weeksOut() == null || r.weeksOut() < 1 || r.weeksOut() > NewClients.MAX_WEEKS) {
+            throw invalid("Give the usual wait in weeks, from 1 to " + NewClients.MAX_WEEKS);
+        }
+        return new NewClients(r.status(), r.weeksOut());
     }
 
     private static ApiException invalid(String message) {
@@ -263,9 +319,11 @@ class ProfileService {
         return new ApiException(HttpStatus.CONFLICT, StylistError.NOT_READY_TO_PUBLISH, message);
     }
 
-    static ProfileView view(StylistProfile p) {
+    ProfileView view(StylistProfile p) {
+        Instant confirmed = p.getNewClientsConfirmedAt();
+        boolean due = confirmed != null && confirmed.plus(properties.newClientsConfirmAfter()).isBefore(Instant.now());
         return new ProfileView(p.getDisplayName(), p.getLocationId(), p.getMarket(), p.getBio(), p.getSpecialties(),
                 p.getBookingUrl(), p.getBookingPlatform(), p.getInstagram(), p.getPriceTier(), p.getStatus(),
-                p.getPublishedAt(), p.getUpdatedAt(), p.isDemo(), p.getPractice());
+                p.getPublishedAt(), p.getUpdatedAt(), p.isDemo(), p.getPractice(), confirmed, due);
     }
 }
