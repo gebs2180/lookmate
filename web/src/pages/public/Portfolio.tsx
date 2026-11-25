@@ -1,5 +1,4 @@
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
-import { apiPath, publicApi } from '../../api'
+import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from 'react'
 import {
   CONSULTATION_PUBLIC,
   LABEL_PUBLIC,
@@ -10,6 +9,8 @@ import {
 } from '../../stylists/practice'
 import type { Practice } from '../../stylists/types'
 import { Chip } from '../../ui'
+import { FirstVisitBlock, NewClientsLine } from './FirstVisit'
+import { useFirstVisitNotes, usePractice, type Visit } from './useFirstVisit'
 
 /** One stylist as clients see them, wherever they appear: on the client's picks or in the directory. */
 export type StylistView = {
@@ -26,6 +27,8 @@ export type StylistView = {
    */
   practice?: Practice | null
   orgId?: string
+  /** What the client asked for, when known: the portfolio adds the generic first-visit notes for it. */
+  visit?: Visit
   /** The tracked Book link, or what to show instead when there is none (no client link on this page). */
   book: { href: string } | { instead: ReactNode }
 }
@@ -68,6 +71,8 @@ export function Portfolio({ stylist, startAt = 0, onClose }: { stylist: StylistV
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const practice = usePractice(stylist.orgId, stylist.practice)
+  const notes = useFirstVisitNotes(stylist.visit)
   const [first, ...rest] = stylist.photoUrls
   const alt = (i: number) => `${stylist.name}'s work, photo ${i + 1}`
   return (
@@ -102,8 +107,10 @@ export function Portfolio({ stylist, startAt = 0, onClose }: { stylist: StylistV
         )}
         {stylist.reason && <p className="reason">{stylist.reason}</p>}
         {stylist.specialties && stylist.specialties.length > 0 && <p className="muted small">{stylist.specialties.join(' · ')}</p>}
+        <NewClientsLine newClients={practice?.newClients} />
       </div>
-      <PracticeBlock stylist={stylist} />
+      <PracticeBlock name={stylist.name} practice={practice} />
+      <FirstVisitBlock name={stylist.name} firstVisit={practice?.firstVisit} notes={notes} />
       {rest.length > 0 && (
         <div className="grid2">
           {rest.map((url, i) => (
@@ -128,28 +135,13 @@ export function Portfolio({ stylist, startAt = 0, onClose }: { stylist: StylistV
  * What to expect in the stylist's chair: the labels they ticked, languages, from-prices and consultation. Shows only
  * what they gave, never a "No"; nothing at all when they gave nothing (or it couldn't be loaded).
  */
-function PracticeBlock({ stylist }: { stylist: StylistView }) {
-  const [fetched, setFetched] = useState<Practice | null>(null)
-  const { orgId, practice: given } = stylist
-  useEffect(() => {
-    if (given !== undefined || !orgId) return
-    let live = true
-    publicApi<Practice>('GET', apiPath`/api/public/stylists/${orgId}/practice`)
-      .then((p) => live && setFetched(p))
-      // Optional extra on a page that works without it.
-      .catch(() => {})
-    return () => {
-      live = false
-    }
-  }, [given, orgId])
-
-  const practice = given ?? fetched
+function PracticeBlock({ name, practice }: { name: string; practice: Practice | null | undefined }) {
   if (!hasPractice(practice)) return null
   const prices = fromPriceLine(practice)
   const speaks = languagesLine(practice.languages)
   return (
     <section className="pf-practice" aria-label="What to expect in their chair">
-      <h3 className="eyebrow">What to expect in {stylist.name}'s chair</h3>
+      <h3 className="eyebrow">What to expect in {name}'s chair</h3>
       {practice.labels.length > 0 && (
         <ul className="pf-labels">
           {practice.labels.map((l) => (

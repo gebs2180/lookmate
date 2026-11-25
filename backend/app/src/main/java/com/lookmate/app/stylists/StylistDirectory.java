@@ -29,7 +29,8 @@ public class StylistDirectory {
 
     /**
      * {@code demo}: a made-up stylist (proof of concept), labelled "Sample stylist" wherever clients see it.
-     * {@code practice}: what to expect in their chair, for the profile only (never a filter, never in ranking).
+     * {@code practice}: what to expect in their chair, their first-visit notes and whether they're taking new clients,
+     * shown only (never a filter, never in ranking: a stylist not taking new clients is listed like any other).
      */
     public record DirectoryStylist(UUID orgId, String displayName, String locationName, String city, List<ServiceType> specialties,
                             List<String> photoUrls, boolean demo, String instagram, Practice practice) {
@@ -41,7 +42,7 @@ public class StylistDirectory {
 
     private record Row(UUID orgId, String displayName, String locationName, String city, List<ServiceType> specialties, boolean demo,
                        String instagram, List<PracticeLabel> labels, List<Language> languages, Consultation consultation,
-                       boolean priceDependsOnHair) {
+                       boolean priceDependsOnHair, FirstVisit firstVisit, NewClients newClients) {
     }
 
     /**
@@ -86,7 +87,9 @@ public class StylistDirectory {
                 .query(Long.class).single();
         List<Row> rows = jdbc.sql("""
                         select p.org_id, p.display_name, l.name as location_name, l.city, p.specialties, p.demo, p.instagram,
-                               p.practice_labels, p.languages, p.consultation, p.price_depends_on_hair
+                               p.practice_labels, p.languages, p.consultation, p.price_depends_on_hair,
+                               p.colour_consultation_first, p.deposit_for_new_clients, p.first_visit_note,
+                               p.new_clients, p.new_clients_weeks
                         """ + WHERE + """
                         order by p.demo, lower(p.display_name), p.org_id
                         limit :size offset :offset
@@ -97,7 +100,11 @@ public class StylistDirectory {
                         rs.getString("city"), services(rs.getArray("specialties")), rs.getBoolean("demo"), rs.getString("instagram"),
                         codes(rs.getArray("practice_labels"), PracticeLabel.class), codes(rs.getArray("languages"), Language.class),
                         rs.getString("consultation") == null ? null : Consultation.valueOf(rs.getString("consultation")),
-                        rs.getBoolean("price_depends_on_hair")))
+                        rs.getBoolean("price_depends_on_hair"),
+                        new FirstVisit(rs.getBoolean("colour_consultation_first"), rs.getBoolean("deposit_for_new_clients"),
+                                rs.getString("first_visit_note")),
+                        new NewClients(NewClientStatus.valueOf(rs.getString("new_clients")),
+                                rs.getObject("new_clients_weeks") == null ? null : rs.getInt("new_clients_weeks"))))
                 .list();
         List<UUID> orgIds = rows.stream().map(Row::orgId).toList();
         Map<UUID, List<String>> photos = photoUrls(orgIds, s, h);
@@ -156,7 +163,8 @@ public class StylistDirectory {
     private static Practice practice(Row r, Map<ServiceType, Integer> prices) {
         List<Practice.FromPrice> fromPrices = r.specialties().stream().filter(prices::containsKey)
                 .map(sv -> new Practice.FromPrice(sv, prices.get(sv))).toList();
-        return new Practice(r.labels(), r.languages(), fromPrices, r.consultation(), r.priceDependsOnHair());
+        return new Practice(r.labels(), r.languages(), fromPrices, r.consultation(), r.priceDependsOnHair(), r.firstVisit(),
+                r.newClients());
     }
 
     private static <E extends Enum<E>> List<E> codes(Array array, Class<E> type) throws SQLException {

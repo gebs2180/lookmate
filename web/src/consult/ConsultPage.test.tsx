@@ -41,6 +41,7 @@ const BALAYAGE: Outcome = {
   bookingUrl: null,
   whatToExpect: 'Hand-painted brightness around your face.',
   why: 'Soft regrowth suits the upkeep you want.',
+  firstVisitNotes: ['Plan for a long appointment.', 'Bring two or three photos.'],
 }
 
 const CONSULT: Outcome = {
@@ -53,6 +54,7 @@ const CONSULT: Outcome = {
   bookingUrl: null,
   whatToExpect: 'Your stylist looks at your hair and gives you the plan.',
   why: 'Box dye can react with lightener.',
+  firstVisitNotes: [],
 }
 
 type Call = { method: string; url: string; body: unknown }
@@ -159,6 +161,8 @@ describe('the service finder', () => {
     expect(screen.getByText('Soft regrowth suits the upkeep you want.')).toBeInTheDocument()
     expect(screen.getByText('Hand-painted brightness around your face.')).toBeInTheDocument()
     expect(screen.getByText('Your stylist confirms at your appointment.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Before your first visit' })).toBeInTheDocument()
+    expect(screen.getByText('Plan for a long appointment.')).toBeInTheDocument()
     expect(screen.queryByText(/Questions and answers by/)).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^Book / })).not.toBeInTheDocument()
 
@@ -177,6 +181,7 @@ describe('the service finder', () => {
     expect(await screen.findByRole('heading', { name: 'Book a consultation first' })).toBeInTheDocument()
     expect(screen.getByText('Colour correction consultation')).toBeInTheDocument()
     expect(screen.getByText('Box dye can react with lightener.')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Before your first visit' })).not.toBeInTheDocument()
     expect(screen.getByText('Your stylist confirms at your appointment.')).toBeInTheDocument()
     // A from-price of 0 is a gap in the data, not "free".
     expect(screen.queryByText(/\$0/)).not.toBeInTheDocument()

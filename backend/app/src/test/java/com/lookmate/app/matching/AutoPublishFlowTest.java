@@ -383,6 +383,28 @@ class AutoPublishFlowTest {
                 .andExpect(jsonPath("$.rows[?(@.hairType=='WAVY')].shownMatches").value(1));
     }
 
+    /** "Not taking new clients right now" is shown only: the stylist is still matched, in the same place. */
+    @Test
+    void aStylistNotTakingNewClientsIsStillMatchedAndKeepsTheirRank() throws Exception {
+        UUID coily = stylist("Coily Pro", "LIVE");
+        UUID curly = stylist("Curly Pro", "LIVE");
+        for (int i = 0; i < 3; i++) {
+            photo(coily, "CUT", "COILY", LOOK);
+            photo(curly, "CUT", "CURLY", LOOK);
+        }
+        jdbc.sql("update stylist_profile set new_clients = 'NOT_TAKING' where org_id = ?").params(coily).update();
+        jdbc.sql("update stylist_profile set new_clients = 'TAKING_WITH_WAIT', new_clients_weeks = 8 where org_id = ?")
+                .params(curly).update();
+        String token = token();
+        UUID request = request("COILY", "CUT", token, null);
+        job.runOnce();
+
+        mvc.perform(get("/api/public/match-requests/" + token))
+                .andExpect(jsonPath("$.matches[*].stylistName").value(Matchers.contains("Coily Pro", "Curly Pro")));
+        assertThat(jdbc.sql("select org_id from match where match_request_id = ? order by system_rank").params(request)
+                .query(UUID.class).list()).containsExactly(coily, curly);
+    }
+
     private void match(UUID request, UUID org, int systemRank, Integer finalRank, boolean hidden, String source) {
         jdbc.sql("""
                         insert into match (id, match_request_id, org_id, score, reason, system_rank, final_rank, hidden, admin_override,

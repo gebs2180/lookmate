@@ -6,6 +6,8 @@ import jakarta.validation.constraints.Pattern;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
+import java.time.Duration;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,11 +27,24 @@ import org.springframework.web.server.ResponseStatusException;
 class DirectoryController {
 
     private final StylistDirectory directory;
+    private final Stylists stylists;
     private final String defaultMarket;
 
-    DirectoryController(StylistDirectory directory, @Value("${lookmate.default-market}") String defaultMarket) {
+    DirectoryController(StylistDirectory directory, Stylists stylists, @Value("${lookmate.default-market}") String defaultMarket) {
         this.directory = directory;
+        this.stylists = stylists;
         this.defaultMarket = defaultMarket;
+    }
+
+    /**
+     * The generic "Before your first visit" notes for a service and hair type (either optional), most specific first, at
+     * most four. Static content, the same for everyone (rate-limited with the directory): the page shows each stylist's own notes before these.
+     */
+    @GetMapping("/api/public/stylists/first-visit-notes")
+    ResponseEntity<List<FirstVisitNote>> firstVisitNotes(@RequestParam(required = false) ServiceType service,
+                                                         @RequestParam(required = false) HairType hairType) {
+        return ResponseEntity.ok().cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePublic())
+                .body(stylists.firstVisitNotes(service, hairType));
     }
 
     @GetMapping("/api/public/stylists")

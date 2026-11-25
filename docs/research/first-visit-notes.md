@@ -7,6 +7,19 @@ worse than none, so for each note Jason can **keep**, **change** or **cut** it, 
 This is idea 1 of [feature-ideas.md](feature-ideas.md). The notes appear under "Before your first visit" on the match
 page, the portfolio dialog and the service finder's result.
 
+## Where the notes live, and putting Jason's version in
+
+The app reads `backend/app/src/main/resources/stylists/first-visit-notes.json`: one `"KEY": "note"` per line, keys
+as in the tables below. To ship Jason's version:
+
+1. Edit the JSON: change or cut a note, or add one with a new key (`any.<name>` for any visit). Leave a key out for no
+   note. Keep this page's tables in step, with his answer in the Jason column.
+2. Update the `_about` line to say it's his version and the date, and credit him in this page's status line once it's
+   his text.
+3. Run `./gradlew test --tests '*FirstVisitNotes*'` in `backend/`: a misspelt key fails it (and the app at start-up).
+
+No migration or web change is needed. How the module uses the notes: [stylists.md](../modules/stylists.md).
+
 ## How a client's notes are picked
 
 - The **stylist's own note** and their two facts come first, and win where they disagree with a generic note:

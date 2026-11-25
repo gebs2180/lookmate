@@ -3,6 +3,7 @@ package com.lookmate.app.stylists;
 import com.lookmate.app.storage.BlobStore;
 import com.lookmate.app.storage.StorageProperties;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -42,19 +43,54 @@ public class Stylists {
                                  Integer width, Integer height) {
     }
 
+    /**
+     * A stylist's new-client status and when they last set or confirmed it (for the digest's 30-day "still accurate?"
+     * link). Never a matching input.
+     */
+    public record NewClientsStatus(UUID orgId, NewClients newClients, Instant confirmedAt) {
+    }
+
     private final StylistProfileRepository profiles;
     private final SalonLocationRepository locations;
     private final PhotoRepository photos;
     private final BlobStore blobs;
     private final StorageProperties storage;
+    private final FirstVisitNotes firstVisitNotes;
 
     Stylists(StylistProfileRepository profiles, SalonLocationRepository locations, PhotoRepository photos,
-             BlobStore blobs, StorageProperties storage) {
+             BlobStore blobs, StorageProperties storage, FirstVisitNotes firstVisitNotes) {
         this.profiles = profiles;
         this.locations = locations;
         this.photos = photos;
         this.blobs = blobs;
         this.storage = storage;
+        this.firstVisitNotes = firstVisitNotes;
+    }
+
+    /**
+     * The generic "Before your first visit" notes for a service and hair type, most specific first, at most four.
+     * Either may be null. The stylist's own notes ({@link Practice#firstVisit()}) go before these wherever both show.
+     */
+    public List<FirstVisitNote> firstVisitNotes(ServiceType service, HairType hairType) {
+        return firstVisitNotes.pick(service, hairType);
+    }
+
+    /** The new-client status of any profile, whatever its status, or empty. */
+    @Transactional(readOnly = true)
+    public Optional<NewClientsStatus> newClients(UUID orgId) {
+        return profiles.findById(orgId).map(p -> new NewClientsStatus(orgId, p.getNewClients(), p.getNewClientsConfirmedAt()));
+    }
+
+    /**
+     * "Still accurate": confirms the stylist's new-client status as it stands, now. For the digest's confirm link; no
+     * access check (the caller has already checked its signed link). Empty when there's no profile.
+     */
+    @Transactional
+    public Optional<NewClientsStatus> confirmNewClients(UUID orgId) {
+        return profiles.findLocked(orgId).map(p -> {
+            p.confirmNewClients(Instant.now());
+            return new NewClientsStatus(orgId, p.getNewClients(), p.getNewClientsConfirmedAt());
+        });
     }
 
     /** The profile if it is LIVE; empty for DRAFT, HIDDEN, missing or a non-stylist org. */

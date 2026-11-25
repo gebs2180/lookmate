@@ -1414,3 +1414,65 @@ button.link-button:active:not(:disabled) {
     display: none;
   }
 }
+
+/* New-client status (feature idea 3): a plain line, never a filter. Not taking is italic, not alarming. */
+.new-clients {
+  margin: var(--space-1) 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.new-clients.not-taking {
+  color: var(--ink-2);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Before your first visit (feature idea 1): the stylist's own facts, then the generic notes, as a quiet ruled list. */
+.first-visit {
+  margin: var(--space-3) 0 0;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--rule);
+  font-size: 0.9375rem;
+}
+
+.portfolio > .first-visit {
+  margin-inline: var(--space-4);
+}
+
+.first-visit h3 {
+  margin: 0 0 var(--space-1);
+}
+
+.fv-own,
+.fv-notes {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding-left: 1.1em;
+}
+
+.fv-own {
+  font-weight: 600;
+}
+
+.fv-own + .fv-notes {
+  margin-top: var(--space-2);
+}
+
+.fv-notes li::marker {
+  color: var(--accent);
+}
+
+.fv-from {
+  font: italic 400 1.0625rem/1 var(--serif);
+}
+
+/* The stylist home's "Still accurate?" check on the new-client status: an oxblood rule, one click to confirm. */
+.panel.nudge {
+  border-top-color: var(--accent);
+}
+
+.panel.nudge .actions {
+  align-items: center;
+}

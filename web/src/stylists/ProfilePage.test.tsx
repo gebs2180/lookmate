@@ -42,6 +42,11 @@ describe('ProfilePage', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: 'Spanish' }))
     await userEvent.type(screen.getByLabelText('Silk press from $'), '80')
     await userEvent.click(screen.getByRole('radio', { name: 'Free' }))
+    // New clients and the first visit: shown to clients, never a filter.
+    await userEvent.click(screen.getByRole('radio', { name: "I'm taking new clients, with a wait" }))
+    await userEvent.type(screen.getByLabelText('Usual wait for a new client, in weeks'), '3')
+    await userEvent.click(screen.getByRole('checkbox', { name: 'I ask new clients for a deposit when they book' }))
+    await userEvent.type(screen.getByLabelText('A note for new clients'), 'Park on Fourth Street.')
     await userEvent.click(screen.getByRole('button', { name: 'Save profile' }))
 
     expect(await screen.findByText('Elsewhere')).toBeInTheDocument()
@@ -59,7 +64,9 @@ describe('ProfilePage', () => {
         fromPrices: [{ service: 'SILK_PRESS', fromDollars: 80 }],
         consultation: 'FREE',
         priceDependsOnHair: false,
+        firstVisit: { colourConsultationFirst: false, depositForNewClients: true, note: 'Park on Fourth Street.' },
       },
+      newClients: { status: 'TAKING_WITH_WAIT', weeksOut: 3 },
     })
   })
 
@@ -87,7 +94,9 @@ describe('ProfilePage', () => {
       fromPrices: [{ service: 'CUT', fromDollars: 65 }],
       consultation: null,
       priceDependsOnHair: false,
+      firstVisit: { colourConsultationFirst: false, depositForNewClients: false, note: null },
     })
+    expect((put.body as { newClients: unknown }).newClients).toEqual({ status: 'TAKING', weeksOut: null })
   })
 
   it("shows the API's reason when the profile is refused", async () => {

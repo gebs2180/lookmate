@@ -56,6 +56,12 @@ class StylistController {
         return profiles.save(orgId, request);
     }
 
+    /** "Still accurate?" on the dashboard: confirms the new-client status as it stands. */
+    @PostMapping("/api/orgs/{orgId}/stylist/new-clients/confirm")
+    ProfileService.ProfileView confirmNewClients(@PathVariable UUID orgId) {
+        return profiles.confirmNewClients(orgId);
+    }
+
     @PostMapping("/api/orgs/{orgId}/stylist/publish")
     ProfileService.ProfileView publish(@PathVariable UUID orgId) {
         return profiles.publish(orgId);

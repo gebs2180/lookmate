@@ -708,6 +708,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/orgs/{orgId}/stylist/new-clients/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["confirmNewClients"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/orgs/{orgId}/stylist/profile": {
         parameters: {
             query?: never;
@@ -1044,6 +1060,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/stylists/first-visit-notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["firstVisitNotes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/stylists/{orgId}/practice": {
         parameters: {
             query?: never;
@@ -1201,6 +1233,7 @@ export interface components {
         };
         ConsultServiceOutcome: {
             bookingUrl: string;
+            firstVisitNotes: string[];
             fromPrice: number;
             hours: number;
             id: string;
@@ -1227,6 +1260,15 @@ export interface components {
             rulesetVersion: number;
             /** Format: uuid */
             sessionId: string;
+        };
+        FirstVisit: {
+            colourConsultationFirst: boolean;
+            depositForNewClients: boolean;
+            note: string;
+        };
+        FirstVisitNote: {
+            key: string;
+            text: string;
         };
         IntakeControllerCreateRequest: {
             /** Format: int32 */
@@ -1448,6 +1490,12 @@ export interface components {
             /** Format: int64 */
             stylistsLive: number;
         };
+        NewClients: {
+            /** @enum {string} */
+            status: "TAKING" | "TAKING_WITH_WAIT" | "NOT_TAKING";
+            /** Format: int32 */
+            weeksOut: number;
+        };
         PhotoServiceOrderRequest: {
             photoIds: string[];
         };
@@ -1512,9 +1560,11 @@ export interface components {
         Practice: {
             /** @enum {string} */
             consultation: "FREE" | "PAID" | "INCLUDED";
+            firstVisit: components["schemas"]["FirstVisit"];
             fromPrices: components["schemas"]["PracticeFromPrice"][];
             labels: ("GENDER_NEUTRAL_PRICING" | "LGBTQ_AFFIRMING" | "SENSORY_FRIENDLY" | "KIDS_WELCOME")[];
             languages: ("AMHARIC" | "ARABIC" | "ASL" | "FRENCH" | "MANDARIN" | "NEPALI" | "PORTUGUESE" | "SOMALI" | "SPANISH" | "VIETNAMESE")[];
+            newClients: components["schemas"]["NewClients"];
             priceDependsOnHair: boolean;
         };
         PracticeFromPrice: {
@@ -1523,9 +1573,21 @@ export interface components {
             /** @enum {string} */
             service: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
         };
+        ProfileServiceFirstVisitRequest: {
+            colourConsultationFirst: boolean;
+            depositForNewClients: boolean;
+            note: string;
+        };
+        ProfileServiceNewClientsRequest: {
+            /** @enum {string} */
+            status: "TAKING" | "TAKING_WITH_WAIT" | "NOT_TAKING";
+            /** Format: int32 */
+            weeksOut: number;
+        };
         ProfileServicePracticeRequest: {
             /** @enum {string} */
             consultation: "FREE" | "PAID" | "INCLUDED";
+            firstVisit: components["schemas"]["ProfileServiceFirstVisitRequest"];
             fromPrices: components["schemas"]["ProfileServicePriceRequest"][];
             labels: ("GENDER_NEUTRAL_PRICING" | "LGBTQ_AFFIRMING" | "SENSORY_FRIENDLY" | "KIDS_WELCOME")[];
             languages: ("AMHARIC" | "ARABIC" | "ASL" | "FRENCH" | "MANDARIN" | "NEPALI" | "PORTUGUESE" | "SOMALI" | "SPANISH" | "VIETNAMESE")[];
@@ -1544,6 +1606,7 @@ export interface components {
             instagram: string;
             /** Format: uuid */
             locationId: string;
+            newClients: components["schemas"]["ProfileServiceNewClientsRequest"];
             practice: components["schemas"]["ProfileServicePracticeRequest"];
             /** Format: int32 */
             priceTier: number;
@@ -1560,6 +1623,9 @@ export interface components {
             /** Format: uuid */
             locationId: string;
             market: string;
+            newClientsConfirmDue: boolean;
+            /** Format: date-time */
+            newClientsConfirmedAt: string;
             practice: components["schemas"]["Practice"];
             /** Format: int32 */
             priceTier: number;
@@ -3180,6 +3246,28 @@ export interface operations {
             };
         };
     };
+    confirmNewClients: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProfileServiceProfileView"];
+                };
+            };
+        };
+    };
     saveProfile: {
         parameters: {
             query?: never;
@@ -3657,6 +3745,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["StylistDirectoryDirectoryPage"];
+                };
+            };
+        };
+    };
+    firstVisitNotes: {
+        parameters: {
+            query?: {
+                service?: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
+                hairType?: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FirstVisitNote"][];
                 };
             };
         };

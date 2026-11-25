@@ -258,6 +258,16 @@ function ResultView({ result, finder, onRestart }: { result: ConsultResult; find
           <p>{outcome.whatToExpect}</p>
         </div>
       )}
+      {outcome.firstVisitNotes.length > 0 && (
+        <div className="consult-why">
+          <h2 className="eyebrow">Before your first visit</h2>
+          <ul className="fv-notes">
+            {outcome.firstVisitNotes.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       <p className="consult-confirm">Your stylist confirms at your appointment.</p>
       {credit && <p className="muted small">Questions and answers by {credit}.</p>}
 

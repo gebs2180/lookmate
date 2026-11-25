@@ -67,6 +67,21 @@ public class Stylists {
 
     /** Active locations in a market, by name. */
     public List<Location> locations(String market);
+
+    /** A stylist's new-client status and when they last set or confirmed it. */
+    public record NewClientsStatus(UUID orgId, NewClients newClients, Instant confirmedAt) { }
+
+    /**
+     * The generic "Before your first visit" notes for a service and hair type, most specific first, at most four.
+     * Either may be null. Consult calls this for the service finder's result.
+     */
+    public List<FirstVisitNote> firstVisitNotes(ServiceType service, HairType hairType);
+
+    /** The new-client status of any profile, whatever its status, or empty. */
+    public Optional<NewClientsStatus> newClients(UUID orgId);
+
+    /** "Still accurate": confirms the status as it stands, now. No access check: for the digest's signed link. */
+    public Optional<NewClientsStatus> confirmNewClients(UUID orgId);
 }
 ```
 
@@ -114,6 +129,7 @@ Public (no sign-in, rate-limited per IP with intake's limiter, `rate-limit.brows
 |---|---|---|
 | GET | `/api/public/stylists?market=&service=&hairType=&page=` | The open directory, for visitors without a request (`/stylists`, from `/find`): LIVE stylists only, 12 a page from 0, real stylists before sample ones, then by name |
 | GET | `/api/public/stylists/{orgId}/practice` | What to expect in one LIVE stylist's chair (`Practice`, below), for the profile view on a client's picks; 404 unless LIVE |
+| GET | `/api/public/stylists/first-visit-notes?service=&hairType=` | The generic "Before your first visit" notes (`[{key, text}]`), most specific first, at most four; both parameters optional |
 | GET | `/api/public/match-requests/{token}/stylists?service=&hairType=&page=` | The same page scoped to a client's link (served by intake with `StylistDirectory`): the request's market, a bad token is 404. The client page (`/m/:token/stylists`) uses this one |
 
 Stylist (`/api/orgs/{orgId}/...`, member of the STYLIST org or ADMIN; anyone else gets 404):
@@ -125,6 +141,7 @@ Stylist (`/api/orgs/{orgId}/...`, member of the STYLIST org or ADMIN; anyone els
 | PUT | `/api/orgs/{orgId}/stylist/profile` | Create or update the profile (stays DRAFT/LIVE/HIDDEN as it was), including `practice` (below; null clears it) |
 | POST | `/api/orgs/{orgId}/stylist/publish` | LIVE; needs accepted terms, a location, an https booking URL and 3+ tagged READY photos |
 | POST | `/api/orgs/{orgId}/stylist/hide` | HIDDEN |
+| POST | `/api/orgs/{orgId}/stylist/new-clients/confirm` | "Yes, still accurate": confirms the new-client status as it stands; returns the profile |
 | GET | `/api/orgs/{orgId}/photos` | READY and HIDDEN photos, in order, with signed view URLs |
 | POST | `/api/orgs/{orgId}/photos` | Upload slot: `{contentType, sizeBytes}` → presigned PUT (needs accepted terms) |
 | POST | `/api/orgs/{orgId}/photos/{photoId}/confirm` | Checks type/size, hashes, strips location/device EXIF, READY |
@@ -182,6 +199,36 @@ All optional; none is needed to go live. `ProfileView.practice` and `DirectorySt
   client-side choice, not a stylist label.
 - **Never a "No":** an unticked label isn't shown. Wording lives in `web/src/stylists/practice.ts`.
 
+## Before your first visit and new-client status (2026-11-25)
+
+Ideas 1 and 3 of [feature-ideas.md](../research/feature-ideas.md), decided by Zach on 2026-11-25. Migration V13.
+
+**Before your first visit.** On the profile form, all optional, inside `Practice.firstVisit`:
+
+- `colourConsultationFirst`: "New colour clients need a consultation first".
+- `depositForNewClients`: "I ask new clients for a deposit when they book". A fact for the client; Combpatible never
+  collects money.
+- `note`: up to 280 characters ("Park in the back lot; I'm in loft 12").
+
+Then the **generic notes** from `backend/app/src/main/resources/stylists/first-visit-notes.json`, picked by
+`FirstVisitNotes`: `SERVICE+HAIRTYPE`, then the service, then the hair type, then `any.*`, at most four. The stylist's
+own facts and note always come first. Shown on the match page (the generic notes once for the request, then each
+pick's own on their card), the portfolio dialog and the service finder's result (consult calls
+`Stylists.firstVisitNotes`; nothing depends on consult). The file is our draft until Jason's version arrives:
+[first-visit-notes.md](../research/first-visit-notes.md) says how to swap it in. Bad keys fail the app at start-up and
+`FirstVisitNotesTest`.
+
+**New-client status.** `Practice.newClients` is `{status, weeksOut}`: `TAKING`, `TAKING_WITH_WAIT` (1 to 26 weeks) or
+`NOT_TAKING`. Shown in plain words ("Taking new clients · usually about 3 weeks out", "Not taking new clients right
+now") on the match card, the portfolio and the directory card. On the profile request, `newClients: null` leaves it as
+it was; any save of it, or "Yes, still accurate", sets `new_clients_confirmed_at`.
+
+- **Never a matching input** (Zach, 2026-11-25). A stylist who isn't taking new clients stays matched, ranked and listed
+  as before, and Book stays: `AutoPublishFlowTest.aStylistNotTakingNewClientsIsStillMatchedAndKeepsTheirRank` holds it.
+- **Still accurate?** `ProfileView.newClientsConfirmDue` turns true once the status is older than
+  `lookmate.stylists.new-clients-confirm-after` (30 days); the stylist home then shows the nudge, and one click confirms.
+  `Stylists.confirmNewClients` does the same for the weekly digest's link.
+
 ## Notes for the other modules
 
 - **Photo metadata.** Stripped with `storage/PhotoMetadata`, shared with intake: a JPEG or PNG copied byte for byte
@@ -203,7 +250,8 @@ Until real stylists join, the admin creates made-up ones at `/admin/demo` (Zach,
 one through the normal API, acting as the admin: an org named "Demo: <name>", a profile on one of the active locations,
 `stylist_profile.demo = true` (V3), five tagged photos (before/after pairs included) and publish. Each gets a practice
 drawn at random (`randomPractice` in `web/src/admin/demoSeed.ts`): some labels, maybe a language, a from-price per
-service scaled by price tier, and a consultation or none. Photos are drawn
+service scaled by price tier, and a consultation or none, plus a new-client status (`randomNewClients`: mostly
+taking, some with a wait, a few not taking). Photos are drawn
 placeholders showing their tags, unless the admin picks real photos named as in `web/src/admin/demoStylists.ts`
 (`maya-1.jpg` to `nia-5.jpg`). Booking links go to `https://example.com/book/<slug>`.
 

@@ -3,6 +3,7 @@ import {
   CONSULTATIONS,
   LANGUAGES,
   type Location,
+  type NewClients,
   type PortfolioPhoto,
   type Practice,
   type PracticeLabel,
@@ -51,7 +52,11 @@ const PRICED_BY_HAIR: ServiceType[] = ['BRAIDS', 'LOCS', 'EXTENSIONS', 'SILK_PRE
  * What to expect in a made-up stylist's chair, some of it at random so the demo shows a spread: labels, maybe a
  * language, a from-price per service (scaled by price tier, rounded to $5) and a consultation, or none.
  */
-export function randomPractice(specialties: ServiceType[], priceTier: number | null, random: () => number = Math.random): Practice {
+export function randomPractice(
+  specialties: ServiceType[],
+  priceTier: number | null,
+  random: () => number = Math.random,
+): Omit<Practice, 'firstVisit' | 'newClients'> {
   const scale = TIER_SCALE[(priceTier ?? 2) - 1] ?? 1
   const pick = <T,>(xs: readonly T[]) => xs[Math.floor(random() * xs.length)]
   const consultation = pick([...CONSULTATIONS, null])
@@ -65,6 +70,14 @@ export function randomPractice(specialties: ServiceType[], priceTier: number | n
     consultation,
     priceDependsOnHair: random() < (specialties.some((s) => PRICED_BY_HAIR.includes(s)) ? 0.6 : 0.2),
   }
+}
+
+/** Most made-up stylists take new clients; some have a wait, a few aren't taking (shown only, never in matching). */
+export function randomNewClients(random: () => number = Math.random): NewClients {
+  const r = random()
+  if (r < 0.2) return { status: 'TAKING_WITH_WAIT', weeksOut: 2 + Math.floor(random() * 5) }
+  if (r < 0.3) return { status: 'NOT_TAKING', weeksOut: null }
+  return { status: 'TAKING', weeksOut: null }
 }
 
 /**
@@ -89,6 +102,7 @@ export async function seedDemoStylists(stylists: DemoStylist[], locations: Locat
       instagram: s.instagram,
       priceTier: s.priceTier,
       practice: randomPractice(specialties, s.priceTier, random),
+      newClients: randomNewClients(random),
     })
     await api<Profile>('POST', apiPath`/api/admin/stylists/${org.id}/demo`)
 

@@ -1,6 +1,15 @@
 // Wording for what to expect in a stylist's chair (docs/research/beyond-the-hair.md). Profile only: never a filter,
 // never in ranking. An unticked label is never shown as "No"; it just isn't shown.
-import { SERVICE_LABEL, type Consultation, type Language, type Practice, type PracticeLabel } from './types'
+import {
+  SERVICE_LABEL,
+  type Consultation,
+  type FirstVisit,
+  type Language,
+  type NewClients,
+  type NewClientStatus,
+  type Practice,
+  type PracticeLabel,
+} from './types'
 
 /** What the stylist ticks on their profile form: the promise, in their words. */
 export const LABEL_FORM: Record<PracticeLabel, string> = {
@@ -73,4 +82,45 @@ export function hasPractice(practice: Practice | null | undefined): practice is 
       practice.consultation !== null ||
       practice.priceDependsOnHair)
   )
+}
+
+// New-client status (feature idea 3): shown only, never a filter and never in ranking or matching.
+
+/** What the stylist picks on their profile form. */
+export const NEW_CLIENTS_FORM: Record<NewClientStatus, string> = {
+  TAKING: "I'm taking new clients",
+  TAKING_WITH_WAIT: "I'm taking new clients, with a wait",
+  NOT_TAKING: "I'm not taking new clients right now",
+}
+
+/** "Taking new clients · usually about 3 weeks out", in plain words for clients. */
+export function newClientsLine(newClients: NewClients | null | undefined): string | null {
+  if (!newClients) return null
+  switch (newClients.status) {
+    case 'TAKING':
+      return 'Taking new clients'
+    case 'TAKING_WITH_WAIT': {
+      const weeks = newClients.weeksOut ?? 0
+      if (weeks < 1) return 'Taking new clients'
+      return `Taking new clients · usually about ${weeks === 1 ? 'a week' : `${weeks} weeks`} out`
+    }
+    case 'NOT_TAKING':
+      return 'Not taking new clients right now'
+  }
+}
+
+// Before your first visit (feature idea 1): the stylist's own facts first, then the generic notes.
+
+export const FIRST_VISIT_FORM = {
+  colourConsultationFirst: 'New colour clients need a consultation first',
+  depositForNewClients: 'I ask new clients for a deposit when they book',
+} as const
+
+/** The stylist's own facts as clients read them, in order: the two ticks, then their note. */
+export function firstVisitFacts(firstVisit: FirstVisit | null | undefined): string[] {
+  if (!firstVisit) return []
+  return [
+    firstVisit.colourConsultationFirst ? 'New colour clients book a consultation first.' : null,
+    firstVisit.depositForNewClients ? 'Asks new clients for a deposit when they book (paid to the stylist, not Combpatible).' : null,
+  ].filter((f): f is string => f !== null)
 }
