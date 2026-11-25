@@ -17,7 +17,7 @@ class EmailOutbox {
 
     /** What an email is, so its rows can be found again. */
     /** MATCH_REQUEST_RECEIVED is no longer sent (the quiz asks no email since V7); it stays for the rows already stored. */
-    enum Template { MATCHES_READY, STYLIST_INVITE, MATCH_REQUEST_RECEIVED, MATCH_LIST_LINK, PICKS_ADDED }
+    enum Template { MATCHES_READY, STYLIST_INVITE, MATCH_REQUEST_RECEIVED, MATCH_LIST_LINK, PICKS_ADDED, STYLIST_DIGEST }
 
     /** A new email. {@code sendAt} is when it's due; a reminder's is in the future. */
     record New(String dedupeKey, Template template, UUID recipientUserId, String recipientEmail, UUID orgId, UUID subjectId,

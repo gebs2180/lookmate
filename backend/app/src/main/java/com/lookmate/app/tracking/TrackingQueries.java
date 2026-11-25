@@ -142,7 +142,7 @@ class TrackingQueries {
      * Stylists clients picked from the directory (a Book click with no match), newest first, for the admin's "record a
      * booking" page; {@code recommended} says whether the same stylist was also on that client's published list.
      */
-    List<DirectoryClick> recentDirectoryClicks(String market, String search, int limit) {
+    List<DirectoryClick> recentDirectoryClicks(String market, UUID orgId, String search, int limit) {
         String like = search == null || search.isBlank() ? null : "%" + search.strip().toLowerCase().replace("%", "") + "%";
         return jdbc.sql("""
                         select e.match_request_id, e.org_id, p.display_name, c.first_name, c.email, r.market, r.service,
@@ -158,6 +158,7 @@ class TrackingQueries {
                         left join stylist_profile p on p.org_id = e.org_id
                         where e.type = 'CLICKED_BOOK' and e.match_id is null
                           and (cast(:market as text) is null or r.market = :market)
+                          and (cast(:org as uuid) is null or e.org_id = :org)
                           and (cast(:like as text) is null
                                or lower(coalesce(p.display_name, '')) like :like
                                or lower(coalesce(c.first_name, '')) like :like
@@ -168,6 +169,7 @@ class TrackingQueries {
                         limit :limit
                         """)
                 .param("market", market)
+                .param("org", orgId)
                 .param("like", like)
                 .param("limit", limit)
                 .query((rs, n) -> new DirectoryClick(uuid(rs, "match_request_id"), uuid(rs, "org_id"), rs.getString("display_name"),

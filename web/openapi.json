@@ -425,6 +425,27 @@
         },
         "required" : [ "channel", "credit", "outcome", "rulesetVersion", "sessionId" ]
       },
+      "DigestControllerDigestRecord" : {
+        "properties" : {
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "type" : {
+            "enum" : [ "VIEWED", "CLICKED_BOOK", "BOOKED", "REBOOKED", "VOIDED" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "occurredAt", "type" ]
+      },
+      "DigestControllerDigestSetting" : {
+        "properties" : {
+          "weeklyDigest" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "weeklyDigest" ]
+      },
       "IntakeControllerCreateRequest" : {
         "properties" : {
           "budgetTier" : {
@@ -1992,6 +2013,36 @@
         },
         "required" : [ "city", "demo", "displayName", "instagram", "locationName", "orgId", "photoUrls", "practice", "specialties" ]
       },
+      "StylistTrackingControllerStylistDirectoryPick" : {
+        "properties" : {
+          "bookedEventId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "clicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "clientFirstName" : {
+            "type" : "string"
+          },
+          "lastClickedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "recommended" : {
+            "type" : "boolean"
+          },
+          "requestId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "bookedEventId", "clicks", "clientFirstName", "lastClickedAt", "recommended", "requestId", "service" ]
+      },
       "StylistTrackingControllerStylistMatch" : {
         "properties" : {
           "bookingClicks" : {
@@ -2317,6 +2368,42 @@
           }
         },
         "required" : [ "id", "matchId", "note", "occurredAt", "source", "type" ]
+      },
+      "WeeklyDigestsLinkInfo" : {
+        "properties" : {
+          "clientFirstName" : {
+            "type" : "string"
+          },
+          "directoryPick" : {
+            "type" : "boolean"
+          },
+          "eventId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "expired" : {
+            "type" : "boolean"
+          },
+          "expiresAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "service" : {
+            "type" : "string"
+          },
+          "used" : {
+            "type" : "boolean"
+          },
+          "weekStart" : {
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "required" : [ "clientFirstName", "directoryPick", "eventId", "expired", "expiresAt", "orgId", "service", "used", "weekStart" ]
       }
     }
   },
@@ -2494,7 +2581,7 @@
     },
     "/api/admin/locations/{id}" : {
       "put" : {
-        "operationId" : "update",
+        "operationId" : "update_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2843,7 +2930,7 @@
     },
     "/api/admin/match-requests/{requestId}/stylists/{orgId}/events" : {
       "post" : {
-        "operationId" : "recordDirectory",
+        "operationId" : "recordDirectory_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "requestId",
@@ -2916,7 +3003,7 @@
         "tags" : [ "admin-tracking-controller" ]
       },
       "post" : {
-        "operationId" : "record_1",
+        "operationId" : "record_2",
         "parameters" : [ {
           "in" : "path",
           "name" : "matchId",
@@ -3360,6 +3447,66 @@
         "tags" : [ "admin-tracking-controller" ]
       }
     },
+    "/api/digest-links/{token}" : {
+      "get" : {
+        "operationId" : "link",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WeeklyDigestsLinkInfo"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "digest-controller" ]
+      },
+      "post" : {
+        "operationId" : "record_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DigestControllerDigestRecord"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TrackingServiceRecorded"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "digest-controller" ]
+      }
+    },
     "/api/invites/{token}" : {
       "get" : {
         "operationId" : "preview",
@@ -3521,6 +3668,68 @@
         "tags" : [ "consent-controller" ]
       }
     },
+    "/api/orgs/{orgId}/digest" : {
+      "get" : {
+        "operationId" : "setting",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DigestControllerDigestSetting"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "digest-controller" ]
+      },
+      "put" : {
+        "operationId" : "update",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DigestControllerDigestSetting"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DigestControllerDigestSetting"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "digest-controller" ]
+      }
+    },
     "/api/orgs/{orgId}/events/{eventId}/void" : {
       "post" : {
         "operationId" : "voidEvent",
@@ -3561,6 +3770,51 @@
               }
             },
             "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-tracking-controller" ]
+      }
+    },
+    "/api/orgs/{orgId}/match-requests/{requestId}/events" : {
+      "post" : {
+        "operationId" : "recordDirectory",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "path",
+          "name" : "requestId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminTrackingControllerRecordBooking"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TrackingServiceRecorded"
+                }
+              }
+            },
+            "description" : "Created"
           }
         },
         "tags" : [ "stylist-tracking-controller" ]
@@ -4048,6 +4302,36 @@
         "tags" : [ "stylist-controller" ]
       }
     },
+    "/api/orgs/{orgId}/tracking/directory-picks" : {
+      "get" : {
+        "operationId" : "directoryPicks",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/StylistTrackingControllerStylistDirectoryPick"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-tracking-controller" ]
+      }
+    },
     "/api/orgs/{orgId}/tracking/matches" : {
       "get" : {
         "operationId" : "matches",
@@ -4314,6 +4598,25 @@
           }
         },
         "tags" : [ "consult-controller" ]
+      }
+    },
+    "/api/public/digest/unsubscribe/{token}" : {
+      "post" : {
+        "operationId" : "unsubscribe",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "digest-controller" ]
       }
     },
     "/api/public/intake/settings" : {

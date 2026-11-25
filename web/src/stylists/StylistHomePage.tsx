@@ -6,6 +6,7 @@ import { message } from '../format'
 import { Chip, Loading, PageError, type Tone } from '../ui'
 import { useLoad } from '../useLoad'
 import './stylists.css'
+import { DigestSetting } from './DigestSetting'
 import { TermsStep } from './TermsStep'
 import { type Missing, type Profile, type ProfileStatus, type StylistHome } from './types'
 
@@ -103,6 +104,8 @@ export function StylistHomePage() {
           {actionError}
         </p>
       )}
+
+      <DigestSetting orgId={orgId} />
     </>
   )
 }

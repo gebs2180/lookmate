@@ -32,10 +32,17 @@ a correction is a new row (a `VOIDED` event, below).
 | Admin | `GET /api/admin/matches/{matchId}/events` | The match's events, newest first, voided ones marked with the reason |
 | Stylist (own org) | `GET /api/orgs/{orgId}/matches/{matchId}/events` | The same, for their own match |
 | Admin | `POST /api/admin/events/{eventId}/void` | `{reason}`: voids any event |
-| Stylist (own org) | `POST /api/orgs/{orgId}/events/{eventId}/void` | `{reason}`: voids a BOOKED or REBOOKED on their own match |
+| Stylist (own org) | `POST /api/orgs/{orgId}/events/{eventId}/void` | `{reason}`: voids a BOOKED or REBOOKED on their own match or directory pick |
+| Stylist (own org) | `GET /api/orgs/{orgId}/tracking/directory-picks` | The 50 latest clients who picked them from the directory: first name, service, clicks, the booking if recorded. No email |
+| Stylist (own org) | `POST /api/orgs/{orgId}/match-requests/{requestId}/events` | `{type: BOOKED\|REBOOKED, note?, occurredAt?}` for a directory pick. `404` unless that client tapped Book on this org from the directory. `source = STYLIST` (or `ADMIN`) |
+| Stylist (signed in, link's org) | `GET /api/digest-links/{token}` | What a weekly-digest Booked/Rebooked link is about: org, client first name, service, week, directory pick or not, used/expired, the recorded event. `404` for anyone not in the link's org |
+| Stylist (signed in, link's org) | `POST /api/digest-links/{token}` | `{type: BOOKED\|REBOOKED, occurredAt?}`: records it once. `201`; `409 LINK_USED`, `410 LINK_EXPIRED`, plus the manual-entry codes |
+| Stylist (own org) | `GET`/`PUT /api/orgs/{orgId}/digest` | `{weeklyDigest}`: the signed-in member's switch for the Monday email |
+| Anyone with the link | `POST /api/public/digest/unsubscribe/{token}` | Turns the digest off for the member it was sent to. `204`; `404` for an unknown or expired link |
 
 Web: `/admin/metrics` (dashboard), `/admin/bookings` (record or void a booking), `/orgs/:orgId/bookings` (the same
-for a stylist's own matches), `/orgs/:orgId/stats` (the stylist's stats card as a page; `StylistStatsCard` is exported
+for a stylist's own matches and directory picks), `/digest/:token?type=` (confirm a digest link, signed in),
+`/digest/unsubscribe/:token` (public), `/orgs/:orgId/stats` (the stylist's stats card as a page; `StylistStatsCard` is exported
 for the stylist home page to embed).
 
 ### The redirect
@@ -74,6 +81,39 @@ for the stylist home page to embed).
 - The admin can void any event (a test click, say); a stylist only BOOKED and REBOOKED on their own org's matches.
 - A BOOKED that a later REBOOKED (same client, same stylist) depends on can't be voided while that rebook stands:
   `409 BOOKING_HAS_REBOOKS`. Voiding twice is `409 ALREADY_VOIDED`. A VOIDED row can't be voided; re-record instead.
+
+## Weekly digest (idea 2, 2026-11-25)
+
+Every Monday each member of a LIVE, non-demo stylist org gets an email about the week before (Monday to Sunday in
+`lookmate.tracking.time-zone`): "Last week Combpatible showed you to N clients; M tapped Book: Sam and Dana", one line
+of 30-day numbers, and per client who tapped a **Booked** and a **Rebooked** button (only Rebooked once a booking is
+recorded). Clients appear by first name only: never contact details or photos.
+
+- **Who counts.** "Showed you to": distinct requests where the org was on the published list (ranked, not hidden,
+  published in the week) or was picked from the directory (a directory `CLICKED_BOOK` in the week). "Tapped Book":
+  requests with a `CLICKED_BOOK` on the org in the week, from the list or the directory. A week with neither sends
+  nothing.
+- **Queue.** `stylist_digest` (V14), one row per org per week (unique), so planning is idempotent. `WeeklyDigestJob`
+  runs every `poll-interval` (10 min): on Mondays from `send-hour` (8) local time it adds the missing rows, then
+  sends PENDING ones claimed with `FOR UPDATE SKIP LOCKED`, one transaction each. A failure is retried on the next run
+  and the digest is FAILED after `max-attempts` (3). Each member's email goes through the notify outbox with dedupe
+  key `stylist-digest:<digestId>:<userId>` (`StylistEmails.weeklyDigest`, template `STYLIST_DIGEST`), so a resend
+  never doubles up.
+- **Links.** `stylist_digest_link`: 32 random bytes, only the SHA-256 stored, one per client per member, plus one
+  unsubscribe link per email. A Booked/Rebooked link lasts `link-ttl` (14 days), works once and needs the stylist's
+  Auth0 sign-in as a member of the link's org, so a forwarded email can't record anything. Opening it records nothing:
+  the page asks to confirm. It records through the same paths as manual entry (`recordBooking` on the match, or
+  `recordDirectoryBooking` for a directory pick), so the same rules apply and the event is an ordinary `BOOKED` or
+  `REBOOKED` with `source = STYLIST`, which the client check-in (idea 6) can key on. The confirm page offers Undo
+  (the normal void). Links are deleted 30 days after they expire.
+- **Opt-out.** Per member: the switch on the stylist home page, or the email's unsubscribe link (`unsubscribe-ttl`,
+  90 days; a button, so a mail scanner opening the link changes nothing). Both write `stylist_digest_opt_out`.
+- **Config.** `lookmate.tracking.digest.*`: `enabled` (env `STYLIST_DIGEST_ENABLED`, default true; false stops the
+  job), `send-hour`, `poll-interval`, `link-ttl`, `unsubscribe-ttl`, `max-attempts`, `max-clients` (20 per email).
+- **Not yet:** the "Still taking new clients? Confirm" line (shown when the status is older than 30 days) waits for
+  `stylists` to have the status and a public confirm method; see docs/modules/stylists.md, "Follow-ups".
+- Tests: `WeeklyDigestTest` (one digest per week, first names only, single-use and member-only links, expiry and
+  clean-up, both opt-outs, the stylist directory route).
 
 ## Metric definitions
 
@@ -116,8 +156,6 @@ every query is a small scan. What supports them:
 
 ## Not done here
 
-- Directory bookings are entered by the admin only; a stylist's own bookings page lists their matches, not directory
-  picks.
 - **Rate limits** are intake's `PublicRateLimit`, in memory per IP (so per instance; a second app container needs a
   shared limit in Caddy or Postgres). Both Book routes (`/api/public/book/**` and `/api/public/book-stylist/**`) share
   the directory's `browse-per-minute` bucket (60); `/viewed` falls under intake's `reads-per-minute`. The click dedupe and the daily cap

@@ -23,6 +23,14 @@ class StylistTrackingController {
                         Integer finalRank, long bookingClicks, long bookings, long rebooks) {
     }
 
+    /**
+     * A client who picked this stylist from the directory (a Book tap with no match), to record a booking against.
+     * First name only, like {@link StylistMatch}.
+     */
+    record StylistDirectoryPick(UUID requestId, String clientFirstName, String service, java.time.Instant lastClickedAt,
+                                long clicks, boolean recommended, UUID bookedEventId) {
+    }
+
     private final TrackingQueries queries;
     private final OrgAccess orgAccess;
     private final MetricsService metrics;
@@ -63,6 +71,33 @@ class StylistTrackingController {
                 .map(m -> new StylistMatch(m.matchId(), m.clientFirstName(), m.service(), m.publishedAt(), m.finalRank(),
                         m.bookingClicks(), m.bookings(), m.rebooks()))
                 .toList();
+    }
+
+    /** The 50 most recent clients who picked this stylist from the directory. */
+    @GetMapping("/api/orgs/{orgId}/tracking/directory-picks")
+    java.util.List<StylistDirectoryPick> directoryPicks(@PathVariable UUID orgId) {
+        orgAccess.require(orgId, OrgType.STYLIST);
+        return queries.recentDirectoryClicks(null, orgId, null, 50).stream()
+                .map(c -> new StylistDirectoryPick(c.requestId(), c.clientFirstName(), c.service(), c.lastClickedAt(),
+                        c.clicks(), c.recommended(), c.bookedEventId()))
+                .toList();
+    }
+
+    /**
+     * A booking with a client who picked this stylist from the directory (no match). Only when that client tapped Book
+     * on this stylist: any other request is a 404, as if it didn't exist.
+     */
+    @PostMapping("/api/orgs/{orgId}/match-requests/{requestId}/events")
+    @ResponseStatus(HttpStatus.CREATED)
+    TrackingService.Recorded recordDirectory(@PathVariable UUID orgId, @PathVariable UUID requestId,
+                                             @Valid @RequestBody AdminTrackingController.RecordBooking request) {
+        orgAccess.require(orgId, OrgType.STYLIST);
+        if (!tracking.directoryPicked(requestId, orgId)) {
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND, "Request not found");
+        }
+        Source source = currentUser.isAdmin() ? Source.ADMIN : Source.STYLIST;
+        return tracking.recordDirectoryBooking(requestId, orgId, request.type(), source, currentUser.id(), request.note(),
+                request.occurredAt());
     }
 
     @GetMapping("/api/orgs/{orgId}/matches/{matchId}/events")

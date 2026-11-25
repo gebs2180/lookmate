@@ -76,7 +76,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["update"];
+        put: operations["update_1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -237,7 +237,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["recordDirectory"];
+        post: operations["recordDirectory_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -253,7 +253,7 @@ export interface paths {
         };
         get: operations["events_1"];
         put?: never;
-        post: operations["record_1"];
+        post: operations["record_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -452,6 +452,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/digest-links/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["link"];
+        put?: never;
+        post: operations["record_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/invites/{token}": {
         parameters: {
             query?: never;
@@ -532,6 +548,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/orgs/{orgId}/digest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["setting"];
+        put: operations["update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/orgs/{orgId}/events/{eventId}/void": {
         parameters: {
             query?: never;
@@ -542,6 +574,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["voidEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orgs/{orgId}/match-requests/{requestId}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recordDirectory"];
         delete?: never;
         options?: never;
         head?: never;
@@ -740,6 +788,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/orgs/{orgId}/tracking/directory-picks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["directoryPicks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/orgs/{orgId}/tracking/matches": {
         parameters: {
             query?: never;
@@ -894,6 +958,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["findStylist"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/digest/unsubscribe/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["unsubscribe"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1227,6 +1307,15 @@ export interface components {
             rulesetVersion: number;
             /** Format: uuid */
             sessionId: string;
+        };
+        DigestControllerDigestRecord: {
+            /** Format: date-time */
+            occurredAt: string;
+            /** @enum {string} */
+            type: "VIEWED" | "CLICKED_BOOK" | "BOOKED" | "REBOOKED" | "VOIDED";
+        };
+        DigestControllerDigestSetting: {
+            weeklyDigest: boolean;
         };
         IntakeControllerCreateRequest: {
             /** Format: int32 */
@@ -1817,6 +1906,19 @@ export interface components {
             practice: components["schemas"]["Practice"];
             specialties: ("CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER")[];
         };
+        StylistTrackingControllerStylistDirectoryPick: {
+            /** Format: uuid */
+            bookedEventId: string;
+            /** Format: int64 */
+            clicks: number;
+            clientFirstName: string;
+            /** Format: date-time */
+            lastClickedAt: string;
+            recommended: boolean;
+            /** Format: uuid */
+            requestId: string;
+            service: string;
+        };
         StylistTrackingControllerStylistMatch: {
             /** Format: int64 */
             bookingClicks: number;
@@ -1962,6 +2064,21 @@ export interface components {
             source: "CLIENT" | "ADMIN" | "STYLIST";
             /** @enum {string} */
             type: "VIEWED" | "CLICKED_BOOK" | "BOOKED" | "REBOOKED" | "VOIDED";
+        };
+        WeeklyDigestsLinkInfo: {
+            clientFirstName: string;
+            directoryPick: boolean;
+            /** Format: uuid */
+            eventId: string;
+            expired: boolean;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: uuid */
+            orgId: string;
+            service: string;
+            used: boolean;
+            /** Format: date */
+            weekStart: string;
         };
     };
     responses: never;
@@ -2110,7 +2227,7 @@ export interface operations {
             };
         };
     };
-    update: {
+    update_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2349,7 +2466,7 @@ export interface operations {
             };
         };
     };
-    recordDirectory: {
+    recordDirectory_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -2398,7 +2515,7 @@ export interface operations {
             };
         };
     };
-    record_1: {
+    record_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -2734,6 +2851,54 @@ export interface operations {
             };
         };
     };
+    link: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["WeeklyDigestsLinkInfo"];
+                };
+            };
+        };
+    };
+    record_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DigestControllerDigestRecord"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrackingServiceRecorded"];
+                };
+            };
+        };
+    };
     preview: {
         parameters: {
             query?: never;
@@ -2868,6 +3033,54 @@ export interface operations {
             };
         };
     };
+    setting: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DigestControllerDigestSetting"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DigestControllerDigestSetting"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["DigestControllerDigestSetting"];
+                };
+            };
+        };
+    };
     voidEvent: {
         parameters: {
             query?: never;
@@ -2891,6 +3104,33 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MatchEventsEvent"];
+                };
+            };
+        };
+    };
+    recordDirectory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+                requestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminTrackingControllerRecordBooking"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["TrackingServiceRecorded"];
                 };
             };
         };
@@ -3228,6 +3468,28 @@ export interface operations {
             };
         };
     };
+    directoryPicks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylistTrackingControllerStylistDirectoryPick"][];
+                };
+            };
+        };
+    };
     matches: {
         parameters: {
             query?: never;
@@ -3436,6 +3698,26 @@ export interface operations {
             header?: never;
             path: {
                 id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unsubscribe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
             };
             cookie?: never;
         };

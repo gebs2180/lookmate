@@ -215,4 +215,9 @@ placeholders showing their tags, unless the admin picks real photos named as in 
 
 ## Follow-ups
 
+- **TODO: "Still taking new clients? Confirm" in the weekly digest** (tracking, docs/tracking.md "Weekly digest").
+  When the "Taking new clients" status lands, give `Stylists` a public read of the status and when it was last
+  confirmed, and a confirm method (a stylist-facing route the email can link to). Then `WeeklyDigests.send` sets
+  `statusConfirmPath` when the status is older than 30 days; `StylistEmails` already renders the line when it's set.
+
 - **Abandoned upload slots (agreed to leave for now).** No cleanup job; see above.
