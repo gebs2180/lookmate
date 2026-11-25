@@ -164,6 +164,8 @@ lookmate.tracking:
     # Booked/Rebooked links: once each, and only for a signed-in member of the stylist's org.
     link-ttl: 14d
     unsubscribe-ttl: 90d
+    # "Still taking new clients? Confirm" once the status is this old (as lookmate.stylists.new-clients-confirm-after).
+    new-clients-confirm-after: 30d
 
 ---
 # Production (docs/hosting.md): SPRING_PROFILES_ACTIVE=prod. Nothing here has a local default, so the app

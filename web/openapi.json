@@ -351,6 +351,12 @@
           "bookingUrl" : {
             "type" : "string"
           },
+          "firstVisitNotes" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "fromPrice" : {
             "type" : "number"
           },
@@ -377,7 +383,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "bookingUrl", "fromPrice", "hours", "id", "kind", "serviceName", "serviceType", "whatToExpect", "why" ]
+        "required" : [ "bookingUrl", "firstVisitNotes", "fromPrice", "hours", "id", "kind", "serviceName", "serviceType", "whatToExpect", "why" ]
       },
       "ConsultServiceQuestion" : {
         "properties" : {
@@ -445,6 +451,39 @@
           }
         },
         "required" : [ "weeklyDigest" ]
+      },
+      "DigestControllerNewClientsConfirmed" : {
+        "properties" : {
+          "newClients" : {
+            "$ref" : "#/components/schemas/NewClients"
+          }
+        },
+        "required" : [ "newClients" ]
+      },
+      "FirstVisit" : {
+        "properties" : {
+          "colourConsultationFirst" : {
+            "type" : "boolean"
+          },
+          "depositForNewClients" : {
+            "type" : "boolean"
+          },
+          "note" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "colourConsultationFirst", "depositForNewClients", "note" ]
+      },
+      "FirstVisitNote" : {
+        "properties" : {
+          "key" : {
+            "type" : "string"
+          },
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "key", "text" ]
       },
       "IntakeControllerCreateRequest" : {
         "properties" : {
@@ -1033,6 +1072,19 @@
         },
         "required" : [ "bookingClicks", "bookings", "bookingsBySource", "clicksBySource", "clientsBooked", "clientsClicked", "clientsMatched", "clientsRebooked", "rebookCohort", "rebookCohortRebooked", "rebookRate", "rebooks", "requestsPublished", "stylistsActive", "stylistsLive" ]
       },
+      "NewClients" : {
+        "properties" : {
+          "status" : {
+            "enum" : [ "TAKING", "TAKING_WITH_WAIT", "NOT_TAKING" ],
+            "type" : "string"
+          },
+          "weeksOut" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "status", "weeksOut" ]
+      },
       "PhotoServiceOrderRequest" : {
         "properties" : {
           "photoIds" : {
@@ -1176,6 +1228,9 @@
             "enum" : [ "FREE", "PAID", "INCLUDED" ],
             "type" : "string"
           },
+          "firstVisit" : {
+            "$ref" : "#/components/schemas/FirstVisit"
+          },
           "fromPrices" : {
             "items" : {
               "$ref" : "#/components/schemas/PracticeFromPrice"
@@ -1196,11 +1251,14 @@
             },
             "type" : "array"
           },
+          "newClients" : {
+            "$ref" : "#/components/schemas/NewClients"
+          },
           "priceDependsOnHair" : {
             "type" : "boolean"
           }
         },
-        "required" : [ "consultation", "fromPrices", "labels", "languages", "priceDependsOnHair" ]
+        "required" : [ "consultation", "firstVisit", "fromPrices", "labels", "languages", "newClients", "priceDependsOnHair" ]
       },
       "PracticeFromPrice" : {
         "properties" : {
@@ -1215,11 +1273,41 @@
         },
         "required" : [ "fromDollars", "service" ]
       },
+      "ProfileServiceFirstVisitRequest" : {
+        "properties" : {
+          "colourConsultationFirst" : {
+            "type" : "boolean"
+          },
+          "depositForNewClients" : {
+            "type" : "boolean"
+          },
+          "note" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "colourConsultationFirst", "depositForNewClients", "note" ]
+      },
+      "ProfileServiceNewClientsRequest" : {
+        "properties" : {
+          "status" : {
+            "enum" : [ "TAKING", "TAKING_WITH_WAIT", "NOT_TAKING" ],
+            "type" : "string"
+          },
+          "weeksOut" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "status", "weeksOut" ]
+      },
       "ProfileServicePracticeRequest" : {
         "properties" : {
           "consultation" : {
             "enum" : [ "FREE", "PAID", "INCLUDED" ],
             "type" : "string"
+          },
+          "firstVisit" : {
+            "$ref" : "#/components/schemas/ProfileServiceFirstVisitRequest"
           },
           "fromPrices" : {
             "items" : {
@@ -1245,7 +1333,7 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "consultation", "fromPrices", "labels", "languages", "priceDependsOnHair" ]
+        "required" : [ "consultation", "firstVisit", "fromPrices", "labels", "languages", "priceDependsOnHair" ]
       },
       "ProfileServicePriceRequest" : {
         "properties" : {
@@ -1278,6 +1366,9 @@
             "format" : "uuid",
             "type" : "string"
           },
+          "newClients" : {
+            "$ref" : "#/components/schemas/ProfileServiceNewClientsRequest"
+          },
           "practice" : {
             "$ref" : "#/components/schemas/ProfileServicePracticeRequest"
           },
@@ -1293,7 +1384,7 @@
             "type" : "array"
           }
         },
-        "required" : [ "bio", "bookingUrl", "displayName", "instagram", "locationId", "practice", "priceTier", "specialties" ]
+        "required" : [ "bio", "bookingUrl", "displayName", "instagram", "locationId", "newClients", "practice", "priceTier", "specialties" ]
       },
       "ProfileServiceProfileView" : {
         "properties" : {
@@ -1323,6 +1414,13 @@
           "market" : {
             "type" : "string"
           },
+          "newClientsConfirmDue" : {
+            "type" : "boolean"
+          },
+          "newClientsConfirmedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
           "practice" : {
             "$ref" : "#/components/schemas/Practice"
           },
@@ -1350,7 +1448,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "bio", "bookingPlatform", "bookingUrl", "demo", "displayName", "instagram", "locationId", "market", "practice", "priceTier", "publishedAt", "specialties", "status", "updatedAt" ]
+        "required" : [ "bio", "bookingPlatform", "bookingUrl", "demo", "displayName", "instagram", "locationId", "market", "newClientsConfirmDue", "newClientsConfirmedAt", "practice", "priceTier", "publishedAt", "specialties", "status", "updatedAt" ]
       },
       "ProfileServiceStylistHome" : {
         "properties" : {
@@ -4238,6 +4336,33 @@
         "tags" : [ "stylist-controller" ]
       }
     },
+    "/api/orgs/{orgId}/stylist/new-clients/confirm" : {
+      "post" : {
+        "operationId" : "confirmNewClients_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProfileServiceProfileView"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-controller" ]
+      }
+    },
     "/api/orgs/{orgId}/stylist/profile" : {
       "put" : {
         "operationId" : "saveProfile",
@@ -4600,6 +4725,32 @@
         "tags" : [ "consult-controller" ]
       }
     },
+    "/api/public/digest/new-clients/{token}" : {
+      "post" : {
+        "operationId" : "confirmNewClients",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DigestControllerNewClientsConfirmed"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "digest-controller" ]
+      }
+    },
     "/api/public/digest/unsubscribe/{token}" : {
       "post" : {
         "operationId" : "unsubscribe",
@@ -4906,6 +5057,44 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/StylistDirectoryDirectoryPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "directory-controller" ]
+      }
+    },
+    "/api/public/stylists/first-visit-notes" : {
+      "get" : {
+        "operationId" : "firstVisitNotes",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "service",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "hairType",
+          "required" : false,
+          "schema" : {
+            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/FirstVisitNote"
+                  },
+                  "type" : "array"
                 }
               }
             },

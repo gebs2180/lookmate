@@ -4,6 +4,7 @@ import com.lookmate.app.api.ApiException;
 import com.lookmate.app.identity.Directory;
 import com.lookmate.app.identity.OrgType;
 import com.lookmate.app.notify.StylistEmails;
+import com.lookmate.app.stylists.NewClientStatus;
 import com.lookmate.app.stylists.ProfileStatus;
 import com.lookmate.app.stylists.Stylists;
 import com.lookmate.app.tracking.MatchEvents.Source;
@@ -166,6 +167,11 @@ public class WeeklyDigests {
         String statsLine = statsLine(month);
         List<DigestStore.Tapped> listed = tapped.subList(0, Math.min(tapped.size(), properties.maxClients()));
         String name = profile.get().displayName();
+        String statusQuestion = stylists.newClients(digest.orgId())
+                .filter(s -> s.confirmedAt().plus(properties.newClientsConfirmAfter()).isBefore(now))
+                .map(s -> s.newClients().status() == NewClientStatus.NOT_TAKING
+                        ? "Still not taking new clients?" : "Still taking new clients?")
+                .orElse(null);
 
         int queued = 0;
         for (UUID user : recipients) {
@@ -179,11 +185,14 @@ public class WeeklyDigests {
             }
             String unsubscribe = store.newLink(DigestStore.LinkKind.UNSUBSCRIBE, digest.id(), digest.orgId(), user, null, null,
                     now, now.plus(properties.unsubscribeTtl()));
-            // TODO(stylist status): add the "Still taking new clients? Confirm" line once stylists can confirm their
-            // status (docs/modules/stylists.md, "Taking new clients").
+            String statusConfirm = null;
+            if (statusQuestion != null) {
+                statusConfirm = "/digest/new-clients/" + store.newLink(DigestStore.LinkKind.NEW_CLIENTS, digest.id(),
+                        digest.orgId(), user, null, null, now, linkExpiry);
+            }
             StylistEmails.WeeklyDigest email = new StylistEmails.WeeklyDigest(name, digest.weekStart(), shown, clients,
                     statsLine, "/orgs/" + digest.orgId() + "/stats", "/stylist/" + digest.orgId(),
-                    "/digest/unsubscribe/" + unsubscribe, null);
+                    "/digest/unsubscribe/" + unsubscribe, statusConfirm, statusQuestion);
             if (emails.weeklyDigest(digest.id(), digest.orgId(), user, email, now)) {
                 queued++;
             }
@@ -279,5 +288,17 @@ public class WeeklyDigests {
                 .filter(l -> now.isBefore(l.expiresAt()));
         link.ifPresent(l -> store.optOut(l.orgId(), l.userId(), DigestStore.OptOutSource.UNSUBSCRIBE_LINK, now));
         return link.isPresent();
+    }
+
+    /**
+     * The email's "Still taking new clients? Confirm" link: no sign-in, like unsubscribing, since all it can do is say
+     * the status as it stands is still right. Empty (a 404) for an unknown or expired link. Repeats are fine.
+     */
+    @Transactional
+    Optional<Stylists.NewClientsStatus> confirmNewClients(String token, Instant now) {
+        return store.link(token, false)
+                .filter(l -> l.kind() == DigestStore.LinkKind.NEW_CLIENTS)
+                .filter(l -> now.isBefore(l.expiresAt()))
+                .flatMap(l -> stylists.confirmNewClients(l.orgId()));
     }
 }

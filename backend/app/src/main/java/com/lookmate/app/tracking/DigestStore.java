@@ -18,7 +18,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 class DigestStore {
 
-    enum LinkKind { RECORD, UNSUBSCRIBE }
+    enum LinkKind { RECORD, UNSUBSCRIBE, NEW_CLIENTS }
 
     enum OptOutSource { SETTINGS, UNSUBSCRIBE_LINK }
 

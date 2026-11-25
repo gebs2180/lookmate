@@ -39,10 +39,11 @@ a correction is a new row (a `VOIDED` event, below).
 | Stylist (signed in, link's org) | `POST /api/digest-links/{token}` | `{type: BOOKED\|REBOOKED, occurredAt?}`: records it once. `201`; `409 LINK_USED`, `410 LINK_EXPIRED`, plus the manual-entry codes |
 | Stylist (own org) | `GET`/`PUT /api/orgs/{orgId}/digest` | `{weeklyDigest}`: the signed-in member's switch for the Monday email |
 | Anyone with the link | `POST /api/public/digest/unsubscribe/{token}` | Turns the digest off for the member it was sent to. `204`; `404` for an unknown or expired link |
+| Anyone with the link | `POST /api/public/digest/new-clients/{token}` | "Still taking new clients? Confirm": confirms the org's new-client status as it stands (`Stylists.confirmNewClients`). `{newClients}`; `404` for an unknown or expired link |
 
 Web: `/admin/metrics` (dashboard), `/admin/bookings` (record or void a booking), `/orgs/:orgId/bookings` (the same
 for a stylist's own matches and directory picks), `/digest/:token?type=` (confirm a digest link, signed in),
-`/digest/unsubscribe/:token` (public), `/orgs/:orgId/stats` (the stylist's stats card as a page; `StylistStatsCard` is exported
+`/digest/unsubscribe/:token` and `/digest/new-clients/:token` (public), `/orgs/:orgId/stats` (the stylist's stats card as a page; `StylistStatsCard` is exported
 for the stylist home page to embed).
 
 ### The redirect
@@ -109,11 +110,15 @@ recorded). Clients appear by first name only: never contact details or photos.
 - **Opt-out.** Per member: the switch on the stylist home page, or the email's unsubscribe link (`unsubscribe-ttl`,
   90 days; a button, so a mail scanner opening the link changes nothing). Both write `stylist_digest_opt_out`.
 - **Config.** `lookmate.tracking.digest.*`: `enabled` (env `STYLIST_DIGEST_ENABLED`, default true; false stops the
-  job), `send-hour`, `poll-interval`, `link-ttl`, `unsubscribe-ttl`, `max-attempts`, `max-clients` (20 per email).
-- **Not yet:** the "Still taking new clients? Confirm" line (shown when the status is older than 30 days) waits for
-  `stylists` to have the status and a public confirm method; see docs/modules/stylists.md, "Follow-ups".
+  job), `send-hour`, `poll-interval`, `link-ttl`, `unsubscribe-ttl`, `max-attempts`, `max-clients` (20 per email),
+  `new-clients-confirm-after` (30 days).
+- **New-client status.** When the stylist's "Taking new clients" status was last set or confirmed more than
+  `new-clients-confirm-after` (30 days) ago, the email asks "Still taking new clients? Confirm" ("Still not taking
+  new clients?" when they've paused). The link (`NEW_CLIENTS`, `link-ttl`) needs no sign-in, like unsubscribing,
+  because all it can do is confirm the status as it stands; the page has a button, so a mail scanner changes nothing.
+  Changing the status needs a sign-in (the profile). The status never affects matching.
 - Tests: `WeeklyDigestTest` (one digest per week, first names only, single-use and member-only links, expiry and
-  clean-up, both opt-outs, the stylist directory route).
+  clean-up, both opt-outs, the new-client status confirm link, the stylist directory route).
 
 ## Metric definitions
 

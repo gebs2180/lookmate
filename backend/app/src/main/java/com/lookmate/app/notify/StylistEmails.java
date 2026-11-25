@@ -38,10 +38,12 @@ public class StylistEmails {
      * @param tapped             the clients who tapped Book, in the order to list them
      * @param statsLine          one line of the stylist's numbers
      * @param statusConfirmPath  where to confirm "taking new clients", when that's due; null leaves the line out
+     * @param statusQuestion     the question before that link, said for the status as it stands ("Still taking new
+     *                           clients?" or "Still not taking new clients?")
      */
     public record WeeklyDigest(String stylistName, LocalDate weekStart, long clientsShown, List<DigestClient> tapped,
                                String statsLine, String statsPath, String settingsPath, String unsubscribePath,
-                               String statusConfirmPath) {
+                               String statusConfirmPath, String statusQuestion) {
     }
 
     static final String SUBJECT_PREFIX = "Your week on Combpatible";
@@ -92,9 +94,9 @@ public class StylistEmails {
         }
 
         if (d.statusConfirmPath() != null) {
-            html.append("<p>Still taking new clients? <a href=\"").append(EmailContent.escape(properties.link(d.statusConfirmPath())))
+            html.append("<p>").append(EmailContent.escape(d.statusQuestion())).append(" <a href=\"").append(EmailContent.escape(properties.link(d.statusConfirmPath())))
                     .append("\" style=\"color:#7a1f2b\">Confirm</a></p>");
-            text.append("Still taking new clients? Confirm: ").append(properties.link(d.statusConfirmPath())).append("\n\n");
+            text.append(d.statusQuestion()).append(" Confirm: ").append(properties.link(d.statusConfirmPath())).append("\n\n");
         }
 
         html.append("<p>").append(EmailContent.escape(d.statsLine())).append(" <a href=\"")

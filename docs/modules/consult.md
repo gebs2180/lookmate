@@ -122,3 +122,9 @@ The shapes are in `web/openapi.json`. The OpenAPI spec doesn't record which fiel
 
 Answers are the answer texts exactly as `Finder` lists them. Skipped questions are left out, and only `multiple`
 questions take more than one answer.
+
+## Before your first visit (2026-11-25)
+
+The result's `outcome.firstVisitNotes` are the generic first-visit notes for the outcome's `serviceType`, from
+`Stylists.firstVisitNotes` (no hair type: the finder doesn't ask for one). The web shows them under "Before your first
+visit". Consult depends on stylists here, never the other way round. See [stylists.md](stylists.md).

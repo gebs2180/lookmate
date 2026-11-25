@@ -85,6 +85,10 @@ export type Profile = {
   /** A made-up stylist for the proof of concept. */
   demo: boolean
   practice: Practice
+  /** When the new-client status was last set or confirmed. */
+  newClientsConfirmedAt: string
+  /** True once that's over 30 days ago: the dashboard asks "still accurate?". */
+  newClientsConfirmDue: boolean
 }
 
 export type ProfileRequest = {
@@ -97,6 +101,8 @@ export type ProfileRequest = {
   priceTier: number | null
   /** The whole "What to expect in my chair" section; all optional. */
   practice: PracticeRequest | null
+  /** Left out or null: unchanged. Saving it counts as confirming it. */
+  newClients?: NewClients | null
 }
 
 export type StylistHome = {
@@ -175,9 +181,34 @@ export type Practice = {
   fromPrices: FromPrice[]
   consultation: Consultation | null
   priceDependsOnHair: boolean
+  /** The stylist's own "Before your first visit" facts; shown before the generic notes. */
+  firstVisit: FirstVisit
+  /** Shown only: never removes a stylist from matching or the directory, never changes the order. */
+  newClients: NewClients
 }
 
-export type PracticeRequest = Partial<Practice>
+/** The new-client status is saved apart from the practice section (ProfileRequest.newClients). */
+export type PracticeRequest = Partial<Omit<Practice, 'newClients' | 'firstVisit'>> & { firstVisit?: Partial<FirstVisit> | null }
+
+export const FIRST_VISIT_NOTE_MAX = 280
+
+export type FirstVisit = {
+  /** New colour clients need a consultation first. */
+  colourConsultationFirst: boolean
+  /** A fact only: the stylist takes it, never Combpatible. */
+  depositForNewClients: boolean
+  note: string | null
+}
+
+export const NEW_CLIENT_STATUSES = ['TAKING', 'TAKING_WITH_WAIT', 'NOT_TAKING'] as const
+export type NewClientStatus = (typeof NEW_CLIENT_STATUSES)[number]
+export const NEW_CLIENTS_MAX_WEEKS = 26
+
+/** weeksOut is set only with TAKING_WITH_WAIT. */
+export type NewClients = { status: NewClientStatus; weeksOut: number | null }
+
+/** A generic "Before your first visit" note (Jason's sheet; our draft until his arrives). */
+export type FirstVisitNote = { key: string; text: string }
 
 /** "SILK_PRESS" as "Silk press". */
 export function words(value: string) {

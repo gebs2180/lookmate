@@ -7,16 +7,20 @@ import { Field, Loading, PageError } from '../ui'
 import { useFormError } from '../useFormError'
 import { useLoad } from '../useLoad'
 import './stylists.css'
-import { CONSULTATION_FORM, LABEL_FORM, LANGUAGE_NAME } from './practice'
+import { CONSULTATION_FORM, FIRST_VISIT_FORM, LABEL_FORM, LANGUAGE_NAME, NEW_CLIENTS_FORM } from './practice'
 import {
   CONSULTATIONS,
+  FIRST_VISIT_NOTE_MAX,
   LANGUAGES,
+  NEW_CLIENTS_MAX_WEEKS,
+  NEW_CLIENT_STATUSES,
   PRACTICE_LABELS,
   SERVICES,
   SERVICE_LABEL,
   type Consultation,
   type Language,
   type Location,
+  type NewClientStatus,
   type PracticeLabel,
   type Profile,
   type ProfileRequest,
@@ -81,6 +85,11 @@ function ProfileForm({
   )
   const [consultation, setConsultation] = useState<Consultation | null>(practice?.consultation ?? null)
   const [priceDependsOnHair, setPriceDependsOnHair] = useState(practice?.priceDependsOnHair ?? false)
+  const [colourConsultationFirst, setColourConsultationFirst] = useState(practice?.firstVisit.colourConsultationFirst ?? false)
+  const [depositForNewClients, setDepositForNewClients] = useState(practice?.firstVisit.depositForNewClients ?? false)
+  const [firstVisitNote, setFirstVisitNote] = useState(practice?.firstVisit.note ?? '')
+  const [newClients, setNewClients] = useState<NewClientStatus>(practice?.newClients.status ?? 'TAKING')
+  const [weeksOut, setWeeksOut] = useState(practice?.newClients.weeksOut != null ? String(practice.newClients.weeksOut) : '')
   const [busy, setBusy] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const formError = useFormError(saveError)
@@ -114,7 +123,10 @@ function ProfileForm({
           .map((s) => ({ service: s, fromDollars: Number((prices[s] ?? '').trim()) })),
         consultation,
         priceDependsOnHair,
+        firstVisit: { colourConsultationFirst, depositForNewClients, note: firstVisitNote.trim() || null },
       },
+      // Saving counts as confirming the status is still right.
+      newClients: { status: newClients, weeksOut: newClients === 'TAKING_WITH_WAIT' ? Number(weeksOut.trim()) || null : null },
     }
     try {
       await api<Profile>('PUT', apiPath`/api/orgs/${orgId}/stylist/profile`, body)
@@ -203,6 +215,38 @@ function ProfileForm({
           {(control) => <textarea {...control} rows={4} value={bio} onChange={(e) => setBio(e.target.value)} maxLength={1000} />}
         </Field>
 
+        <fieldset className="tag-group">
+          <legend className="field-label">New clients</legend>
+          <p className="field-hint">
+            Shown on your profile in plain words. You stay in matching and the directory whatever you pick.
+          </p>
+          <div className="choices wide">
+            {NEW_CLIENT_STATUSES.map((s) => (
+              <label key={s} className="choice">
+                <input type="radio" name="newClients" checked={newClients === s} onChange={() => setNewClients(s)} />
+                {NEW_CLIENTS_FORM[s]}
+              </label>
+            ))}
+          </div>
+          {newClients === 'TAKING_WITH_WAIT' && (
+            <Field label="Usual wait for a new client, in weeks">
+              {(control) => (
+                <input
+                  {...control}
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={NEW_CLIENTS_MAX_WEEKS}
+                  step={1}
+                  required
+                  value={weeksOut}
+                  onChange={(e) => setWeeksOut(e.target.value)}
+                />
+              )}
+            </Field>
+          )}
+        </fieldset>
+
         <section className="practice-form" aria-labelledby="practice-heading">
           <h2 id="practice-heading">What to expect in my chair</h2>
           <p className="field-hint">
@@ -280,6 +324,33 @@ function ProfileForm({
                 Don't show
               </label>
             </div>
+          </fieldset>
+
+          <fieldset className="tag-group">
+            <legend className="field-label">Before a client's first visit</legend>
+            <p className="field-hint">
+              Shown first under "Before your first visit", above Combpatible's general tips. A deposit is between you and your
+              client: Combpatible never takes payments.
+            </p>
+            <label className="check">
+              <input type="checkbox" checked={colourConsultationFirst} onChange={(e) => setColourConsultationFirst(e.target.checked)} />
+              {FIRST_VISIT_FORM.colourConsultationFirst}
+            </label>
+            <label className="check">
+              <input type="checkbox" checked={depositForNewClients} onChange={(e) => setDepositForNewClients(e.target.checked)} />
+              {FIRST_VISIT_FORM.depositForNewClients}
+            </label>
+            <Field label="A note for new clients" hint={`Optional, up to ${FIRST_VISIT_NOTE_MAX} characters. Parking, what to bring, how to arrive.`}>
+              {(control) => (
+                <textarea
+                  {...control}
+                  rows={2}
+                  value={firstVisitNote}
+                  onChange={(e) => setFirstVisitNote(e.target.value)}
+                  maxLength={FIRST_VISIT_NOTE_MAX}
+                />
+              )}
+            </Field>
           </fieldset>
         </section>
 

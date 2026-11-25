@@ -54,11 +54,62 @@ describe('Portfolio', () => {
     vi.stubGlobal('fetch', fetch)
     render(
       <Portfolio
-        stylist={{ ...STYLIST, orgId: 'org-1', practice: { labels: [], languages: [], fromPrices: [], consultation: null, priceDependsOnHair: false } }}
+        stylist={{
+          ...STYLIST,
+          orgId: 'org-1',
+          practice: { labels: [], languages: [], fromPrices: [], consultation: null, priceDependsOnHair: false, firstVisit: { colourConsultationFirst: false, depositForNewClients: false, note: null }, newClients: { status: 'TAKING' as const, weeksOut: null } },
+        }}
         onClose={() => {}}
       />,
     )
     expect(fetch).not.toHaveBeenCalled()
     expect(screen.queryByRole('region', { name: 'What to expect in their chair' })).not.toBeInTheDocument()
+    expect(screen.getByText('Taking new clients')).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Before your first visit' })).not.toBeInTheDocument()
+  })
+
+  it("shows the status and the stylist's own first-visit facts before the generic notes for the client's look", async () => {
+    const fetch = vi.fn(async (url: string) =>
+      url.startsWith('/api/public/stylists/first-visit-notes')
+        ? json(200, [
+            { key: 'CUT+CURLY', text: 'Come with your curls dry and unstyled.' },
+            { key: 'any.photos', text: 'Bring two or three photos.' },
+          ])
+        : json(404, {}),
+    )
+    vi.stubGlobal('fetch', fetch)
+    render(
+      <Portfolio
+        stylist={{
+          ...STYLIST,
+          visit: { service: 'CUT', hairType: 'CURLY' },
+          practice: {
+            labels: [],
+            languages: [],
+            fromPrices: [],
+            consultation: null,
+            priceDependsOnHair: false,
+            firstVisit: { colourConsultationFirst: true, depositForNewClients: true, note: "I'm in loft 12." },
+            newClients: { status: 'NOT_TAKING', weeksOut: null },
+          },
+        }}
+        onClose={() => {}}
+      />,
+    )
+
+    expect(screen.getByText('Not taking new clients right now')).toBeInTheDocument()
+    // Book stays: the status is a heads-up, not a gate.
+    expect(screen.getByRole('link', { name: 'Book with Ana' })).toBeInTheDocument()
+    const block = await screen.findByRole('region', { name: 'Before your first visit' })
+    await within(block).findByText('Come with your curls dry and unstyled.')
+    expect(fetch).toHaveBeenCalledWith('/api/public/stylists/first-visit-notes?service=CUT&hairType=CURLY', expect.anything())
+    const items = within(block).getAllByRole('listitem').map((li) => li.textContent)
+    expect(items).toEqual([
+      'New colour clients book a consultation first.',
+      'Asks new clients for a deposit when they book (paid to the stylist, not Combpatible).',
+      "From Ana: I'm in loft 12.",
+      'Come with your curls dry and unstyled.',
+      'Bring two or three photos.',
+    ])
   })
 })

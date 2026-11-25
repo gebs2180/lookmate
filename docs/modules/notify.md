@@ -23,7 +23,7 @@ Clients have no account; intake passes the address. `listLink`, `picksAdded`, `m
 public record DigestClient(String firstName, String bookedPath, String rebookedPath, boolean booked) {}
 public record WeeklyDigest(String stylistName, LocalDate weekStart, long clientsShown, List<DigestClient> tapped,
                            String statsLine, String statsPath, String settingsPath, String unsubscribePath,
-                           String statusConfirmPath) {}
+                           String statusConfirmPath, String statusQuestion) {}
 
 /** Queues the Monday digest to one member; false if already queued. Dedupe key stylist-digest:<digestId>:<userId>. */
 public boolean weeklyDigest(UUID digestId, UUID orgId, UUID userId, WeeklyDigest digest, Instant now)
@@ -31,7 +31,7 @@ public boolean weeklyDigest(UUID digestId, UUID orgId, UUID userId, WeeklyDigest
 
 Sent to the user's login email (`Notifier`, via identity's `Directory`). Paths are relative; the email makes them
 absolute with `lookmate.email.app-url`. Copy says Combpatible and names clients by first name only. A booked client
-shows "Booking recorded" and only the Rebooked button. `statusConfirmPath`, when set, adds "Still taking new clients?
-Confirm" (not set yet: docs/modules/stylists.md, "Follow-ups"). The email carries the stylist's one-time links, so its
+shows "Booking recorded" and only the Rebooked button. `statusConfirmPath`, when set, adds `statusQuestion` ("Still taking new
+clients?") with a Confirm link. The email carries the stylist's one-time links, so its
 stored content is as sensitive as those links until retention clears it; they expire after 14 days anyway. How the
 digest is built and sent: docs/tracking.md, "Weekly digest".

@@ -5,6 +5,7 @@ import { useApi } from '../useApi'
 import { message } from '../format'
 import { Chip, Loading, PageError, type Tone } from '../ui'
 import { useLoad } from '../useLoad'
+import { newClientsLine } from './practice'
 import './stylists.css'
 import { DigestSetting } from './DigestSetting'
 import { TermsStep } from './TermsStep'
@@ -26,6 +27,19 @@ export function StylistHomePage() {
   const { data: home, error, reload } = useLoad(() => api<StylistHome>('GET', apiPath`/api/orgs/${orgId}/stylist`), [api, orgId])
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+
+  async function confirmNewClients() {
+    setBusy(true)
+    setActionError(null)
+    try {
+      await api<Profile>('POST', apiPath`/api/orgs/${orgId}/stylist/new-clients/confirm`)
+      reload()
+    } catch (e) {
+      setActionError(message(e))
+    } finally {
+      setBusy(false)
+    }
+  }
 
   async function change(action: 'publish' | 'hide') {
     setBusy(true)
@@ -61,6 +75,23 @@ export function StylistHomePage() {
       <p>
         <Chip tone={STATUS[status].tone}>{STATUS[status].label}</Chip>
       </p>
+
+      {home.profile?.newClientsConfirmDue && (
+        <section className="panel nudge" aria-labelledby="new-clients-check">
+          <h2 id="new-clients-check">Still accurate?</h2>
+          <p>
+            Clients see: <b>{newClientsLine(home.profile.practice.newClients)}</b>
+          </p>
+          <div className="actions">
+            <button onClick={confirmNewClients} disabled={busy} aria-busy={busy}>
+              Yes, still accurate
+            </button>
+            <Link className="button secondary" to={`/stylist/${orgId}/profile`}>
+              Change it
+            </Link>
+          </div>
+        </section>
+      )}
 
       <section className="panel" aria-labelledby="checklist">
         <h2 id="checklist">Getting ready to go live</h2>

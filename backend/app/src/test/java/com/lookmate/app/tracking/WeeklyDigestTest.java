@@ -42,6 +42,7 @@ class WeeklyDigestTest {
     private static final Instant TUESDAY_IN_WEEK = Instant.parse("2026-11-17T15:00:00Z");
     private static final Pattern RECORD_LINK = Pattern.compile("/digest/([A-Za-z0-9_-]{43})\\?type=REBOOKED");
     private static final Pattern UNSUBSCRIBE_LINK = Pattern.compile("/digest/unsubscribe/([A-Za-z0-9_-]{43})");
+    private static final Pattern NEW_CLIENTS_LINK = Pattern.compile("/digest/new-clients/([A-Za-z0-9_-]{43})");
 
     @Autowired
     private MockMvc mvc;
@@ -137,6 +138,7 @@ class WeeklyDigestTest {
                 .doesNotContain("@example.com");
         assertThat(all(RECORD_LINK, text)).hasSize(2);
         assertThat(all(UNSUBSCRIBE_LINK, text)).hasSize(1);
+        assertThat(text).doesNotContain("Still taking new clients?"); // the status was confirmed just now
         assertThat(sent.getFirst()[2]).contains(">Booked</a>").contains(">Rebooked</a>");
         assertThat(jdbc.sql("select status from stylist_digest where id = :id").param("id", digest).query(String.class).single())
                 .isEqualTo("DONE");
@@ -211,6 +213,33 @@ class WeeklyDigestTest {
         assertThat(fx.count(w.matchedRequest(), "BOOKED")).isZero();
         // Expired more than 30 days ago: deleted.
         assertThat(digests.cleanUp(Instant.now().plusSeconds(31L * 86_400))).isGreaterThanOrEqualTo(3);
+    }
+
+    @Test
+    void aStatusOlderThan30DaysGetsAConfirmLinkThatWorksWithoutSignIn() throws Exception {
+        Week w = seedWeek("digest-new-clients");
+        Instant old = Instant.parse("2026-10-01T12:00:00Z");
+        jdbc.sql("update stylist_profile set new_clients_confirmed_at = :at where org_id = :org")
+                .param("at", Timestamp.from(old)).param("org", w.orgId()).update();
+        digests.plan(MONDAY);
+        digests.sendPending(MONDAY, 1000);
+        String[] email = emails(digestOf(w.orgId(), LocalDate.parse("2026-11-16"))).getFirst();
+        assertThat(email[1]).contains("Still taking new clients?");
+        List<String> links = all(NEW_CLIENTS_LINK, email[1]);
+        assertThat(links).hasSize(1);
+        String unsubscribe = all(UNSUBSCRIBE_LINK, email[1]).getFirst();
+
+        // No sign-in, POST only; it confirms the status as it stands. Another kind of link, or none, is a 404.
+        mvc.perform(post("/api/public/digest/new-clients/" + unsubscribe)).andExpect(status().isNotFound());
+        mvc.perform(post("/api/public/digest/new-clients/" + TrackingFixtures.token())).andExpect(status().isNotFound());
+        mvc.perform(post("/api/public/digest/new-clients/" + links.getFirst()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.newClients.status").value("TAKING"));
+        Instant confirmed = jdbc.sql("select new_clients_confirmed_at from stylist_profile where org_id = :org")
+                .param("org", w.orgId()).query(Timestamp.class).single().toInstant();
+        assertThat(confirmed).isAfter(old.plusSeconds(86_400));
+        // Repeats are fine.
+        mvc.perform(post("/api/public/digest/new-clients/" + links.getFirst())).andExpect(status().isOk());
     }
 
     @Test

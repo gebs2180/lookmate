@@ -50,6 +50,9 @@ class StylistFlowTest {
     @Autowired
     private Stylists stylists;
 
+    @Autowired
+    private org.springframework.jdbc.core.simple.JdbcClient jdbc;
+
     private TestApi api;
 
     @BeforeEach
@@ -422,6 +425,96 @@ class StylistFlowTest {
 
         mvc.perform(post(home + "/hide").with(as("auth0|rae"))).andExpect(status().isOk());
         mvc.perform(get("/api/public/stylists/" + orgId + "/practice")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void firstVisitNotesAndTheNewClientStatusAreShownAndConfirmed() throws Exception {
+        String loc = location("Bexley", "first-visit-oh");
+        String orgId = api.stylistOrg("Jo's Suite", "auth0|jo");
+        String home = "/api/orgs/" + orgId + "/stylist";
+        String profile = "{\"displayName\":\"Jo\",\"locationId\":\"" + loc + "\",\"specialties\":[\"CUT\",\"COLOR\"],"
+                + "\"bookingUrl\":\"https://vagaro.com/jo\",\"practice\":%s,\"newClients\":%s}";
+
+        // A new profile takes new clients, confirmed when it's made, with nothing to confirm yet.
+        putJson(home + "/profile", profile.formatted("null", "null"), as("auth0|jo")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.practice.newClients.status").value("TAKING"))
+                .andExpect(jsonPath("$.practice.firstVisit.colourConsultationFirst").value(false))
+                .andExpect(jsonPath("$.practice.firstVisit.note").doesNotExist())
+                .andExpect(jsonPath("$.newClientsConfirmedAt").isNotEmpty())
+                .andExpect(jsonPath("$.newClientsConfirmDue").value(false));
+
+        // A wait needs 1 to 26 weeks; a note over 280 characters is refused.
+        putJson(home + "/profile", profile.formatted("null", "{\"status\":\"TAKING_WITH_WAIT\"}"), as("auth0|jo"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_FIELD"));
+        putJson(home + "/profile", profile.formatted("null", "{\"status\":\"TAKING_WITH_WAIT\",\"weeksOut\":27}"), as("auth0|jo"))
+                .andExpect(status().isBadRequest());
+        putJson(home + "/profile", profile.formatted("{\"firstVisit\":{\"note\":\"" + "x".repeat(281) + "\"}}", "null"), as("auth0|jo"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_FIELD"));
+
+        putJson(home + "/profile", profile.formatted("""
+                {"firstVisit":{"colourConsultationFirst":true,"depositForNewClients":true,"note":"  Park in the back lot; I'm in loft 12. "}}""",
+                "{\"status\":\"TAKING_WITH_WAIT\",\"weeksOut\":6}"), as("auth0|jo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.practice.firstVisit.colourConsultationFirst").value(true))
+                .andExpect(jsonPath("$.practice.firstVisit.depositForNewClients").value(true))
+                .andExpect(jsonPath("$.practice.firstVisit.note").value("Park in the back lot; I'm in loft 12."))
+                .andExpect(jsonPath("$.practice.newClients.status").value("TAKING_WITH_WAIT"))
+                .andExpect(jsonPath("$.practice.newClients.weeksOut").value(6));
+        // Leaving newClients out keeps it; weeks are dropped with any other status.
+        putJson(home + "/profile", profile.formatted("null", "null"), as("auth0|jo"))
+                .andExpect(jsonPath("$.practice.newClients.weeksOut").value(6))
+                .andExpect(jsonPath("$.practice.firstVisit.depositForNewClients").value(false));
+        putJson(home + "/profile", profile.formatted("{\"firstVisit\":{\"depositForNewClients\":true}}",
+                "{\"status\":\"NOT_TAKING\",\"weeksOut\":6}"), as("auth0|jo"))
+                .andExpect(jsonPath("$.practice.newClients.status").value("NOT_TAKING"))
+                .andExpect(jsonPath("$.practice.newClients.weeksOut").doesNotExist());
+
+        for (int i = 0; i < 2; i++) {
+            tag(orgId, "auth0|jo", upload(orgId, "auth0|jo", TestImages.jpeg(60 + i), "image/jpeg"), "CUT", "CURLY");
+        }
+        mvc.perform(post(home + "/publish").with(as("auth0|jo"))).andExpect(status().isOk());
+
+        // Not taking new clients: still in the directory, with the status shown.
+        mvc.perform(get("/api/public/stylists?market=first-visit-oh")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.stylists[0].practice.newClients.status").value("NOT_TAKING"))
+                .andExpect(jsonPath("$.stylists[0].practice.firstVisit.depositForNewClients").value(true));
+        mvc.perform(get("/api/public/stylists?market=first-visit-oh&service=CUT&hairType=CURLY"))
+                .andExpect(jsonPath("$.total").value(1));
+        mvc.perform(get("/api/public/stylists/" + orgId + "/practice"))
+                .andExpect(jsonPath("$.newClients.status").value("NOT_TAKING"))
+                .andExpect(jsonPath("$.firstVisit.depositForNewClients").value(true))
+                .andExpect(jsonPath("$.newClientsConfirmedAt").doesNotExist());
+        assertThat(stylists.liveProfile(UUID.fromString(orgId))).isPresent();
+
+        // 31 days on, the dashboard asks; one click confirms.
+        jdbc.sql("update stylist_profile set new_clients_confirmed_at = now() - interval '31 days' where org_id = ?")
+                .params(UUID.fromString(orgId)).update();
+        api.get(home, as("auth0|jo")).andExpect(jsonPath("$.profile.newClientsConfirmDue").value(true));
+        mvc.perform(post(home + "/new-clients/confirm").with(as("auth0|jo"))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.newClientsConfirmDue").value(false))
+                .andExpect(jsonPath("$.practice.newClients.status").value("NOT_TAKING"));
+        mvc.perform(post(home + "/new-clients/confirm").with(as("auth0|other"))).andExpect(status().isNotFound());
+
+        // The public service, for the digest's confirm link.
+        jdbc.sql("update stylist_profile set new_clients_confirmed_at = now() - interval '40 days' where org_id = ?")
+                .params(UUID.fromString(orgId)).update();
+        java.time.Instant before = java.time.Instant.now().minusSeconds(5);
+        assertThat(stylists.confirmNewClients(UUID.fromString(orgId))).hasValueSatisfying(s -> {
+            assertThat(s.newClients().status()).isEqualTo(NewClientStatus.NOT_TAKING);
+            assertThat(s.confirmedAt()).isAfter(before);
+        });
+        assertThat(stylists.newClients(UUID.fromString(orgId)).orElseThrow().confirmedAt()).isAfter(before);
+        assertThat(stylists.confirmNewClients(UUID.randomUUID())).isEmpty();
+    }
+
+    @Test
+    void theGenericFirstVisitNotesArePublicAndMostSpecificFirst() throws Exception {
+        mvc.perform(get("/api/public/stylists/first-visit-notes?service=CUT&hairType=CURLY")).andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].key").value(org.hamcrest.Matchers.contains("CUT+CURLY", "CUT", "CURLY", "any.photos")));
+        mvc.perform(get("/api/public/stylists/first-visit-notes"))
+                .andExpect(jsonPath("$[*].key").value(org.hamcrest.Matchers.contains("any.photos", "any.routine")));
+        mvc.perform(get("/api/public/stylists/first-visit-notes?service=NOPE")).andExpect(status().isBadRequest());
     }
 
     @Test

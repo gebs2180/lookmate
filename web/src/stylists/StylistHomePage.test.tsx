@@ -32,11 +32,13 @@ const profile = {
   bookingPlatform: 'BOOKSY' as const,
   instagram: null,
   priceTier: null,
-  practice: { labels: [], languages: [], fromPrices: [], consultation: null, priceDependsOnHair: false },
+  practice: { labels: [], languages: [], fromPrices: [], consultation: null, priceDependsOnHair: false, firstVisit: { colourConsultationFirst: false, depositForNewClients: false, note: null }, newClients: { status: 'TAKING' as const, weeksOut: null } },
   status: 'DRAFT' as const,
   publishedAt: null,
   updatedAt: '2026-11-20T00:00:00Z',
   demo: false,
+  newClientsConfirmedAt: '2026-11-20T00:00:00Z',
+  newClientsConfirmDue: false,
 }
 
 describe('StylistHomePage', () => {
@@ -84,6 +86,35 @@ describe('StylistHomePage', () => {
     expect(await screen.findByRole('button', { name: 'Hide my profile' })).toBeInTheDocument()
     expect(screen.getByText(/Live: clients can be matched/)).toBeInTheDocument()
     await waitFor(() => expect(calls.some((c) => c.url === `/api/orgs/${ORG}/stylist/publish`)).toBe(true))
+  })
+
+  it('asks whether the new-client status is still accurate after 30 days, and one click confirms it', async () => {
+    let due = true
+    const waiting = { ...profile.practice, newClients: { status: 'TAKING_WITH_WAIT' as const, weeksOut: 4 } }
+    const calls = stubApi({
+      [`GET /api/orgs/${ORG}/stylist`]: () =>
+        home({ profile: { ...profile, practice: waiting, newClientsConfirmDue: due }, readyPhotos: 3, taggedPhotos: 3, missing: [] }),
+      [`POST /api/orgs/${ORG}/stylist/new-clients/confirm`]: () => {
+        due = false
+        return { ...profile, practice: waiting }
+      },
+    })
+    renderAt(`/stylist/${ORG}`, '/stylist/:orgId', <StylistHomePage />)
+
+    expect(await screen.findByRole('heading', { name: 'Still accurate?' })).toBeInTheDocument()
+    expect(screen.getByText('Taking new clients · usually about 4 weeks out')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Change it' })).toHaveAttribute('href', `/stylist/${ORG}/profile`)
+    await userEvent.click(screen.getByRole('button', { name: 'Yes, still accurate' }))
+
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Still accurate?' })).not.toBeInTheDocument())
+    expect(calls.some((c) => c.method === 'POST' && c.url === `/api/orgs/${ORG}/stylist/new-clients/confirm`)).toBe(true)
+  })
+
+  it("doesn't ask while the status is recent", async () => {
+    stubApi({ [`GET /api/orgs/${ORG}/stylist`]: () => home({ profile, readyPhotos: 3, taggedPhotos: 3, missing: [] }) })
+    renderAt(`/stylist/${ORG}`, '/stylist/:orgId', <StylistHomePage />)
+    expect(await screen.findByRole('heading', { name: 'Getting ready to go live' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Still accurate?' })).not.toBeInTheDocument()
   })
 })
 

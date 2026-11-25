@@ -3,6 +3,7 @@ package com.lookmate.app.tracking;
 import com.lookmate.app.identity.CurrentUser;
 import com.lookmate.app.identity.OrgAccess;
 import com.lookmate.app.identity.OrgType;
+import com.lookmate.app.stylists.NewClients;
 import com.lookmate.app.tracking.MatchEvents.Source;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -20,7 +21,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * The weekly digest's links and switch (docs/tracking.md, "Weekly digest"). The Booked/Rebooked links need a signed-in
- * member of the link's org: a forwarded email gets anyone else a 404. The unsubscribe link needs no sign-in.
+ * member of the link's org: a forwarded email gets anyone else a 404. The unsubscribe and "Still taking new clients?"
+ * links need no sign-in.
  */
 @RestController
 class DigestController {
@@ -30,6 +32,10 @@ class DigestController {
     }
 
     record DigestSetting(boolean weeklyDigest) {
+    }
+
+    /** The new-client status the stylist just confirmed, to say back to them. */
+    record NewClientsConfirmed(NewClients newClients) {
     }
 
     private final WeeklyDigests digests;
@@ -75,6 +81,14 @@ class DigestController {
         if (!digests.unsubscribe(token, Instant.now())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Link not found");
         }
+    }
+
+    /** POST for the same reason: the page has a button. Confirms the status as it stands; changing it needs a sign-in. */
+    @PostMapping("/api/public/digest/new-clients/{token}")
+    NewClientsConfirmed confirmNewClients(@PathVariable String token) {
+        return digests.confirmNewClients(token, Instant.now())
+                .map(status -> new NewClientsConfirmed(status.newClients()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Link not found"));
     }
 
     private void requireMember(UUID orgId) {

@@ -31,11 +31,12 @@ create table stylist_digest_opt_out (
 -- The links in a digest email. Only the SHA-256 of the token is stored. A RECORD link names one client's request
 -- (and the match, or null for a directory pick) and is single-use and short-lived; it records nothing by itself: the
 -- stylist signs in and confirms (a forwarded email can't record events). An UNSUBSCRIBE link turns the digest off for
--- its user and org without a sign-in. Rows are deleted 30 days after they expire.
+-- its user and org without a sign-in. A NEW_CLIENTS link confirms the stylist's "Taking new clients" status as it
+-- stands ("Still taking new clients? Confirm", sent when it is over 30 days old), also without a sign-in. Rows are deleted 30 days after they expire.
 create table stylist_digest_link (
     id               uuid        primary key,
     token_hash       text        not null unique,
-    kind             text        not null check (kind in ('RECORD', 'UNSUBSCRIBE')),
+    kind             text        not null check (kind in ('RECORD', 'UNSUBSCRIBE', 'NEW_CLIENTS')),
     digest_id        uuid        not null references stylist_digest (id),
     org_id           uuid        not null references org (id),
     user_id          uuid        not null references app_user (id),
@@ -46,7 +47,7 @@ create table stylist_digest_link (
     used_at          timestamptz,
     used_by          uuid        references app_user (id),
     event_id         uuid,                  -- the match_event the link recorded
-    check (kind = 'UNSUBSCRIBE' or match_request_id is not null)
+    check (kind <> 'RECORD' or match_request_id is not null)
 );
 
 create index stylist_digest_link_expires on stylist_digest_link (expires_at);

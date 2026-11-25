@@ -8,6 +8,8 @@ import { Chip, Loading } from '../../ui'
 import { useLoad, usePoll, type Backoff } from '../../useLoad'
 import { PhotoPicker, PrivacyNote } from './PhotoPicker'
 import { sendPhoto } from './photo'
+import { FirstVisitBlock, NewClientsLine } from './FirstVisit'
+import { useFirstVisitNotes, usePractice, type Visit } from './useFirstVisit'
 import { BookLink, InstagramLink, Portfolio, type StylistView } from './Portfolio'
 import { HAIR_TYPES, SERVICES, bookingNote, labelOf } from './quiz'
 
@@ -126,7 +128,7 @@ export function MatchStatusPage() {
       )}
 
       {noMatches && <NoCloseMatches directory={directory} />}
-      {revealed && <Matches token={token} matches={view.matches} hairType={view.hairType} directory={directory} note={bookingNote(view.asks)} />}
+      {revealed && <Matches token={token} matches={view.matches} service={view.service} hairType={view.hairType} directory={directory} note={bookingNote(view.asks)} />}
       {(waiting || view.stage === 'READY') && (
         <KeepThisList token={token} view={view} mode={noMatches ? 'picks' : 'list'} onSaved={(saved) => setUpdated({ after: loaded, view: saved })} />
       )}
@@ -188,12 +190,14 @@ function NoCloseMatches({ directory }: { directory: string }) {
 function Matches({
   token,
   matches,
+  service,
   hairType,
   directory,
   note,
 }: {
   token: string
   matches: ClientMatch[]
+  service: ClientView['service']
   hairType: ClientView['hairType']
   directory: string
   note: string | null
@@ -206,6 +210,10 @@ function Matches({
       // A missed view is only a missing count; never bother the client with it.
     })
   }, [token, matches.length])
+
+  const visit: Visit = { service: service ?? null, hairType: hairType ?? null }
+  // The same generic notes fit every pick: shown once under the covers, and in each portfolio.
+  const notes = useFirstVisitNotes(visit)
 
   const listRef = useRef<HTMLOListElement>(null)
   const last = matches.length - 1
@@ -253,7 +261,13 @@ function Matches({
       {note && <BookingNote note={note} />}
       <ol className="covers" ref={listRef} onScroll={onScroll} aria-label="Stylists for your look">
         {matches.map((m, i) => (
-          <Cover key={m.matchId} index={i} match={m} hairType={hairType} book={{ href: apiPath`/api/public/book/${token}/${m.matchId}` }} />
+          <Cover
+            key={m.matchId}
+            index={i}
+            match={m}
+            visit={visit}
+            book={{ href: apiPath`/api/public/book/${token}/${m.matchId}` }}
+          />
         ))}
       </ol>
       {matches.length > 1 && (
@@ -278,6 +292,7 @@ function Matches({
           </button>
         </div>
       )}
+      <FirstVisitBlock name="" firstVisit={null} notes={notes} />
       <div className="anyone">
         <p>These are suggestions: you can book any stylist you like. You book on the stylist's own page.</p>
         <p>
@@ -293,15 +308,18 @@ function Matches({
 function Cover({
   index,
   match,
-  hairType,
+  visit,
   book,
 }: {
   index: number
   match: ClientMatch
-  hairType: ClientView['hairType']
+  visit: Visit
   book: { href: string }
 }) {
   const [open, setOpen] = useState(false)
+  // Picks don't carry the practice: fetched per stylist, for the status and their own first-visit facts.
+  const practice = usePractice(match.orgId)
+  const hairType = visit.hairType
   const stylist: StylistView = {
     name: match.stylistName,
     location: match.locationName,
@@ -310,6 +328,8 @@ function Cover({
     photoUrls: match.photoUrls,
     instagram: match.instagram,
     orgId: match.orgId,
+    practice,
+    visit,
     book,
   }
   const [cover, ...evidence] = match.photoUrls
@@ -332,6 +352,7 @@ function Cover({
       <div className="cover-body">
         {match.locationName && <p className="eyebrow">{match.locationName}</p>}
         <p className="reason">{match.reason}</p>
+        <NewClientsLine newClients={practice?.newClients} />
         {evidence.length > 0 && (
           <>
             <p className="thread" aria-hidden="true">
@@ -347,6 +368,7 @@ function Cover({
             </div>
           </>
         )}
+        <FirstVisitBlock name={match.stylistName} firstVisit={practice?.firstVisit} heading={`Before your first visit with ${match.stylistName}`} />
         <div className="cover-actions">
           <BookLink stylist={stylist} />
           {match.photoUrls.length > 1 && (

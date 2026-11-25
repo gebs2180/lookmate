@@ -33,6 +33,8 @@ const PAGE: Page = {
         ],
         consultation: 'FREE',
         priceDependsOnHair: false,
+        firstVisit: { colourConsultationFirst: false, depositForNewClients: false, note: null },
+        newClients: { status: 'TAKING_WITH_WAIT', weeksOut: 3 },
       },
     },
     {
@@ -44,7 +46,15 @@ const PAGE: Page = {
       photoUrls: [],
       demo: true,
       instagram: null,
-      practice: { labels: [], languages: [], fromPrices: [], consultation: null, priceDependsOnHair: false },
+      practice: {
+        labels: [],
+        languages: [],
+        fromPrices: [],
+        consultation: null,
+        priceDependsOnHair: false,
+        firstVisit: { colourConsultationFirst: false, depositForNewClients: false, note: null },
+        newClients: { status: 'NOT_TAKING', weeksOut: null },
+      },
     },
   ],
 }
