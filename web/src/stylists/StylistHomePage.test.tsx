@@ -117,3 +117,21 @@ describe('StylistHomePage', () => {
     expect(screen.queryByRole('heading', { name: 'Still accurate?' })).not.toBeInTheDocument()
   })
 })
+
+describe('the weekly email switch', () => {
+  it('shows the setting and turns it off', async () => {
+    const calls = stubApi({
+      [`GET /api/orgs/${ORG}/stylist`]: () => home({}),
+      [`GET /api/orgs/${ORG}/digest`]: () => ({ weeklyDigest: true }),
+      [`PUT /api/orgs/${ORG}/digest`]: (body) => body,
+    })
+    renderAt(`/stylist/${ORG}`, '/stylist/:orgId', <StylistHomePage />)
+
+    const box = await screen.findByRole('checkbox', { name: /Email me every Monday/ })
+    expect(box).toBeChecked()
+    await userEvent.click(box)
+
+    await waitFor(() => expect(box).not.toBeChecked())
+    expect(calls.find((c) => c.method === 'PUT')?.body).toEqual({ weeklyDigest: false })
+  })
+})

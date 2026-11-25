@@ -155,6 +155,17 @@ lookmate.tracking:
   click-dedupe-window: 30s
   # At most this many clicks counted per client link per day; more still redirect.
   max-clicks-per-request-per-day: 20
+  # The Monday email to each live stylist: last week's clients, who tapped Book, one-tap Booked/Rebooked links.
+  digest:
+    enabled: ${STYLIST_DIGEST_ENABLED:true}
+    # Mondays from this hour (time-zone above) on.
+    send-hour: 8
+    poll-interval: 10m
+    # Booked/Rebooked links: once each, and only for a signed-in member of the stylist's org.
+    link-ttl: 14d
+    unsubscribe-ttl: 90d
+    # "Still taking new clients? Confirm" once the status is this old (as lookmate.stylists.new-clients-confirm-after).
+    new-clients-confirm-after: 30d
 
 ---
 # Production (docs/hosting.md): SPRING_PROFILES_ACTIVE=prod. Nothing here has a local default, so the app

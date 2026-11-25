@@ -227,7 +227,7 @@ it was; any save of it, or "Yes, still accurate", sets `new_clients_confirmed_at
   as before, and Book stays: `AutoPublishFlowTest.aStylistNotTakingNewClientsIsStillMatchedAndKeepsTheirRank` holds it.
 - **Still accurate?** `ProfileView.newClientsConfirmDue` turns true once the status is older than
   `lookmate.stylists.new-clients-confirm-after` (30 days); the stylist home then shows the nudge, and one click confirms.
-  `Stylists.confirmNewClients` does the same for the weekly digest's link.
+  `Stylists.confirmNewClients` does the same for the weekly digest's link (docs/tracking.md, "Weekly digest").
 
 ## Notes for the other modules
 

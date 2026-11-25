@@ -44,25 +44,43 @@ export function RecordBookingPage() {
   )
 }
 
+/** A directory pick as both sides show it; the stylist's has no stylist name or client email. */
+type Pick_ = Pick<DirectoryClick, 'requestId' | 'clientFirstName' | 'lastClickedAt' | 'recommended' | 'bookedEventId'> & {
+  orgId?: string
+  stylistName?: string | null
+  clientEmail?: string | null
+}
+
 /**
- * Bookings with a stylist the client picked from the directory (a Book click with no match). Admin only for now: a
- * stylist's own bookings page lists their matches.
+ * Bookings with a stylist the client picked from the directory (a Book click with no match). The admin sees every
+ * stylist's; a stylist ({@code orgId}) only the clients who picked them, by first name.
  */
-function DirectoryBookings() {
+function DirectoryBookings({ orgId }: { orgId?: string }) {
   const api = useApi()
-  const { data: clicks, error, reload } = useLoad(() => api<DirectoryClick[]>('GET', '/api/admin/tracking/directory-clicks'), [api])
+  const { data: clicks, error, reload } = useLoad(
+    () =>
+      api<Pick_[]>('GET', orgId ? apiPath`/api/orgs/${orgId}/tracking/directory-picks` : '/api/admin/tracking/directory-clicks'),
+    [api, orgId],
+  )
+  const recordPath = (c: Pick_) =>
+    orgId
+      ? apiPath`/api/orgs/${orgId}/match-requests/${c.requestId}/events`
+      : apiPath`/api/admin/match-requests/${c.requestId}/stylists/${c.orgId ?? ''}/events`
+  const voidPath = (eventId: string) =>
+    orgId ? apiPath`/api/orgs/${orgId}/events/${eventId}/void` : apiPath`/api/admin/events/${eventId}/void`
+  const withStylist = (c: Pick_) => (orgId ? '' : ` with ${c.stylistName ?? 'the stylist'}`)
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
-  const [voiding, setVoiding] = useState<DirectoryClick | null>(null)
+  const [voiding, setVoiding] = useState<Pick_ | null>(null)
 
-  async function record(c: DirectoryClick, type: 'BOOKED' | 'REBOOKED') {
+  async function record(c: Pick_, type: 'BOOKED' | 'REBOOKED') {
     setBusy(true)
     setActionError(null)
     setSaved(null)
     try {
-      await api<RecordedEvent>('POST', apiPath`/api/admin/match-requests/${c.requestId}/stylists/${c.orgId}/events`, { type })
-      setSaved(`Recorded a ${label(type)} for ${c.clientFirstName ?? 'the client'} with ${c.stylistName ?? 'the stylist'}.`)
+      await api<RecordedEvent>('POST', recordPath(c), { type })
+      setSaved(`Recorded a ${label(type)} for ${c.clientFirstName ?? 'the client'}${withStylist(c)}.`)
       reload()
     } catch (err) {
       setActionError(message(err))
@@ -74,7 +92,11 @@ function DirectoryBookings() {
   return (
     <section className="metric-section" aria-labelledby="rb-directory-title">
       <h2 id="rb-directory-title">Picked from the directory</h2>
-      <p className="muted">Clients who clicked Book on a stylist they found in the directory, newest first. Record a booking here when one came of it.</p>
+      <p className="muted">
+        {orgId
+          ? 'Clients who found you in the stylist list and tapped Book, newest first. Record a booking here when one came of it.'
+          : 'Clients who clicked Book on a stylist they found in the directory, newest first. Record a booking here when one came of it.'}
+      </p>
       {error && <PageError inline message={error} />}
       {actionError && <p className="error" role="alert">{actionError}</p>}
       {saved && <p className="tracking-saved" role="status">{saved}</p>}
@@ -86,22 +108,24 @@ function DirectoryBookings() {
             <thead>
               <tr>
                 <th scope="col">Client</th>
-                <th scope="col">Stylist</th>
+                {!orgId && <th scope="col">Stylist</th>}
                 <th scope="col">Last click</th>
                 <th scope="col">Booking</th>
               </tr>
             </thead>
             <tbody>
               {clicks.map((c) => (
-                <tr key={`${c.requestId}-${c.orgId}`}>
+                <tr key={`${c.requestId}-${c.orgId ?? orgId}`}>
                   <td>
                     {c.clientFirstName ?? '–'}
                     {c.clientEmail && <div className="muted">{c.clientEmail}</div>}
                   </td>
-                  <td>
-                    {c.stylistName ?? '–'}
-                    {c.recommended && <div className="muted">also on their list</div>}
-                  </td>
+                  {!orgId && (
+                    <td>
+                      {c.stylistName ?? '–'}
+                      {c.recommended && <div className="muted">also on their list</div>}
+                    </td>
+                  )}
                   <td>{new Date(c.lastClickedAt).toLocaleDateString()}</td>
                   <td>
                     {c.bookedEventId ? (
@@ -129,8 +153,8 @@ function DirectoryBookings() {
       {voiding?.bookedEventId && (
         <VoidForm
           key={voiding.bookedEventId}
-          path={apiPath`/api/admin/events/${voiding.bookedEventId}/void`}
-          label={`Void the booking for ${voiding.clientFirstName ?? 'the client'} with ${voiding.stylistName ?? 'the stylist'}`}
+          path={voidPath(voiding.bookedEventId)}
+          label={`Void the booking for ${voiding.clientFirstName ?? 'the client'}${withStylist(voiding)}`}
           onDone={() => {
             setVoiding(null)
             reload()
@@ -148,7 +172,12 @@ export function StylistBookingsPage() {
   // Stable per org: the list reloads when its paths change.
   const paths = useMemo(() => orgPaths(orgId), [orgId])
   if (!orgId) return <PageError message="No stylist org in the link." />
-  return <BookingEntry paths={paths} admin={false} />
+  return (
+    <>
+      <BookingEntry paths={paths} admin={false} />
+      <DirectoryBookings orgId={orgId} />
+    </>
+  )
 }
 
 function BookingEntry({ paths, admin }: { paths: Paths; admin: boolean }) {

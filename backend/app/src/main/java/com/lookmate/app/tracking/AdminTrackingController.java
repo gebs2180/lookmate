@@ -72,7 +72,7 @@ class AdminTrackingController {
     @GetMapping("/api/admin/tracking/directory-clicks")
     List<TrackingQueries.DirectoryClick> directoryClicks(@RequestParam(required = false) String market,
                                                          @RequestParam(required = false) @Size(max = 200) String q) {
-        return queries.recentDirectoryClicks(market == null || market.isBlank() ? null : market, q, 50);
+        return queries.recentDirectoryClicks(market == null || market.isBlank() ? null : market, null, q, 50);
     }
 
     /** A booking or rebook with a stylist the client picked from the directory (no match). */
@@ -80,7 +80,7 @@ class AdminTrackingController {
     @ResponseStatus(HttpStatus.CREATED)
     TrackingService.Recorded recordDirectory(@PathVariable UUID requestId, @PathVariable UUID orgId,
                                              @Valid @RequestBody RecordBooking request) {
-        return tracking.recordDirectoryBooking(requestId, orgId, request.type(), currentUser.id(), request.note(),
+        return tracking.recordDirectoryBooking(requestId, orgId, request.type(), MatchEvents.Source.ADMIN, currentUser.id(), request.note(),
                 request.occurredAt());
     }
 

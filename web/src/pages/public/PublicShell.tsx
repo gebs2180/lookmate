@@ -2,6 +2,8 @@ import { lazy, Suspense } from 'react'
 import { Link, Route, Routes, useLocation } from 'react-router'
 import { BrandMark } from '../../strand/Strand'
 import { Loading, NotFound, RouteErrorBoundary } from '../../ui'
+import { DigestNewClientsPage } from './DigestNewClientsPage'
+import { DigestUnsubscribePage } from './DigestUnsubscribePage'
 import { DirectoryPage } from './DirectoryPage'
 import { FindPage } from './FindPage'
 import { MatchStatusPage } from './MatchStatusPage'
@@ -33,6 +35,8 @@ export function PublicShell() {
               <Route path="/stylists" element={<DirectoryPage />} />
               <Route path="/consult" element={<GeneralConsultPage />} />
               <Route path="/c/:slug" element={<PartnerConsultPage />} />
+              <Route path="/digest/unsubscribe/:token" element={<DigestUnsubscribePage />} />
+              <Route path="/digest/new-clients/:token" element={<DigestNewClientsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

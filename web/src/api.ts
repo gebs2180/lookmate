@@ -248,3 +248,13 @@ export type DirectoryClick = Omit<
   service: string | null
   bookedEventId: string | null
 }
+
+// The stylist weekly digest (backend: tracking, docs/tracking.md "Weekly digest").
+
+/** What a digest Booked/Rebooked link is about: first name and service only. */
+export type DigestLink = Omit<Schemas['WeeklyDigestsLinkInfo'], 'clientFirstName' | 'service' | 'eventId'> & {
+  clientFirstName: string | null
+  service: string | null
+  eventId: string | null
+}
+export type DigestSettingView = Schemas['DigestControllerDigestSetting']

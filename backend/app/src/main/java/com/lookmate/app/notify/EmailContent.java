@@ -27,7 +27,7 @@ record EmailContent(String subject, String html, String text) {
         return new EmailContent(subject, html.toString(), text.toString());
     }
 
-    private static String escape(String s) {
+    static String escape(String s) {
         return HtmlUtils.htmlEscape(s);
     }
 }

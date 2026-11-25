@@ -13,7 +13,7 @@ pgvector, one private photo bucket, one React PWA. Clients never sign in; stylis
 |---|---|---|
 | `identity` | users, stylist orgs, invites, memberships, terms | From pokemans |
 | `storage` | `BlobStore` (presigned uploads, never overwrite), image checks | From pokemans |
-| `notify` | email outbox, Resend, retention | From pokemans |
+| `notify` | email outbox, Resend, retention; client and stylist emails ([docs/modules/notify.md](modules/notify.md)) | From pokemans |
 | `stylists` | `salon_location`, `stylist_profile`, `portfolio_photo` and tags, the public directory | Built ([modules/stylists.md](modules/stylists.md)) |
 | `intake` | `client`, `match_request`, inspiration upload, `/api/public/match-requests/**` | Built ([modules/intake.md](modules/intake.md)) |
 | `matching` | embeddings, ranking, `match`, auto-publish, the admin monitor and (switch) review | Built ([modules/matching.md](modules/matching.md)) |

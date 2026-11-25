@@ -184,11 +184,13 @@ public class TrackingService {
     }
 
     /**
-     * A BOOKED or REBOOKED with a stylist the client picked from the directory (no match), entered by the admin. The
-     * request needn't be published: the directory is open to any client with a link.
+     * A BOOKED or REBOOKED with a stylist the client picked from the directory (no match), entered by the admin or by
+     * that stylist (the caller checks the stylist's route: the client must have tapped Book on them). The request
+     * needn't be published: the directory is open to any client with a link.
      */
     @Transactional
-    Recorded recordDirectoryBooking(UUID requestId, UUID orgId, Type type, UUID recordedBy, String note, Instant occurredAt) {
+    Recorded recordDirectoryBooking(UUID requestId, UUID orgId, Type type, Source source, UUID recordedBy, String note,
+                                    Instant occurredAt) {
         if (type != Type.BOOKED && type != Type.REBOOKED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only BOOKED and REBOOKED can be entered by hand");
         }
@@ -205,8 +207,14 @@ public class TrackingService {
                     "There's no earlier booking with this stylist for this client. Record a booking first.");
         }
         String cleanNote = note == null || note.isBlank() ? null : note.strip();
-        UUID id = events.append(new MatchEvents.New(null, requestId, orgId, type, Source.ADMIN, recordedBy, cleanNote, when));
-        return new Recorded(id, null, type, Source.ADMIN, when, cleanNote);
+        UUID id = events.append(new MatchEvents.New(null, requestId, orgId, type, source, recordedBy, cleanNote, when));
+        return new Recorded(id, null, type, source, when, cleanNote);
+    }
+
+    /** Whether the client of this request tapped Book on this stylist from the directory (a stylist may record then). */
+    @Transactional(readOnly = true)
+    boolean directoryPicked(UUID requestId, UUID orgId) {
+        return events.directoryExists(requestId, orgId, Type.CLICKED_BOOK);
     }
 
     private Instant checkedTime(Instant occurredAt, TrackingQueries.EntryTarget target) {

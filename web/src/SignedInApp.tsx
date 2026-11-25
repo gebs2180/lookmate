@@ -21,6 +21,7 @@ const AdminMetricsPage = lazy(() => import('./pages/tracking/AdminMetricsPage').
 const RecordBookingPage = lazy(() => import('./pages/tracking/RecordBookingPage').then((m) => ({ default: m.RecordBookingPage })))
 const StylistBookingsPage = lazy(() => import('./pages/tracking/RecordBookingPage').then((m) => ({ default: m.StylistBookingsPage })))
 const StylistStatsPage = lazy(() => import('./pages/tracking/StylistStatsCard').then((m) => ({ default: m.StylistStatsPage })))
+const DigestConfirmPage = lazy(() => import('./pages/tracking/DigestConfirmPage').then((m) => ({ default: m.DigestConfirmPage })))
 const AdminLocationsPage = lazy(() => import('./admin/AdminLocationsPage').then((m) => ({ default: m.AdminLocationsPage })))
 
 /** Everything behind sign-in, with Auth0 around it. Its own chunk, so client pages never download Auth0. */
@@ -36,6 +37,8 @@ function SignedInShell() {
   const { isLoading, isAuthenticated, user, error, loginWithRedirect, logout } = useAuth0()
   const location = useLocation()
   const invite = location.pathname.startsWith('/invite/')
+  // The weekly digest's Booked/Rebooked links: sign in, then confirm (docs/tracking.md, "Weekly digest").
+  const digest = location.pathname.startsWith('/digest/')
   const login = () => loginWithRedirect({ appState: { returnTo: location.pathname + location.search } })
 
   return (
@@ -59,7 +62,7 @@ function SignedInShell() {
       {error && <p className="error" role="alert">Login error: {error.message}</p>}
       {isLoading && <Loading />}
 
-      {!isLoading && !isAuthenticated && !invite && <Landing key="landing" onStylistLogin={login} />}
+      {!isLoading && !isAuthenticated && !invite && !digest && <Landing key="landing" onStylistLogin={login} />}
 
       {!isLoading && !isAuthenticated && invite && (
         <main className="welcome page-lift">
@@ -68,6 +71,17 @@ function SignedInShell() {
           <p>Log in, or sign up, to accept. Clients find you by your own work, so your portfolio does the talking.</p>
           <button className="block" onClick={login}>
             Log in or sign up
+          </button>
+        </main>
+      )}
+
+      {!isLoading && !isAuthenticated && digest && (
+        <main className="welcome page-lift">
+          <p className="eyebrow">For stylists</p>
+          <p className="lead">Log in to record this booking.</p>
+          <p>Links in your weekly email only work for you, once you're signed in, so a forwarded email can't record anything.</p>
+          <button className="block" onClick={login}>
+            Log in
           </button>
         </main>
       )}
@@ -92,6 +106,7 @@ function SignedInShell() {
                 <Route path="/admin/bookings" element={<RecordBookingPage />} />
                 <Route path="/orgs/:orgId/stats" element={<StylistStatsPage />} />
                 <Route path="/orgs/:orgId/bookings" element={<StylistBookingsPage />} />
+                <Route path="/digest/:token" element={<DigestConfirmPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
