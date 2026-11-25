@@ -60,6 +60,17 @@ stays a separate app. Code was copied, not shared: a fix in one doesn't reach th
   Combpatible licenses them, in a one-page agreement. Answers go to the stylist only if the client ticks the box.
   Charging stylists a membership is allowed later, at about 10 weekly users; "no payments" still covers clients. See
   [docs/research/service-finder.md](docs/research/service-finder.md).
+- **Feature ideas: build all except the rebook reminder** (Zach, 2026-11-25), from
+  [docs/research/feature-ideas.md](docs/research/feature-ideas.md):
+  - First-visit notes. Jason writes the generic notes; our draft ([docs/research/first-visit-notes.md](docs/research/first-visit-notes.md)) stands until his arrive.
+  - Weekly stylist digest with one-tap Booked/Rebooked. Zach: stylists would open it.
+  - "Taking new clients" status. **It never removes a stylist from matching.** The match card shows the status and wait.
+  - Public stylist page `/s/<slug>`. Zach: "never charge the stylists" for the clients it brings. Whether that also drops
+    the later membership above is still to confirm.
+  - "Did you get the look?" check-in **for all clients**. Clients without an email see it on their link page only
+    ("no email means no emails" still holds).
+  - Duplicate portfolio photo check. Near-duplicates wait on real embeddings.
+  - **Dropped: the rebook reminder email.** Reminders come from the stylist directly.
 
 ## Defaults to confirm (ask before changing; record the answer here)
 

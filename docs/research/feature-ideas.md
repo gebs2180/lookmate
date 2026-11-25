@@ -1,7 +1,8 @@
 # Feature ideas: what to add next for clients and stylists
 
-Research and a ranked list, 2026-11-25. Nothing here is built and nothing is decided: Zach decides (open questions at
-the end). Read with [CLAUDE.md](../../CLAUDE.md) (Decisions, Non-negotiables), [brief.md](../brief.md) (pilot
+Research and a ranked list, 2026-11-25. **Decided the same day (Zach): build ideas 1–4, 6 and 7; idea 5 is dropped.**
+The answers are under [Open questions](#open-questions-for-zach) and in CLAUDE.md's Decisions; where an idea's text
+below disagrees with them, the answers win. Read with [CLAUDE.md](../../CLAUDE.md) (Decisions, Non-negotiables), [brief.md](../brief.md) (pilot
 metrics), [beyond-the-hair.md](beyond-the-hair.md), [service-finder.md](service-finder.md),
 [tracking.md](../tracking.md) and the module docs in [modules/](../modules/).
 
@@ -317,20 +318,23 @@ So nobody re-proposes them.
 
 ## Open questions for Zach
 
-1. **Which to build first?** Our suggestion: 1 and 2 together (both S, no decisions needed beyond the copy), then 3
-   and 4.
-2. **Idea 3: may "not taking new clients" remove a stylist from new matches?** It changes eligibility, not order.
-   Or should the match card just show the wait and leave them in?
-3. **Idea 4: commit now that a later membership never charges per client for clients from a stylist's own page?**
-   Recording it early keeps the tracking clean and is a selling point to Salon Lofts stylists.
-4. **Idea 5: is a one-way rebook reminder within "no messaging"?** And may we keep an opted-in email past the 90-day
-   link, within the 365-day contact retention?
-5. **Idea 6** is [beyond-the-hair.md](beyond-the-hair.md)'s open question 9: pilot the check-in with the first 100
-   matched clients who gave an email? Show stylists only aggregates of 5 or more?
-6. **Who writes the generic first-visit notes (idea 1)?** Jason, as part of the finder agreement, or the Salon Lofts
-   advisory-board stylist?
-7. **Ask the advisory-board stylist:** would stylists actually open a weekly digest and tap "Booked"? If not, the
-   rebook metric needs another source (asking stylists for a monthly count, say).
+Answered 2026-11-25 by Zach: "I look moving forward with all of these."
+
+1. **Which to build first?** All of them, except idea 5. Order: 1 and 3 together (both are profile fields in
+   `stylists`) alongside 2; then 4, 6 (needs 2) and 7.
+2. **Idea 3: may "not taking new clients" remove a stylist from new matches?** **No.** Zach: "Not taking clients
+   should not prevent them from matching." The stylist stays in matching and the directory; the match card shows the
+   status and the wait. The 30-day confirm still applies.
+3. **Idea 4: never charge per client for clients from a stylist's own page?** **Agreed.** Zach: "never charge the
+   stylists". Whether that also rules out the later membership (CLAUDE.md, 2026-11-22) is still to confirm.
+4. **Idea 5: rebook reminder.** **Dropped.** Zach: "no reminder emails, that should come from the stylist directly."
+5. **Idea 6: who gets the check-in?** **All clients,** not a pilot of 100. Clients who gave an email get one email
+   about 10 days after `BOOKED`; clients without one see the question on their link page instead, and still get no
+   email. Stylists see aggregates of 5 or more (proposed, not contradicted).
+6. **Who writes the generic first-visit notes?** **Jason.** Ours is the first draft:
+   [first-visit-notes.md](first-visit-notes.md). Like the finder, ship our draft and don't credit Jason until his
+   version is in.
+7. **Would stylists open a weekly digest?** **Yes,** per Zach.
 
 ## Sources
 
