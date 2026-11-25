@@ -7,6 +7,7 @@ import { DigestUnsubscribePage } from './DigestUnsubscribePage'
 import { DirectoryPage } from './DirectoryPage'
 import { FindPage } from './FindPage'
 import { MatchStatusPage } from './MatchStatusPage'
+import { StylistPage } from './StylistPage'
 
 // The service finder is its own module (consult), loaded only when a client opens it.
 const GeneralConsultPage = lazy(() => import('../../consult/ConsultPage').then((m) => ({ default: m.GeneralConsultPage })))
@@ -35,6 +36,7 @@ export function PublicShell() {
               <Route path="/stylists" element={<DirectoryPage />} />
               <Route path="/consult" element={<GeneralConsultPage />} />
               <Route path="/c/:slug" element={<PartnerConsultPage />} />
+              <Route path="/s/:slug" element={<StylistPage />} />
               <Route path="/digest/unsubscribe/:token" element={<DigestUnsubscribePage />} />
               <Route path="/digest/new-clients/:token" element={<DigestNewClientsPage />} />
               <Route path="*" element={<NotFound />} />

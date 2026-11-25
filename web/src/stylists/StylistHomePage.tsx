@@ -8,6 +8,7 @@ import { useLoad } from '../useLoad'
 import { newClientsLine } from './practice'
 import './stylists.css'
 import { DigestSetting } from './DigestSetting'
+import { SharePanel } from './SharePanel'
 import { TermsStep } from './TermsStep'
 import { type Missing, type Profile, type ProfileStatus, type StylistHome } from './types'
 
@@ -135,6 +136,8 @@ export function StylistHomePage() {
           {actionError}
         </p>
       )}
+
+      {status === 'LIVE' && home.profile && !home.profile.demo && <SharePanel name={home.profile.displayName} slug={home.profile.slug} />}
 
       <DigestSetting orgId={orgId} />
     </>

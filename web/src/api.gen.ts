@@ -475,7 +475,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["preview"];
+        get: operations["preview_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1156,6 +1156,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/public/stylists/by-slug/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["bySlug"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/public/stylists/first-visit-notes": {
         parameters: {
             query?: never;
@@ -1164,6 +1180,70 @@ export interface paths {
             cookie?: never;
         };
         get: operations["firstVisitNotes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/stylists/preview/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/stylists/{orgId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["byOrg"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/stylists/{orgId}/book": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["bookFromProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/public/stylists/{orgId}/og.jpg": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["ogImage"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1584,6 +1664,8 @@ export interface components {
             /** Format: int64 */
             clientsRebooked: number;
             /** Format: int64 */
+            profileBookClicks: number;
+            /** Format: int64 */
             rebookCohort: number;
             /** Format: int64 */
             rebookCohortRebooked: number;
@@ -1718,6 +1800,7 @@ export interface components {
             practice: components["schemas"]["ProfileServicePracticeRequest"];
             /** Format: int32 */
             priceTier: number;
+            slug: string;
             specialties: ("CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER")[];
         };
         ProfileServiceProfileView: {
@@ -1739,6 +1822,7 @@ export interface components {
             priceTier: number;
             /** Format: date-time */
             publishedAt: string;
+            slug: string;
             specialties: ("CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER")[];
             /** @enum {string} */
             status: "DRAFT" | "LIVE" | "HIDDEN";
@@ -1989,6 +2073,40 @@ export interface components {
             orgId: string;
             photoUrls: string[];
             practice: components["schemas"]["Practice"];
+            specialties: ("CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER")[];
+        };
+        StylistPagesPagePhoto: {
+            before: boolean;
+            /** @enum {string} */
+            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+            /** Format: int32 */
+            height: number;
+            /** Format: uuid */
+            photoId: string;
+            /** @enum {string} */
+            service: "CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER";
+            url: string;
+            /** Format: int32 */
+            width: number;
+        };
+        StylistPagesPhotoGroup: {
+            /** @enum {string} */
+            hairType: "STRAIGHT" | "WAVY" | "CURLY" | "COILY";
+            photos: components["schemas"]["StylistPagesPagePhoto"][];
+        };
+        StylistPagesStylistPage: {
+            bio: string;
+            city: string;
+            demo: boolean;
+            displayName: string;
+            finderPath: string;
+            instagram: string;
+            locationName: string;
+            /** Format: uuid */
+            orgId: string;
+            photoGroups: components["schemas"]["StylistPagesPhotoGroup"][];
+            practice: components["schemas"]["Practice"];
+            slug: string;
             specialties: ("CUT" | "COLOR" | "BALAYAGE" | "HIGHLIGHTS" | "EXTENSIONS" | "BRAIDS" | "LOCS" | "SILK_PRESS" | "PERM" | "TREATMENT" | "STYLING" | "OTHER")[];
         };
         StylistTrackingControllerStylistDirectoryPick: {
@@ -2984,7 +3102,7 @@ export interface operations {
             };
         };
     };
-    preview: {
+    preview_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -4072,6 +4190,28 @@ export interface operations {
             };
         };
     };
+    bySlug: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylistPagesStylistPage"];
+                };
+            };
+        };
+    };
     firstVisitNotes: {
         parameters: {
             query?: {
@@ -4091,6 +4231,94 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["FirstVisitNote"][];
+                };
+            };
+        };
+    };
+    preview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
+    byOrg: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylistPagesStylistPage"];
+                };
+            };
+        };
+    };
+    bookFromProfile: {
+        parameters: {
+            query?: {
+                via?: string;
+            };
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ogImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                orgId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
                 };
             };
         };

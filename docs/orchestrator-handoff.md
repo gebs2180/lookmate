@@ -85,8 +85,9 @@ variables (`AUTH0_DOMAIN`, `AUTH0_SPA_CLIENT_ID`, `AUTH0_AUDIENCE`) to be set.
 ## Next build work (not started)
 
 - **Lookbook follow-ups** (redesign is gebs2180/lookmate#14): a client note field for the reveal's pull quote (now
-  built from quiz answers), a single-stylist endpoint for the portfolio dialog, dark mode, install icons, and View
-  Transitions between routes.
+  built from quiz answers), dark mode, install icons, and View
+  Transitions between routes. (The single-stylist endpoint, `/api/public/stylists/{orgId}`, came with the stylist
+  page.)
 - **Module boundaries:** matching still reads the stylists and intake tables with read-only SQL (the documented
   exception in [architecture.md](architecture.md)); the follow-ups are listed in
   [modules/matching.md](modules/matching.md). Tracking has a similar documented exception.

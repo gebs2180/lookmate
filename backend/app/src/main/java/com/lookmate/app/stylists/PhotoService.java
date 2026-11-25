@@ -176,6 +176,11 @@ class PhotoService {
         if (photos.existsByOrgIdAndSha256AndStatusInAndIdNot(orgId, result.sha256(), KEPT, photo.getId())) {
             return refuse(photo, StylistError.DUPLICATE_PHOTO, "This photo is already in your portfolio.");
         }
+        if (photos.existsBySha256AndStatusInAndOrgIdNot(result.sha256(), KEPT, orgId)) {
+            // Exact copies only. Near-duplicates (cropped, re-saved) wait on real embeddings (docs/modules/stylists.md).
+            return refuse(photo, StylistError.PHOTO_ELSEWHERE, "This photo is already in another stylist's portfolio on "
+                    + "Combpatible, so we can't add it to yours. Please upload photos of your own work.");
+        }
         photo.ready(result.sha256(), result.width(), result.height(), result.size());
         events.publishEvent(new PortfolioPhotoReady(photo.getId(), orgId));
         return new Checked(view(photo), null);

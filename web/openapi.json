@@ -1041,6 +1041,10 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "profileBookClicks" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
           "rebookCohort" : {
             "format" : "int64",
             "type" : "integer"
@@ -1070,7 +1074,7 @@
             "type" : "integer"
           }
         },
-        "required" : [ "bookingClicks", "bookings", "bookingsBySource", "clicksBySource", "clientsBooked", "clientsClicked", "clientsMatched", "clientsRebooked", "rebookCohort", "rebookCohortRebooked", "rebookRate", "rebooks", "requestsPublished", "stylistsActive", "stylistsLive" ]
+        "required" : [ "bookingClicks", "bookings", "bookingsBySource", "clicksBySource", "clientsBooked", "clientsClicked", "clientsMatched", "clientsRebooked", "profileBookClicks", "rebookCohort", "rebookCohortRebooked", "rebookRate", "rebooks", "requestsPublished", "stylistsActive", "stylistsLive" ]
       },
       "NewClients" : {
         "properties" : {
@@ -1376,6 +1380,9 @@
             "format" : "int32",
             "type" : "integer"
           },
+          "slug" : {
+            "type" : "string"
+          },
           "specialties" : {
             "items" : {
               "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
@@ -1384,7 +1391,7 @@
             "type" : "array"
           }
         },
-        "required" : [ "bio", "bookingUrl", "displayName", "instagram", "locationId", "newClients", "practice", "priceTier", "specialties" ]
+        "required" : [ "bio", "bookingUrl", "displayName", "instagram", "locationId", "newClients", "practice", "priceTier", "slug", "specialties" ]
       },
       "ProfileServiceProfileView" : {
         "properties" : {
@@ -1432,6 +1439,9 @@
             "format" : "date-time",
             "type" : "string"
           },
+          "slug" : {
+            "type" : "string"
+          },
           "specialties" : {
             "items" : {
               "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
@@ -1448,7 +1458,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "bio", "bookingPlatform", "bookingUrl", "demo", "displayName", "instagram", "locationId", "market", "newClientsConfirmDue", "newClientsConfirmedAt", "practice", "priceTier", "publishedAt", "specialties", "status", "updatedAt" ]
+        "required" : [ "bio", "bookingPlatform", "bookingUrl", "demo", "displayName", "instagram", "locationId", "market", "newClientsConfirmDue", "newClientsConfirmedAt", "practice", "priceTier", "publishedAt", "slug", "specialties", "status", "updatedAt" ]
       },
       "ProfileServiceStylistHome" : {
         "properties" : {
@@ -2110,6 +2120,101 @@
           }
         },
         "required" : [ "city", "demo", "displayName", "instagram", "locationName", "orgId", "photoUrls", "practice", "specialties" ]
+      },
+      "StylistPagesPagePhoto" : {
+        "properties" : {
+          "before" : {
+            "type" : "boolean"
+          },
+          "hairType" : {
+            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
+            "type" : "string"
+          },
+          "height" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "photoId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "service" : {
+            "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          },
+          "width" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "before", "hairType", "height", "photoId", "service", "url", "width" ]
+      },
+      "StylistPagesPhotoGroup" : {
+        "properties" : {
+          "hairType" : {
+            "enum" : [ "STRAIGHT", "WAVY", "CURLY", "COILY" ],
+            "type" : "string"
+          },
+          "photos" : {
+            "items" : {
+              "$ref" : "#/components/schemas/StylistPagesPagePhoto"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "hairType", "photos" ]
+      },
+      "StylistPagesStylistPage" : {
+        "properties" : {
+          "bio" : {
+            "type" : "string"
+          },
+          "city" : {
+            "type" : "string"
+          },
+          "demo" : {
+            "type" : "boolean"
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "finderPath" : {
+            "type" : "string"
+          },
+          "instagram" : {
+            "type" : "string"
+          },
+          "locationName" : {
+            "type" : "string"
+          },
+          "orgId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "photoGroups" : {
+            "items" : {
+              "$ref" : "#/components/schemas/StylistPagesPhotoGroup"
+            },
+            "type" : "array"
+          },
+          "practice" : {
+            "$ref" : "#/components/schemas/Practice"
+          },
+          "slug" : {
+            "type" : "string"
+          },
+          "specialties" : {
+            "items" : {
+              "enum" : [ "CUT", "COLOR", "BALAYAGE", "HIGHLIGHTS", "EXTENSIONS", "BRAIDS", "LOCS", "SILK_PRESS", "PERM", "TREATMENT", "STYLING", "OTHER" ],
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "bio", "city", "demo", "displayName", "finderPath", "instagram", "locationName", "orgId", "photoGroups", "practice", "slug", "specialties" ]
       },
       "StylistTrackingControllerStylistDirectoryPick" : {
         "properties" : {
@@ -3607,7 +3712,7 @@
     },
     "/api/invites/{token}" : {
       "get" : {
-        "operationId" : "preview",
+        "operationId" : "preview_1",
         "parameters" : [ {
           "in" : "path",
           "name" : "token",
@@ -5066,6 +5171,32 @@
         "tags" : [ "directory-controller" ]
       }
     },
+    "/api/public/stylists/by-slug/{slug}" : {
+      "get" : {
+        "operationId" : "bySlug",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "slug",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StylistPagesStylistPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-page-controller" ]
+      }
+    },
     "/api/public/stylists/first-visit-notes" : {
       "get" : {
         "operationId" : "firstVisitNotes",
@@ -5102,6 +5233,114 @@
           }
         },
         "tags" : [ "directory-controller" ]
+      }
+    },
+    "/api/public/stylists/preview/{slug}" : {
+      "get" : {
+        "operationId" : "preview",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "slug",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "text/html" : {
+                "schema" : {
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-page-controller" ]
+      }
+    },
+    "/api/public/stylists/{orgId}" : {
+      "get" : {
+        "operationId" : "byOrg",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StylistPagesStylistPage"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-page-controller" ]
+      }
+    },
+    "/api/public/stylists/{orgId}/book" : {
+      "get" : {
+        "operationId" : "bookFromProfile",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        }, {
+          "in" : "query",
+          "name" : "via",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "public-tracking-controller" ]
+      }
+    },
+    "/api/public/stylists/{orgId}/og.jpg" : {
+      "get" : {
+        "operationId" : "ogImage",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "orgId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "image/jpeg" : {
+                "schema" : {
+                  "format" : "byte",
+                  "type" : "string"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "stylist-page-controller" ]
       }
     },
     "/api/public/stylists/{orgId}/practice" : {

@@ -27,7 +27,8 @@ class MetricsService {
     record Totals(long stylistsLive, long stylistsActive, long requestsPublished, long clientsMatched, long bookingClicks,
                   long clientsClicked, long bookings, long clientsBooked, long rebooks, long clientsRebooked,
                   long rebookCohort, long rebookCohortRebooked, Double rebookRate,
-                  TrackingQueries.SourceSplit clicksBySource, TrackingQueries.SourceSplit bookingsBySource) {
+                  TrackingQueries.SourceSplit clicksBySource, TrackingQueries.SourceSplit bookingsBySource,
+                  long profileBookClicks) {
     }
 
     record Metrics(String market, LocalDate from, LocalDate to, String timeZone, List<String> markets, Totals totals,
@@ -39,10 +40,12 @@ class MetricsService {
     }
 
     private final TrackingQueries queries;
+    private final ProfileClicks profileClicks;
     private final ZoneId zone;
 
-    MetricsService(TrackingQueries queries, TrackingProperties properties) {
+    MetricsService(TrackingQueries queries, ProfileClicks profileClicks, TrackingProperties properties) {
         this.queries = queries;
+        this.profileClicks = profileClicks;
         this.zone = properties.timeZone();
     }
 
@@ -64,7 +67,8 @@ class MetricsService {
         Double rate = t.rebookCohort() == 0 ? null : (double) t.rebookCohortRebooked() / t.rebookCohort();
         Totals totals = new Totals(t.stylistsLive(), t.stylistsActive(), t.requestsPublished(), t.clientsMatched(),
                 t.bookingClicks(), t.clientsClicked(), t.bookings(), t.clientsBooked(), t.rebooks(), t.clientsRebooked(),
-                t.rebookCohort(), t.rebookCohortRebooked(), rate, t.clicksBySource(), t.bookingsBySource());
+                t.rebookCohort(), t.rebookCohortRebooked(), rate, t.clicksBySource(), t.bookingsBySource(),
+                profileClicks.count(m, range));
 
         return new Metrics(m, start, end, zone.getId(), queries.markets(), totals, weeks(start, end, queries.weekly(m, range, zone.getId())),
                 queries.perStylist(m, range), queries.byHairType(m, range));

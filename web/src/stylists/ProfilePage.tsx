@@ -75,6 +75,7 @@ function ProfileForm({
   const [specialties, setSpecialties] = useState<ServiceType[]>(profile?.specialties ?? [])
   const [bookingUrl, setBookingUrl] = useState(profile?.bookingUrl ?? '')
   const [instagram, setInstagram] = useState(profile?.instagram ? `@${profile.instagram}` : '')
+  const [slug, setSlug] = useState(profile?.slug ?? '')
   const [priceTier, setPriceTier] = useState<number | null>(profile?.priceTier ?? null)
   const [bio, setBio] = useState(profile?.bio ?? '')
   const practice = profile?.practice
@@ -113,6 +114,8 @@ function ProfileForm({
       specialties,
       bookingUrl: bookingUrl.trim() || null,
       instagram: instagram.trim() || null,
+      // Blank: unchanged (a new profile gets one from the name).
+      slug: slug.trim() || null,
       priceTier,
       practice: {
         labels,
@@ -198,6 +201,14 @@ function ProfileForm({
             <input {...control} value={instagram} onChange={(e) => setInstagram(e.target.value)} autoCapitalize="none" autoCorrect="off" />
           )}
         </Field>
+
+        {profile && (
+          <Field label="Your page's address" hint={`${window.location.host}/s/${slug.trim() || profile.slug}. Letters, numbers and hyphens. Changing it breaks links and QR cards you already shared.`}>
+            {(control) => (
+              <input {...control} value={slug} onChange={(e) => setSlug(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} />
+            )}
+          </Field>
+        )}
 
         <fieldset className="tag-group">
           <legend className="field-label">Price range</legend>

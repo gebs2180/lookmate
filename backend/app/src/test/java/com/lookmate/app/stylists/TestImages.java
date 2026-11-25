@@ -39,6 +39,10 @@ final class TestImages {
         g.setColor(Color.BLUE);
         g.fillOval(4 + seed % 20, 8, 30, 20);
         g.dispose();
+        // The seed in the corner pixels, so different seeds never give the same bytes (the duplicate checks hash them).
+        for (int bit = 0; bit < 16; bit++) {
+            img.setRGB(bit * 4, 0, ((seed >> bit) & 1) == 1 ? 0xFFFFFF : 0x000000);
+        }
         return img;
     }
 

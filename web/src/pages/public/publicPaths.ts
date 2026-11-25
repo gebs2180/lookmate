@@ -1,4 +1,4 @@
-/** The client pages (/find, /m/:token, the stylist directory, the service finder), and the stylist digest's unsubscribe and new-client status links: no sign-in, outside the signed-in shell (CLAUDE.md). */
+/** The client pages (/find, /m/:token, the stylist directory, the service finder, a stylist's own page /s/:slug), and the stylist digest's unsubscribe and new-client status links: no sign-in, outside the signed-in shell (CLAUDE.md). */
 export function isPublicPath(pathname: string) {
   return (
     pathname === '/find' ||
@@ -6,6 +6,7 @@ export function isPublicPath(pathname: string) {
     pathname === '/stylists' ||
     pathname === '/consult' ||
     pathname.startsWith('/c/') ||
+    pathname.startsWith('/s/') ||
     pathname.startsWith('/digest/unsubscribe/') ||
     pathname.startsWith('/digest/new-clients/')
   )

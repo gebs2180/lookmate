@@ -57,6 +57,8 @@ describe('ProfilePage', () => {
       specialties: ['SILK_PRESS'],
       bookingUrl: 'https://booksy.com/ana',
       instagram: '@curls.by.ana',
+      // A new profile: the page address comes from the name.
+      slug: null,
       priceTier: 2,
       practice: {
         labels: ['LGBTQ_AFFIRMING'],

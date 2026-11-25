@@ -404,7 +404,7 @@ class StylistFlowTest {
         mvc.perform(get("/api/public/stylists/" + orgId + "/practice")).andExpect(status().isNotFound());
 
         for (int i = 0; i < 2; i++) {
-            tag(orgId, "auth0|rae", upload(orgId, "auth0|rae", TestImages.jpeg(40 + i), "image/jpeg"), "CUT", "WAVY");
+            tag(orgId, "auth0|rae", upload(orgId, "auth0|rae", TestImages.jpeg(140 + i), "image/jpeg"), "CUT", "WAVY");
         }
         mvc.perform(post(home + "/publish").with(as("auth0|rae"))).andExpect(status().isOk());
 
@@ -470,7 +470,7 @@ class StylistFlowTest {
                 .andExpect(jsonPath("$.practice.newClients.weeksOut").doesNotExist());
 
         for (int i = 0; i < 2; i++) {
-            tag(orgId, "auth0|jo", upload(orgId, "auth0|jo", TestImages.jpeg(60 + i), "image/jpeg"), "CUT", "CURLY");
+            tag(orgId, "auth0|jo", upload(orgId, "auth0|jo", TestImages.jpeg(160 + i), "image/jpeg"), "CUT", "CURLY");
         }
         mvc.perform(post(home + "/publish").with(as("auth0|jo"))).andExpect(status().isOk());
 

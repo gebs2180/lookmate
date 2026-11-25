@@ -37,6 +37,7 @@ const profile = {
   publishedAt: null,
   updatedAt: '2026-11-20T00:00:00Z',
   demo: false,
+  slug: 'ana-curls',
   newClientsConfirmedAt: '2026-11-20T00:00:00Z',
   newClientsConfirmDue: false,
 }
@@ -86,6 +87,18 @@ describe('StylistHomePage', () => {
     expect(await screen.findByRole('button', { name: 'Hide my profile' })).toBeInTheDocument()
     expect(screen.getByText(/Live: clients can be matched/)).toBeInTheDocument()
     await waitFor(() => expect(calls.some((c) => c.url === `/api/orgs/${ORG}/stylist/publish`)).toBe(true))
+    // Live: their own page to share, with a QR card drawn here.
+    expect(screen.getByRole('heading', { name: 'Share your page' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /\/s\/ana-curls$/ })).toHaveAttribute('href', `${window.location.origin}/s/ana-curls`)
+    expect(screen.getByRole('img', { name: /QR code for .*\/s\/ana-curls/ })).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Link for your bio' })).toHaveValue(`${window.location.origin}/s/ana-curls?via=bio`)
+  })
+
+  it("doesn't offer a page before going live, or to a demo stylist", async () => {
+    stubApi({ [`GET /api/orgs/${ORG}/stylist`]: () => home({ profile: { ...profile, status: 'LIVE', demo: true }, readyPhotos: 3, taggedPhotos: 3, missing: [] }) })
+    renderAt(`/stylist/${ORG}`, '/stylist/:orgId', <StylistHomePage />)
+    expect(await screen.findByRole('button', { name: 'Hide my profile' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Share your page' })).not.toBeInTheDocument()
   })
 
   it('asks whether the new-client status is still accurate after 30 days, and one click confirms it', async () => {

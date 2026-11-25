@@ -1476,3 +1476,31 @@ button.link-button:active:not(:disabled) {
 .panel.nudge .actions {
   align-items: center;
 }
+
+/* ---------- A stylist's own page, /s/<slug> (pages/public/StylistPage.tsx): the portfolio spread as a page ---------- */
+
+.stylist-page {
+  max-width: var(--measure);
+  margin: 0 auto;
+  animation: page-lift var(--t-page) var(--ease-page) both;
+}
+
+.stylist-page h1 {
+  margin: 0;
+  font: 400 3.25rem/0.95 var(--serif);
+}
+
+.sp-bio {
+  font: 400 1rem/1.55 var(--sans);
+  color: var(--ink-2);
+}
+
+/* Portfolio groups by hair type, in the page and the dialog. */
+.pf-group > h3 {
+  margin: var(--space-4) var(--space-4) 0;
+}
+
+.sp-foot {
+  padding: var(--space-3) var(--space-4) var(--space-5);
+  text-align: center;
+}

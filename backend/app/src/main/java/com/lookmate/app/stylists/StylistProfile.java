@@ -26,6 +26,8 @@ class StylistProfile extends AssignedIdEntity<UUID> {
     @Id
     private UUID orgId;
     private String displayName;
+    /** The page address, combpatible.app/s/<slug> (V15). Unique. */
+    private String slug;
     private UUID locationId;
     private String market;
     private String bio;
@@ -104,6 +106,12 @@ class StylistProfile extends AssignedIdEntity<UUID> {
         this.updatedAt = Instant.now();
     }
 
+    /** The page address; the caller has checked it is well-formed and free. */
+    void setSlug(String slug) {
+        this.slug = slug;
+        this.updatedAt = Instant.now();
+    }
+
     /** Sets the new-client status; setting it counts as confirming it. */
     void setNewClients(NewClients status, Instant now) {
         this.newClients = status.status().name();
@@ -148,6 +156,10 @@ class StylistProfile extends AssignedIdEntity<UUID> {
 
     String getDisplayName() {
         return displayName;
+    }
+
+    String getSlug() {
+        return slug;
     }
 
     UUID getLocationId() {

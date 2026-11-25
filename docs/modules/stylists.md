@@ -128,6 +128,10 @@ Public (no sign-in, rate-limited per IP with intake's limiter, `rate-limit.brows
 | Method | Path | What |
 |---|---|---|
 | GET | `/api/public/stylists?market=&service=&hairType=&page=` | The open directory, for visitors without a request (`/stylists`, from `/find`): LIVE stylists only, 12 a page from 0, real stylists before sample ones, then by name |
+| GET | `/api/public/stylists/by-slug/{slug}` | A stylist's own page (`/s/<slug>`, `StylistPage`): profile, `practice`, portfolio photos grouped by hair type (`photoGroups`, signed URLs, never cached) and `finderPath` (only for the finder partner). 404 unless LIVE, and for demo stylists |
+| GET | `/api/public/stylists/{orgId}` | The same `StylistPage` for one LIVE stylist by org, demo ones included (`slug` null for them): the directory's portfolio dialog |
+| GET | `/api/public/stylists/preview/{slug}` | Open Graph tags for `/s/<slug>` as a tiny HTML page. Caddy rewrites link-preview bots (by User-Agent) to it; people get the web app. Cached 10 minutes |
+| GET | `/api/public/stylists/{orgId}/og.jpg?v=` | The link-preview image (1200×630): a collage of the stylist's own READY portfolio photos only, never a client photo. Takes a photo decode turn (503 when busy); cached 6 hours, `v` is the profile's last change |
 | GET | `/api/public/stylists/{orgId}/practice` | What to expect in one LIVE stylist's chair (`Practice`, below), for the profile view on a client's picks; 404 unless LIVE |
 | GET | `/api/public/stylists/first-visit-notes?service=&hairType=` | The generic "Before your first visit" notes (`[{key, text}]`), most specific first, at most four; both parameters optional |
 | GET | `/api/public/match-requests/{token}/stylists?service=&hairType=&page=` | The same page scoped to a client's link (served by intake with `StylistDirectory`): the request's market, a bad token is 404. The client page (`/m/:token/stylists`) uses this one |
@@ -235,8 +239,18 @@ it was; any save of it, or "Yes, still accurate", sets `new_clients_confirmed_at
   without EXIF/XMP/comments/text, keeping only the orientation.
 - **Width and height** are the stored pixel dimensions, before the EXIF orientation is applied (a portrait phone photo
   with orientation 6 reads as landscape here). Browsers apply the orientation when showing it.
-- **`sha256`** is of the upload as received (before stripping), so the same photo uploaded twice is caught as a
-  duplicate within one stylist's portfolio.
+- **`sha256`** is of the upload as received (before stripping), indexed (V15). An exact copy of a READY or HIDDEN
+  photo is refused when the upload is confirmed: `DUPLICATE_PHOTO` ("already in your portfolio") for the same
+  stylist, `PHOTO_ELSEWHERE` (422, a friendly "this photo is already in another stylist's portfolio") for anyone else.
+  The refused upload's object is deleted. Near-duplicates (cropped, re-saved) are not caught: see Follow-ups.
+- **Page address (`slug`, V15).** Unique, 3 to 40 lowercase letters, digits and hyphens, a letter or digit at each end. Set from the display name
+  when the profile is created (with `-2`, `-3`… if taken), editable on the profile form (`SLUG_TAKEN` if someone has
+  it). Rows inserted outside the app get a random `s-…` default. Changing it breaks links already shared.
+- **Finder button.** `lookmate.stylists.finder-org-id` (`STYLISTS_FINDER_ORG_ID`) names the partner stylist whose page
+  shows "Not sure what to book?", linking to `finder-path` (`/c/<partner slug>`). Unset: no page shows it.
+- **Share your page.** A LIVE, non-demo stylist's home shows the address with Copy, a link-in-bio version
+  (`?via=bio`) and a printable QR card (`?via=qr`). The QR code is drawn in the browser (`web/src/stylists/qr.ts`), no
+  third-party service. `via` rides along to the tracked Book link (docs/tracking.md).
 - **Before/after pairs.** Tagging photo A with `pairPhotoId = B, before = true` sets B's pair to A and B's `before` to
   false; whatever A or B were paired with before is unpaired. A photo is in at most one pair. Deleting a photo unpairs
   its partner.
@@ -263,4 +277,6 @@ placeholders showing their tags, unless the admin picks real photos named as in 
 
 ## Follow-ups
 
+- **Near-duplicate portfolio photos.** Exact copies are refused (above). Cropped or re-saved copies need image
+  embeddings; a review queue for the admin waits on the real embedding provider (Bedrock).
 - **Abandoned upload slots (agreed to leave for now).** No cleanup job; see above.

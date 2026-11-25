@@ -64,6 +64,8 @@ services:
       RETENTION_CRON: ${RETENTION_CRON:-0 15 4 * * *}
       TRACKING_TIME_ZONE: ${TRACKING_TIME_ZONE:-America/New_York}
       STORAGE_REGION: ${STORAGE_REGION:-auto}
+      # The organisation whose stylist page shows "Not sure what to book?" (the finder partner); empty: none.
+      STYLISTS_FINDER_ORG_ID: ${STYLISTS_FINDER_ORG_ID:-}
     # No OpenCV or PDF rendering here, so far less than pokemans needs. The JVM takes 60% of this as heap.
     mem_limit: 768m
     # Runs as the image's app user with no capabilities and a read-only filesystem; the JVM and Tomcat write
