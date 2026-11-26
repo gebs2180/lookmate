@@ -14,14 +14,37 @@ section) and the service finder doc below, then ask Zach what is next.
   that does this automatically (Zach chose option 1, 2026-11-20).
 - **Orchestrate:** for bigger work, start separate sessions, one module each. Name the shared files and the merge order
   in each brief, have them push a branch without opening a PR, and open the PR yourself with auto-merge on.
+  **Paste [Known pitfalls](#known-pitfalls) into every brief.**
 - **Product name is Combpatible**; `lookmate` stays internal (CLAUDE.md, top). Outsider-visible text says
   Combpatible, including `utm_source=combpatible`.
 - Ask before changing a "default to confirm" in CLAUDE.md, and record the answer there.
 
+## Known pitfalls
+
+Mistakes sessions have actually made or nearly made here. Paste this section into every session brief. When a session
+hits a new one, add it in the PR that fixes it; when a rule here stops being true, delete it.
+
+- **Migration numbers collide or merge out of order.** Flyway refuses an older number after a newer one has run.
+  Reserve each session's `V<n>` in its brief, and keep the higher-numbered PR's auto-merge off until the lower one has
+  merged (V13 before V14 before V15, 2026-11-25).
+- **API files go stale after merging `main`.** A branch that merged `main` and touches the API must rerun
+  `./gradlew test -Dopenapi.update=true` and then `npm run api:types` in `web/`; CI fails otherwise (#54).
+- **Local backend tests pass with Docker off.** Testcontainers tests are skipped, not failed. Check that Docker is
+  running before calling the backend green; CI will fail where your machine didn't.
+- **A passing build isn't a working screen.** For UI work, open the page in a browser and use it before calling it done.
+  A syntax check or green unit tests don't show that a flow works (the feature walkthrough, 2026-11-25).
+- **Modules talk through public services only.** Reaching into another module's internals fails `ModularityTest`. The
+  read-only SQL in matching and tracking are documented exceptions, not a pattern to copy.
+- **Outsiders see Combpatible.** New user-facing text, emails, Open Graph tags and booking-link tags say Combpatible,
+  even though code, packages and config keys say `lookmate`.
+- **Never commit real or stock photos.** Demo photos (Pexels) are for display only; tests use generated images.
+- **Secrets never pass through a session.** Don't read or print `deploy/.env` or any key. Zach sets the value, and a
+  session checks it only with masked output.
+
 ## Where things are
 
-`main` has everything below merged. Open PRs are only Dependabot bumps. The latest Flyway migration is `V8`
-(`backend/app/src/main/resources/db/migration`). What is running in production is not recorded here: check it with
+`main` has everything below merged. Open PRs are only Dependabot bumps. The latest Flyway migration is `V15`
+(`backend/app/src/main/resources/db/migration`; list it with `sort -V`, since plain `ls` puts `V15` before `V2`). What is running in production is not recorded here: check it with
 the deploy-prod skill's read-only check (`deploy/prod-check.sh`, [hosting.md](hosting.md#day-to-day)).
 
 | PR | What |
