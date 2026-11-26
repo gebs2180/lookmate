@@ -107,6 +107,11 @@ variables (`AUTH0_DOMAIN`, `AUTH0_SPA_CLIENT_ID`, `AUTH0_AUDIENCE`) to be set.
 
 ## Next build work (not started)
 
+- **Fairness gate, with the Bedrock provider** (waits on the AWS account and the labelled set): a check that fails a
+  model, dimension or threshold change when matching on curly or coily hair falls behind. The spec is in
+  [embedding-providers.md](embedding-providers.md#fairness-gate-to-build-with-the-bedrock-provider). Bedrock doesn't
+  go live without it.
+
 - **Lookbook follow-ups** (redesign is gebs2180/lookmate#14): a client note field for the reveal's pull quote (now
   built from quiz answers), dark mode, install icons, and View
   Transitions between routes. (The single-stylist endpoint, `/api/public/stylists/{orgId}`, came with the stylist
